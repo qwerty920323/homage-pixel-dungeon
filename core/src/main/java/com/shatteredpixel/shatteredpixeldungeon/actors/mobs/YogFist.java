@@ -158,16 +158,6 @@ public abstract class YogFist extends Mob {
 		}
 	}
 
-	@Override
-	public void die(Object cause) {
-		super.die(cause);
-		for ( Char c : Actor.chars() ){
-			if (c instanceof YogDzewa){
-				((YogDzewa) c).processFistDeath();
-			}
-		}
-	}
-
 	protected abstract void zap();
 
 	public void onZapComplete(){
@@ -182,12 +172,12 @@ public abstract class YogFist extends Mob {
 
 	@Override
 	public int damageRoll() {
-		return Random.NormalIntRange( 18, 36 );
+		return Char.combatRoll( 18, 36 );
 	}
 
 	@Override
 	public int drRoll() {
-		return super.drRoll() + Random.NormalIntRange(0, 15);
+		return super.drRoll() + Char.combatRoll(0, 15);
 	}
 
 	{
@@ -459,7 +449,7 @@ public abstract class YogFist extends Mob {
 
 		@Override
 		public int damageRoll() {
-			return Random.NormalIntRange( 22, 44 );
+			return Char.combatRoll( 22, 44 );
 		}
 
 		@Override
@@ -509,7 +499,7 @@ public abstract class YogFist extends Mob {
 			Char enemy = this.enemy;
 			if (hit( this, enemy, true )) {
 
-				enemy.damage( Random.NormalIntRange(10, 20), new LightBeam() );
+				enemy.damage( Char.combatRoll(10, 20), new LightBeam() );
 				Buff.prolong( enemy, Blindness.class, Blindness.DURATION/2f );
 
 				if (!enemy.isAlive() && enemy == Dungeon.hero) {
@@ -575,7 +565,7 @@ public abstract class YogFist extends Mob {
 			Char enemy = this.enemy;
 			if (hit( this, enemy, true )) {
 
-				enemy.damage( Random.NormalIntRange(10, 20), new DarkBolt() );
+				enemy.damage( Char.combatRoll(10, 20), new DarkBolt() );
 
 				Light l = enemy.buff(Light.class);
 				if (l != null){

@@ -22,7 +22,6 @@
 package com.shatteredpixel.shatteredpixeldungeon.levels.traps;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
-import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
@@ -82,7 +81,7 @@ public class GnollRockfallTrap extends RockfallTrap {
 
 			if (ch != null && ch.isAlive() && !(ch instanceof GnollGeomancer)){
 				//deals notably less damage than a regular rockfall trap, but ignores armor
-				int damage = Random.NormalIntRange(6, 12);
+				int damage = Char.combatRoll(6, 12);
 				ch.damage( Math.max(damage, 0) , this);
 
 				//guards take full paralysis, otherwise just a little
@@ -91,7 +90,6 @@ public class GnollRockfallTrap extends RockfallTrap {
 				if (!ch.isAlive() && ch == Dungeon.hero){
 					Dungeon.fail( this );
 					GLog.n( Messages.get(this, "ondeath") );
-					if (reclaimed) Badges.validateDeathFromFriendlyMagic();
 				}
 			} else if (ch == null
 					&& Dungeon.level instanceof MiningLevel

@@ -145,14 +145,9 @@ public class StyledButton extends Button {
 	}
 
 	public void alpha(float value){
-		if (icon != null)   icon.alpha(value);
-		if (bg != null)     bg.alpha(value);
-		if (text != null)   text.alpha(value);
-	}
-
-	public float alpha(){
-		if (icon != null)   return icon.alpha();
-		else                return bg.alpha();
+		if (icon != null) icon.alpha(value);
+		if (bg != null)   bg.alpha(value);
+		if (text != null) text.alpha(value);
 	}
 	
 	public float reqWidth() {

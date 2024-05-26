@@ -78,14 +78,8 @@ public class Dart extends MissileWeapon {
 	@Override
 	public int min(int lvl) {
 		if (bow != null){
-			if (!(this instanceof TippedDart) && Dungeon.hero.buff(Crossbow.ChargedShot.class) != null){
-				//ability increases base dmg by 37.5%, scaling by 50%
-				return  7 +                     //7 base
-						2*bow.buffedLvl() + lvl;//+2 per bow level, +1 per level
-			} else {
-				return  4 +                     //4 base
-						bow.buffedLvl() + lvl;  //+1 per level or bow level
-			}
+			return  4 +                    //4 base
+					bow.buffedLvl() + lvl; //+1 per level or bow level
 		} else {
 			return  1 +     //1 base, down from 2
 					lvl;    //scaling unchanged
@@ -95,14 +89,8 @@ public class Dart extends MissileWeapon {
 	@Override
 	public int max(int lvl) {
 		if (bow != null){
-			if (!(this instanceof TippedDart) && Dungeon.hero.buff(Crossbow.ChargedShot.class) != null){
-				//ability increases base dmg by 37.5%, scaling by 50%
-				return  15 +                       //15 base
-						4*bow.buffedLvl() + 2*lvl; //+4 per bow level, +2 per level
-			} else {
-				return  12 +                       //12 base
-						3*bow.buffedLvl() + 2*lvl; //+3 per bow level, +2 per level
-			}
+			return  12 +                       //12 base
+					3*bow.buffedLvl() + 2*lvl; //+3 per bow level, +2 per level (default scaling +2)
 		} else {
 			return  2 +     //2 base, down from 5
 					2*lvl;  //scaling unchanged
@@ -112,9 +100,7 @@ public class Dart extends MissileWeapon {
 	protected static Crossbow bow;
 	
 	private void updateCrossbow(){
-		if (Dungeon.hero == null) {
-			bow = null;
-		} else if (Dungeon.hero.belongings.weapon() instanceof Crossbow){
+		if (Dungeon.hero.belongings.weapon() instanceof Crossbow){
 			bow = (Crossbow) Dungeon.hero.belongings.weapon();
 		} else if (Dungeon.hero.belongings.secondWep() instanceof Crossbow) {
 			//player can instant swap anyway, so this is just QoL
@@ -149,7 +135,9 @@ public class Dart extends MissileWeapon {
 
 	@Override
 	public int proc(Char attacker, Char defender, int damage) {
-		if (bow != null && !processingChargedShot){
+		if (bow != null
+				//only apply enchant effects to enemies when processing charged shot
+				&& (!processingChargedShot || attacker.alignment != defender.alignment)){
 			damage = bow.proc(attacker, defender, damage);
 		}
 

@@ -21,8 +21,6 @@
 
 package com.shatteredpixel.shatteredpixeldungeon.levels.traps;
 
-import com.shatteredpixel.shatteredpixeldungeon.Badges;
-import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.items.bombs.Bomb;
 
 public class ExplosiveTrap extends Trap {
@@ -35,9 +33,6 @@ public class ExplosiveTrap extends Trap {
 	@Override
 	public void activate() {
 		new Bomb().explode(pos);
-		if (reclaimed && !Dungeon.hero.isAlive()) {
-			Badges.validateDeathFromFriendlyMagic();
-		}
 	}
 
 }

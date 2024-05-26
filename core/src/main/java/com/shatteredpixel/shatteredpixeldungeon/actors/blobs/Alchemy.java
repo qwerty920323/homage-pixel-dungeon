@@ -29,12 +29,7 @@ import com.shatteredpixel.shatteredpixeldungeon.journal.Notes;
 public class Alchemy extends Blob {
 
 	protected int pos;
-
-	@Override
-	public Notes.Landmark landmark() {
-		return Notes.Landmark.ALCHEMY;
-	}
-
+	
 	@Override
 	protected void evolve() {
 		int cell;
@@ -45,6 +40,9 @@ public class Alchemy extends Blob {
 					off[cell] = cur[cell];
 
 					volume += off[cell];
+					if (off[cell] > 0 && Dungeon.level.visited[cell]){
+						Notes.add( Notes.Landmark.ALCHEMY );
+					}
 				}
 			}
 		}

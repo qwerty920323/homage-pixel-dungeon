@@ -33,7 +33,6 @@ import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.StatueSprite;
 import com.watabou.utils.Bundle;
-import com.watabou.utils.Random;
 
 public class ArmoredStatue extends Statue {
 
@@ -75,7 +74,7 @@ public class ArmoredStatue extends Statue {
 
 	@Override
 	public int drRoll() {
-		return super.drRoll() + Random.NormalIntRange( armor.DRMin(), armor.DRMax());
+		return super.drRoll() + Char.combatRoll( armor.DRMin(), armor.DRMax());
 	}
 
 	//used in some glyph calculations
@@ -117,11 +116,7 @@ public class ArmoredStatue extends Statue {
 	@Override
 	public CharSprite sprite() {
 		CharSprite sprite = super.sprite();
-		if (armor != null) {
-			((StatueSprite) sprite).setArmor(armor.tier);
-		} else {
-			((StatueSprite) sprite).setArmor(3);
-		}
+		((StatueSprite)sprite).setArmor(armor.tier);
 		return sprite;
 	}
 
@@ -149,11 +144,7 @@ public class ArmoredStatue extends Statue {
 
 	@Override
 	public String description() {
-		String desc = Messages.get(this, "desc");
-		if (weapon != null && armor != null){
-			desc += "\n\n" + Messages.get(this, "desc_arm_wep", weapon.name(), armor.name());
-		}
-		return desc;
+		return Messages.get(this, "desc", weapon.name(), armor.name());
 	}
 
 }

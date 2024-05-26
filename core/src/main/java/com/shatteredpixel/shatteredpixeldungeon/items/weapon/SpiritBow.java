@@ -26,8 +26,10 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.RangerArrow;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.RevealedArea;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.huntress.NaturesPower;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Splash;
@@ -46,6 +48,7 @@ import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.MissileSprite;
 import com.shatteredpixel.shatteredpixeldungeon.ui.QuickSlotButton;
+import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.noosa.particles.Emitter;
 import com.watabou.utils.Callback;
@@ -135,7 +138,7 @@ public class SpiritBow extends Weapon {
 
 	@Override
 	public String info() {
-		String info = super.info();
+		String info = desc();
 		
 		info += "\n\n" + Messages.get( SpiritBow.class, "stats",
 				Math.round(augment.damageFactor(min())),
@@ -214,7 +217,7 @@ public class SpiritBow extends Weapon {
 		if (owner instanceof Hero) {
 			int exStr = ((Hero)owner).STR() - STRReq();
 			if (exStr > 0) {
-				damage += Hero.heroDamageIntRange( 0, exStr );
+				damage += Char.combatRoll( 0, exStr );
 			}
 		}
 
@@ -348,6 +351,20 @@ public class SpiritBow extends Weapon {
 		protected void onThrow( int cell ) {
 			Char enemy = Actor.findChar( cell );
 			if (enemy == null || enemy == curUser) {
+
+				RangerArrow rangerArrow = curUser.buff(RangerArrow.class);
+
+				if (rangerArrow != null && enemy == curUser){ //ranger
+					curUser.sprite.operate(cell);
+					if (RangerArrow.piercingCheck) {
+						RangerArrow.piercingCheck = false;
+						GLog.w( Messages.get(RangerArrow.class, "change_wide_arrow") );
+					} else {
+						RangerArrow.piercingCheck = true;
+						GLog.w( Messages.get(RangerArrow.class, "change_pierce_arrow") );
+					}
+				}
+
 				parent = null;
 				Splash.at( cell, 0xCC99FFFF, 1 );
 			} else {
@@ -462,11 +479,41 @@ public class SpiritBow extends Weapon {
 					}
 				}
 
-				super.cast(user, dst);
+				Char enemy = Actor.findChar( cell );
+
+				if (rangerAttack(user,enemy,cell,false)) {   // 순찰자의 방사 화살
+					RangerArrow.rangerArrow(user,cell,enemy,0);
+					super.cast(user, dst);
+
+				} else if (rangerAttack(user,enemy,cell,true)){
+					user.sprite.zap( cell );
+					user.busy();
+
+					throwSound();
+					QuickSlotButton.target(enemy);
+
+					RangerArrow.rangerArrow(user,cell,enemy,castDelay(user, dst));
+
+				} else {
+					super.cast(user, dst);
+				}
+
+				//super.cast(user, dst);
 			}
 		}
 	}
-	
+
+	public boolean rangerAttack( final Hero user, Char enemy, int cell, boolean Check ) { //순찰자 특수 화살
+		int maxdistanc = 8;
+		RangerArrow rangerArrow = user.buff(RangerArrow.class);
+		if (enemy != user
+				&& Dungeon.level.distance(user.pos,cell) <= maxdistanc
+				&& rangerArrow != null && RangerArrow.piercingCheck == Check) {
+			return true;
+		}
+		return false;
+	}
+
 	private CellSelector.Listener shooter = new CellSelector.Listener() {
 		@Override
 		public void onSelect( Integer target ) {

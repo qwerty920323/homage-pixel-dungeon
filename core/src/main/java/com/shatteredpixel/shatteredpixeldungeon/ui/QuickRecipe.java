@@ -115,15 +115,12 @@ public class QuickRecipe extends Component {
 					ShatteredPixelDungeon.scene().addToFront(new WndInfoItem(in));
 				}
 			};
-
+			
+			ArrayList<Item> similar = Dungeon.hero.belongings.getAllSimilar(in);
 			int quantity = 0;
-			if (Dungeon.hero != null) {
-				ArrayList<Item> similar = Dungeon.hero.belongings.getAllSimilar(in);
-				for (Item sim : similar) {
-					//if we are looking for a specific item, it must be IDed
-					if (sim.getClass() != in.getClass() || sim.isIdentified())
-						quantity += sim.quantity();
-				}
+			for (Item sim : similar) {
+				//if we are looking for a specific item, it must be IDed
+				if (sim.getClass() != in.getClass() || sim.isIdentified()) quantity += sim.quantity();
 			}
 			
 			if (quantity < in.quantity()) {
@@ -370,8 +367,8 @@ public class QuickRecipe extends Component {
 				result.add(new QuickRecipe(new ElixirOfIcyTouch.Recipe()));
 				result.add(new QuickRecipe(new ElixirOfToxicEssence.Recipe()));
 				result.add(new QuickRecipe(new ElixirOfDragonsBlood.Recipe()));
-				result.add(new QuickRecipe(new ElixirOfFeatherFall.Recipe()));
 				result.add(new QuickRecipe(new ElixirOfMight.Recipe()));
+				result.add(new QuickRecipe(new ElixirOfFeatherFall.Recipe()));
 				return result;
 			case 8:
 				result.add(new QuickRecipe(new UnstableSpell.Recipe(), new ArrayList<>(Arrays.asList(new Scroll.PlaceHolder(), new  Runestone.PlaceHolder())), new UnstableSpell()));

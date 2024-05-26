@@ -54,13 +54,6 @@ public class ElixirOfFeatherFall extends Elixir {
 			type = buffType.POSITIVE;
 		}
 
-		public void processFall(){
-			spend(-10f);
-			if (cooldown() <= 0) {
-				detach();
-			}
-		}
-
 		public static final float DURATION	= 50f;
 
 		@Override
@@ -91,13 +84,13 @@ public class ElixirOfFeatherFall extends Elixir {
 
 	public static class Recipe extends com.shatteredpixel.shatteredpixeldungeon.items.Recipe.SimpleRecipe {
 
-		private static final int OUT_QUANTITY = 1;
+		private static final int OUT_QUANTITY = 2;
 
 		{
 			inputs =  new Class[]{PotionOfLevitation.class};
 			inQuantity = new int[]{1};
 
-			cost = 10;
+			cost = 16;
 
 			output = ElixirOfFeatherFall.class;
 			outQuantity = OUT_QUANTITY;

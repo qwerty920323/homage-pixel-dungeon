@@ -34,7 +34,7 @@ import com.shatteredpixel.shatteredpixeldungeon.ui.Window;
 public class WndMonkAbilities extends Window {
 
 	private static final int WIDTH_P = 120;
-	private static final int WIDTH_L = 180;
+	private static final int WIDTH_L = 160;
 
 	private static final int MARGIN  = 2;
 
@@ -71,7 +71,7 @@ public class WndMonkAbilities extends Window {
 			moveBtn.multiline = true;
 			moveBtn.setSize(width, moveBtn.reqHeight());
 			moveBtn.setRect(0, pos, width, moveBtn.reqHeight());
-			moveBtn.enable(abil.usable(energyBuff));
+			moveBtn.enable(energyBuff.energy >= abil.energyCost());
 			add(moveBtn);
 			pos = moveBtn.bottom() + MARGIN;
 		}

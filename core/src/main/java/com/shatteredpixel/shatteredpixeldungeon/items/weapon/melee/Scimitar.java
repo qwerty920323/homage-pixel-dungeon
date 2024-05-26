@@ -65,11 +65,6 @@ public class Scimitar extends MeleeWeapon {
 		}
 	}
 
-	@Override
-	public String upgradeAbilityStat(int level) {
-		return Integer.toString(4+level);
-	}
-
 	public static class SwordDance extends FlavourBuff {
 
 		{

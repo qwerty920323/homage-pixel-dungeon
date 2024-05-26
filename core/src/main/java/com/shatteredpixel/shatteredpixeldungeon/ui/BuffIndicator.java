@@ -36,7 +36,6 @@ import com.watabou.noosa.Image;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.noosa.tweeners.AlphaTweener;
 import com.watabou.noosa.ui.Component;
-import com.watabou.utils.GameMath;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -120,8 +119,14 @@ public class BuffIndicator extends Component {
 	public static final int MONK_ENERGY = 68;
 	public static final int DUEL_COMBO  = 69;
 	public static final int DAZE        = 70;
-	public static final int DISGUISE    = 71;
-	public static final int WAND        = 72;
+	public static final int KEENSENSE   = 71; //예리한 감각
+	public static final int SCHOLAR_BUFF= 72; //연구가 버프
+	public static final int PINNED_ARROW= 73; //꽂힌 마법 화살
+	public static final int WIDE_ARROW  = 74; //확산 화살
+	public static final int PIERCE_ARROW= 75; //관통 화살
+	public static final int DANCER_ABIL = 76; //검무 능력
+	public static final int DANCER_SHOT = 77; //검무 능력
+
 
 	public static final int SIZE_SMALL  = 7;
 	public static final int SIZE_LARGE  = 16;
@@ -288,7 +293,7 @@ public class BuffIndicator extends Component {
 			if (!large || buff.iconTextDisplay().isEmpty()) {
 				text.visible = false;
 				grey.visible = true;
-				float fadeHeight = GameMath.gate(0, buff.iconFadePercent(), 1) * icon.height();
+				float fadeHeight = buff.iconFadePercent() * icon.height();
 				float zoom = (camera() != null) ? camera().zoom : 1;
 				if (fadeHeight < icon.height() / 2f) {
 					grey.scale.set(icon.width(), (float) Math.ceil(zoom * fadeHeight) / zoom);

@@ -32,21 +32,15 @@ public class EyeOfNewt extends Trinket {
 
 	@Override
 	protected int upgradeEnergyCost() {
-		//6 -> 8(14) -> 10(24) -> 12(36)
+		//5 -> 8(13) -> 10(23) -> 12(35)
 		return 6+2*level();
 	}
 
 	@Override
-	public String statsDesc() {
-		if (isIdentified()){
-			return Messages.get(this, "stats_desc",
-					Messages.decimalFormat("#.##", 100*(1f-visionRangeMultiplier(buffedLvl()))),
-					mindVisionRange(buffedLvl()));
-		} else {
-			return Messages.get(this, "typical_stats_desc",
-					Messages.decimalFormat("#.##", 100*(1f-visionRangeMultiplier(0))),
-					mindVisionRange(0));
-		}
+	public String desc() {
+		return Messages.get(this, "desc",
+				Messages.decimalFormat("#.##", 100*(1f-visionRangeMultiplier(buffedLvl()))),
+				mindVisionRange(buffedLvl()));
 	}
 
 	public static float visionRangeMultiplier(){

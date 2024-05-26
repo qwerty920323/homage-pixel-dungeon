@@ -90,18 +90,6 @@ public class WndTextInput extends Window {
 				onSelect(true, getText());
 				hide();
 			}
-
-			@Override
-			public void onChanged() {
-				super.onChanged();
-				if (btnCopy != null) btnCopy.enable(!getText().isEmpty());
-			}
-
-			@Override
-			public void onClipBoardUpdate() {
-				super.onClipBoardUpdate();
-				btnPaste.enable(Gdx.app.getClipboard().hasContents());
-			}
 		};
 		if (initialValue != null) textBox.setText(initialValue);
 		textBox.setMaxLength(maxLength);
@@ -139,7 +127,6 @@ public class WndTextInput extends Window {
 			}
 		};
 		btnCopy.icon(Icons.COPY.get());
-		btnCopy.enable(!textBox.getText().isEmpty());
 		add(btnCopy);
 
 		btnPaste = new RedButton(""){
@@ -158,16 +145,11 @@ public class WndTextInput extends Window {
 			@Override
 			protected void onClick() {
 				super.onClick();
-				if (Gdx.app.getClipboard().hasContents()) {
-					textBox.pasteFromClipboard();
-				} else {
-					enable(false);
-				}
+				textBox.pasteFromClipboard();
 			}
 
 		};
 		btnPaste.icon(Icons.PASTE.get());
-		btnPaste.enable(Gdx.app.getClipboard().hasContents());
 		add(btnPaste);
 
 		btnCopy.setRect(textBoxWidth + 2*MARGIN, pos, BUTTON_HEIGHT, BUTTON_HEIGHT);
@@ -216,6 +198,13 @@ public class WndTextInput extends Window {
 
 		PointerEvent.clearKeyboardThisPress = false;
 
+	}
+
+	@Override
+	public synchronized void update() {
+		super.update();
+		btnCopy.enable(!textBox.getText().isEmpty());
+		btnPaste.enable(Gdx.app.getClipboard().hasContents());
 	}
 
 	@Override

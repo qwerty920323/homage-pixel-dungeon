@@ -103,14 +103,13 @@ public class GamesInProgress {
 			try {
 				
 				Bundle bundle = FileUtils.bundleFromFile(gameFile(slot));
-
-				if (bundle.getInt( "version" ) < ShatteredPixelDungeon.v1_4_3) {
+				info = new Info();
+				info.slot = slot;
+				Dungeon.preview(info, bundle);
+				
+				//saves from before v1.4.3 are not supported
+				if (info.version < ShatteredPixelDungeon.v1_4_3) {
 					info = null;
-				} else {
-
-					info = new Info();
-					info.slot = slot;
-					Dungeon.preview(info, bundle);
 				}
 
 			} catch (IOException e) {

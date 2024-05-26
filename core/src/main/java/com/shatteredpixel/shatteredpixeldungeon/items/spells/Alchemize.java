@@ -28,7 +28,6 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Shopkeeper;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.Runestone;
-import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Plant;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
@@ -199,7 +198,7 @@ public class Alchemize extends Spell {
 					RedButton btnEnergize = new RedButton(Messages.get(this, "energize", item.energyVal())) {
 						@Override
 						protected void onClick() {
-							WndEnergizeItem.energizeAll(item);
+							WndEnergizeItem.energize(item);
 							hide();
 							consumeAlchemize();
 						}
@@ -227,7 +226,7 @@ public class Alchemize extends Spell {
 					RedButton btnEnergizeAll = new RedButton(Messages.get(this, "energize_all", energyAll)) {
 						@Override
 						protected void onClick() {
-							WndEnergizeItem.energizeAll(item);
+							WndEnergizeItem.energize(item);
 							hide();
 							consumeAlchemize();
 						}
@@ -259,7 +258,6 @@ public class Alchemize extends Spell {
 				}
 				GameScene.selectItem(itemSelector);
 			}
-			Catalog.countUse(getClass());
 			if (curItem instanceof Alchemize && Random.Float() < ((Alchemize)curItem).talentChance){
 				Talent.onScrollUsed(curUser, curUser.pos, ((Alchemize) curItem).talentFactor);
 			}

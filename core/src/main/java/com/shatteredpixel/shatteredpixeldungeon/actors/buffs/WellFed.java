@@ -25,7 +25,6 @@ import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.effects.FloatingText;
-import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.SaltCube;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
@@ -57,9 +56,8 @@ public class WellFed extends Buff {
 				((Hero) target).resting = false;
 			}
 		}
-
-		//salt cube does slow this buff down, but doesn't lessen the bonus health
-		spend(TICK / SaltCube.hungerGainMultiplier());
+		
+		spend(TICK);
 		return true;
 	}
 	
@@ -85,14 +83,12 @@ public class WellFed extends Buff {
 
 	@Override
 	public String iconTextDisplay() {
-		int visualLeft = (int)(left / SaltCube.hungerGainMultiplier());
-		return Integer.toString(visualLeft+1);
+		return Integer.toString(left);
 	}
 	
 	@Override
 	public String desc() {
-		int visualLeft = (int)(left / SaltCube.hungerGainMultiplier());
-		return Messages.get(this, "desc", visualLeft + 1);
+		return Messages.get(this, "desc", left + 1);
 	}
 	
 	private static final String LEFT = "left";

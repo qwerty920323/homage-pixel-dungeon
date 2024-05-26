@@ -29,6 +29,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Adrenaline;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AllyBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AscensionChallenge;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.ChampionEnemy;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Invisibility;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
@@ -37,8 +38,8 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Rat;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.ClassArmor;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.MasterThievesArmband;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTeleportation;
-import com.shatteredpixel.shatteredpixeldungeon.journal.Bestiary;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.RatSprite;
@@ -138,20 +139,28 @@ public class Ratmogrify extends ArmorAbility {
 			rat.setup((Mob)ch);
 			rat.pos = ch.pos;
 
-			//preserve some buffs
-			HashSet<Buff> persistentBuffs = new HashSet<>();
-			for (Buff b : ch.buffs()){
-				if (b.revivePersists){
-					persistentBuffs.add(b);
+			//preserve champion enemy buffs
+			HashSet<ChampionEnemy> champBuffs = ch.buffs(ChampionEnemy.class);
+			for (ChampionEnemy champ : champBuffs){
+				if (ch.remove(champ)) {
+					ch.sprite.clearAura();
 				}
+			}
+
+			MasterThievesArmband.StolenTracker stealTracker = ch.buff(MasterThievesArmband.StolenTracker.class);
+			if (stealTracker != null){
+				ch.remove(stealTracker);
 			}
 
 			Actor.remove( ch );
 			ch.sprite.killAndErase();
 			Dungeon.level.mobs.remove(ch);
 
-			for (Buff b : persistentBuffs){
-				ch.add(b);
+			for (ChampionEnemy champ : champBuffs){
+				ch.add(champ);
+			}
+			if (stealTracker != null) {
+				ch.add(stealTracker);
 			}
 
 			GameScene.add(rat);
@@ -160,11 +169,11 @@ public class Ratmogrify extends ArmorAbility {
 			CellEmitter.get(rat.pos).burst(Speck.factory(Speck.WOOL), 4);
 			Sample.INSTANCE.play(Assets.Sounds.PUFF);
 
-			//for rare cases where a buff was keeping a mob alive (e.g. gnoll brute rage)
+			Dungeon.level.occupyCell(rat);
+
+			//for rare cases where a buff was keeping a mob alive (e.g. gnoll brutes)
 			if (!rat.isAlive()){
 				rat.die(this);
-			} else {
-				Dungeon.level.occupyCell(rat);
 			}
 		}
 
@@ -257,8 +266,6 @@ public class Ratmogrify extends ArmorAbility {
 			allied = true;
 			alignment = Alignment.ALLY;
 			timeLeft = Float.POSITIVE_INFINITY;
-			Bestiary.setSeen(original.getClass());
-			Bestiary.countEncounter(original.getClass());
 		}
 
 		public int attackSkill(Char target) {
@@ -287,15 +294,6 @@ public class Ratmogrify extends ArmorAbility {
 		public void rollToDropLoot() {
 			original.pos = pos;
 			original.rollToDropLoot();
-		}
-
-		@Override
-		public void destroy() {
-			super.destroy();
-			if (alignment == Alignment.ENEMY && original != null) {
-				Bestiary.setSeen(original.getClass());
-				Bestiary.countEncounter(original.getClass());
-			}
 		}
 
 		@Override

@@ -34,18 +34,23 @@ public enum HeroSubClass {
 
 	BERSERKER(HeroIcon.BERSERKER),
 	GLADIATOR(HeroIcon.GLADIATOR),
+	BRAWLER(HeroIcon.BRAWLER),  //싸움꾼
 
 	BATTLEMAGE(HeroIcon.BATTLEMAGE),
 	WARLOCK(HeroIcon.WARLOCK),
-	
+	SCHOLAR(HeroIcon.SCHOLAR), // 연구가
+
 	ASSASSIN(HeroIcon.ASSASSIN),
 	FREERUNNER(HeroIcon.FREERUNNER),
-	
+	GRAVEROBBER(HeroIcon.GRAVEROBBER), //도굴꾼
+
 	SNIPER(HeroIcon.SNIPER),
 	WARDEN(HeroIcon.WARDEN),
+	RANGER(HeroIcon.RANGER), //순찰자
 
 	CHAMPION(HeroIcon.CHAMPION),
-	MONK(HeroIcon.MONK);
+	MONK(HeroIcon.MONK),
+	BLADEDANCER(HeroIcon.BLADEDANCER); //무예가
 
 	int icon;
 

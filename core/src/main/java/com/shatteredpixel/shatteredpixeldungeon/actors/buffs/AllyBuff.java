@@ -29,16 +29,11 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mimic;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
 import com.shatteredpixel.shatteredpixeldungeon.effects.FloatingText;
-import com.shatteredpixel.shatteredpixeldungeon.journal.Bestiary;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 
 //generic class for buffs which convert an enemy into an ally
 // There is a decent amount of logic that ties into this, which is why it has its own abstract class
-public abstract class AllyBuff extends Buff {
-
-	{
-		revivePersists = true;
-	}
+public abstract class AllyBuff extends Buff{
 
 	@Override
 	public boolean attachTo(Char target) {
@@ -65,8 +60,6 @@ public abstract class AllyBuff extends Buff {
 			Statistics.enemiesSlain++;
 			Badges.validateMonstersSlain();
 			Statistics.qualifiedForNoKilling = false;
-			Bestiary.setSeen(enemy.getClass());
-			Bestiary.countEncounter(enemy.getClass());
 
 			AscensionChallenge.processEnemyKill(enemy);
 

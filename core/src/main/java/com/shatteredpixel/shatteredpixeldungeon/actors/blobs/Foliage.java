@@ -33,12 +33,7 @@ import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 
 public class Foliage extends Blob {
-
-	@Override
-	public Notes.Landmark landmark() {
-		return Notes.Landmark.GARDEN;
-	}
-
+	
 	@Override
 	protected void evolve() {
 
@@ -74,6 +69,10 @@ public class Foliage extends Blob {
 			if (s != null){
 				s.prolong();
 			}
+		}
+
+		if (seen) {
+			Notes.add( Notes.Landmark.GARDEN );
 		}
 	}
 	

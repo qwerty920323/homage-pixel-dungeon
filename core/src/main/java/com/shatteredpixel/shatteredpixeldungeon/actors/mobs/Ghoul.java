@@ -25,11 +25,14 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.SacrificialFire;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AllyBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.ChampionEnemy;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.duelist.Challenge;
 import com.shatteredpixel.shatteredpixeldungeon.effects.FloatingText;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Pushing;
 import com.shatteredpixel.shatteredpixeldungeon.items.Gold;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.MasterThievesArmband;
 import com.shatteredpixel.shatteredpixeldungeon.levels.features.Chasm;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
@@ -63,7 +66,7 @@ public class Ghoul extends Mob {
 
 	@Override
 	public int damageRoll() {
-		return Random.NormalIntRange( 16, 22 );
+		return Char.combatRoll( 16, 22 );
 	}
 
 	@Override
@@ -73,7 +76,7 @@ public class Ghoul extends Mob {
 
 	@Override
 	public int drRoll() {
-		return super.drRoll() + Random.NormalIntRange(0, 4);
+		return super.drRoll() + Char.combatRoll(0, 4);
 	}
 
 	@Override
@@ -134,11 +137,8 @@ public class Ghoul extends Mob {
 					Actor.add( new Pushing( child, pos, child.pos ) );
 				}
 
-				//champion buff, mainly
-				for (Buff b : buffs()){
-					if (b.revivePersists) {
-						Buff.affect(child, b.getClass());
-					}
+				for (Buff b : buffs(ChampionEnemy.class)){
+					Buff.affect( child, b.getClass());
 				}
 
 			}
@@ -184,7 +184,10 @@ public class Ghoul extends Mob {
 				if (buff instanceof SacrificialFire.Marked){
 					//don't remove and postpone so marked stays on
 					Buff.prolong(this, SacrificialFire.Marked.class, timesDowned*5);
-				} else if (buff.revivePersists) {
+				} else if (buff instanceof AllyBuff
+						|| buff instanceof ChampionEnemy
+						|| buff instanceof MasterThievesArmband.StolenTracker
+						|| buff instanceof DwarfKing.KingDamager) {
 					//don't remove
 				} else {
 					buff.detach();

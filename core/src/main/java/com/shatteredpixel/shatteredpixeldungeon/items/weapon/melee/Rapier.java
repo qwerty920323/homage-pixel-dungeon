@@ -25,7 +25,6 @@ import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Invisibility;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
@@ -69,24 +68,19 @@ public class Rapier extends MeleeWeapon {
 
 	@Override
 	protected void duelistAbility(Hero hero, Integer target) {
-		//+(5+1.5*lvl) damage, roughly +111% base damage, +100% scaling
-		int dmgBoost =  augment.damageFactor(5 + Math.round(1.5f*buffedLvl()));
+		//+(4+lvl) damage, roughly +90% base damage, +67% scaling
+		int dmgBoost = augment.damageFactor(4 + buffedLvl());
 		lungeAbility(hero, target, 1, dmgBoost, this);
 	}
 
 	@Override
 	public String abilityInfo() {
-		int dmgBoost = levelKnown ? 5 + Math.round(1.5f*buffedLvl()) : 5;
+		int dmgBoost = levelKnown ? 4+buffedLvl() : 4;
 		if (levelKnown){
 			return Messages.get(this, "ability_desc", augment.damageFactor(min()+dmgBoost), augment.damageFactor(max()+dmgBoost));
 		} else {
 			return Messages.get(this, "typical_ability_desc", min(0)+dmgBoost, max(0)+dmgBoost);
 		}
-	}
-
-	public String upgradeAbilityStat(int level){
-		int dmgBoost = 5 + Math.round(1.5f*level);
-		return augment.damageFactor(min(level)+dmgBoost) + "-" + augment.damageFactor(max(level)+dmgBoost);
 	}
 
 	public static void lungeAbility(Hero hero, Integer target, float dmgMulti, int dmgBoost, MeleeWeapon wep){
@@ -160,16 +154,10 @@ public class Rapier extends MeleeWeapon {
 						}
 					});
 				} else {
-					//spends charge but otherwise does not count as an ability use
-					Charger charger = Buff.affect(hero, Charger.class);
-					charger.partialCharge -= 1;
-					while (charger.partialCharge < 0 && charger.charges > 0) {
-						charger.charges--;
-						charger.partialCharge++;
-					}
-					updateQuickslot();
+					wep.beforeAbilityUsed(hero, null);
 					GLog.w(Messages.get(Rapier.class, "ability_no_target"));
 					hero.spendAndNext(1/hero.speed());
+					wep.afterAbilityUsed(hero);
 				}
 			}
 		});

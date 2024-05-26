@@ -33,7 +33,6 @@ import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.ui.RedButton;
-import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 
 public class WndEnergizeItem extends WndInfoItem {
 
@@ -54,7 +53,7 @@ public class WndEnergizeItem extends WndInfoItem {
 			RedButton btnEnergize = new RedButton( Messages.get(this, "energize", item.energyVal()) ) {
 				@Override
 				protected void onClick() {
-					energizeAll( item );
+					energize( item );
 					hide();
 				}
 			};
@@ -80,7 +79,7 @@ public class WndEnergizeItem extends WndInfoItem {
 			RedButton btnEnergizeAll = new RedButton( Messages.get(this, "energize_all", energyAll ) ) {
 				@Override
 				protected void onClick() {
-					energizeAll( item );
+					energize( item );
 					hide();
 				}
 			};
@@ -107,43 +106,52 @@ public class WndEnergizeItem extends WndInfoItem {
 		}
 	}
 
-	public static void energizeAll(Item item ) {
+	public static void energize( Item item ) {
 
-		if (item.isEquipped( Dungeon.hero ) && !((EquipableItem)item).doUnequip( Dungeon.hero, false )) {
+		Hero hero = Dungeon.hero;
+
+		if (item.isEquipped( hero ) && !((EquipableItem)item).doUnequip( hero, false )) {
 			return;
 		}
-		item.detachAll( Dungeon.hero.belongings.backpack );
-		energize(item);
-	}
-
-	public static void energizeOne( Item item ) {
-
-		if (item.quantity() <= 1) {
-			energizeAll( item );
-		} else {
-			energize(item.detach( Dungeon.hero.belongings.backpack ));
-		}
-	}
-
-	private static void energize(Item item){
-		Hero hero = Dungeon.hero;
+		item.detachAll( hero.belongings.backpack );
 
 		if (ShatteredPixelDungeon.scene() instanceof AlchemyScene){
 
 			Dungeon.energy += item.energyVal();
 			((AlchemyScene) ShatteredPixelDungeon.scene()).createEnergy();
-			if (!item.isIdentified()){
-				((AlchemyScene) ShatteredPixelDungeon.scene()).showIdentify(item);
-			}
 
 		} else {
 
-			//energizing items doesn't spend time
+			//selling items in the sell interface doesn't spend time
 			hero.spend(-hero.cooldown());
-			new EnergyCrystal(item.energyVal()).doPickUp(hero);
-			item.identify();
-			GLog.h("You energized: " + item.name());
 
+			new EnergyCrystal(item.energyVal()).doPickUp(hero);
+
+		}
+	}
+
+	public static void energizeOne( Item item ) {
+
+		if (item.quantity() <= 1) {
+			energize( item );
+		} else {
+
+			Hero hero = Dungeon.hero;
+
+			item = item.detach( hero.belongings.backpack );
+
+			if (ShatteredPixelDungeon.scene() instanceof AlchemyScene){
+
+				Dungeon.energy += item.energyVal();
+				((AlchemyScene) ShatteredPixelDungeon.scene()).createEnergy();
+
+			} else {
+
+				//selling items in the sell interface doesn't spend time
+				hero.spend(-hero.cooldown());
+
+				new EnergyCrystal(item.energyVal()).doPickUp(hero);
+			}
 		}
 	}
 

@@ -65,6 +65,14 @@ public class PinCushion extends Buff {
 		return new ArrayList<>(items);
 	}
 
+	public int pinCount (){ //ranger
+		int result = 0;
+		for (Item item : items){
+			result += item.quantity();
+		}
+		return result;
+	}
+
 	@Override
 	public void detach() {
 		for (Item item : items)

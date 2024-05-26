@@ -22,7 +22,6 @@
 package com.shatteredpixel.shatteredpixeldungeon.windows;
 
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
-import com.shatteredpixel.shatteredpixeldungeon.SPDAction;
 import com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon;
 import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
@@ -42,8 +41,6 @@ import com.shatteredpixel.shatteredpixeldungeon.ui.TalentButton;
 import com.shatteredpixel.shatteredpixeldungeon.ui.TalentsPane;
 import com.shatteredpixel.shatteredpixeldungeon.ui.Window;
 import com.shatteredpixel.shatteredpixeldungeon.utils.DungeonSeed;
-import com.watabou.input.KeyBindings;
-import com.watabou.input.KeyEvent;
 import com.watabou.noosa.Gizmo;
 import com.watabou.noosa.Group;
 import com.watabou.noosa.Image;
@@ -119,16 +116,6 @@ public class WndHero extends WndTabbed {
 	}
 
 	@Override
-	public boolean onSignal(KeyEvent event) {
-		if (event.pressed && KeyBindings.getActionForKey( event ) == SPDAction.HERO_INFO) {
-			onBackPressed();
-			return true;
-		} else {
-			return super.onSignal(event);
-		}
-	}
-
-	@Override
 	public void offset(int xOffset, int yOffset) {
 		super.offset(xOffset, yOffset);
 		talents.layout();
@@ -155,7 +142,7 @@ public class WndHero extends WndTabbed {
 			Hero hero = Dungeon.hero;
 
 			IconTitle title = new IconTitle();
-			title.icon( HeroSprite.avatar(hero) );
+			title.icon( HeroSprite.avatar(hero.heroClass, hero.tier()) );
 			if (hero.name().equals(hero.className()))
 				title.label( Messages.get(this, "title", hero.lvl, hero.className() ).toUpperCase( Locale.ENGLISH ) );
 			else

@@ -232,13 +232,10 @@ public abstract class ElementalSprite extends MobSprite {
 	
 	public static class Chaos extends ElementalSprite {
 
-		@Override
-		public void zap(int cell) {
-			zap( cell, null ); //effectively super.super.zap
-			//relies on cursed wand for effects
-			((Elemental)ch).onZapComplete();
+		{
+			boltType = MagicMissile.RAINBOW;
 		}
-
+		
 		@Override
 		protected int texOffset() {
 			return 56;

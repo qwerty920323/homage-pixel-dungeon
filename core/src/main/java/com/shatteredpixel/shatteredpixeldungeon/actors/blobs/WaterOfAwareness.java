@@ -88,7 +88,7 @@ public class WaterOfAwareness extends WellWater {
 	}
 	
 	@Override
-	public Landmark landmark() {
+	protected Landmark record() {
 		return Landmark.WELL_OF_AWARENESS;
 	}
 	

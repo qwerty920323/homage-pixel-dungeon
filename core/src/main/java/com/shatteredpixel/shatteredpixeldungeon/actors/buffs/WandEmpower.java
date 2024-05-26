@@ -34,7 +34,7 @@ public class WandEmpower extends Buff {
 
 	@Override
 	public int icon() {
-		return BuffIndicator.WAND;
+		return BuffIndicator.UPGRADE;
 	}
 
 	@Override

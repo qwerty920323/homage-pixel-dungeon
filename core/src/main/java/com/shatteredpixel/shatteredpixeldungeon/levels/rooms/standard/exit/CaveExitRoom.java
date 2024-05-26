@@ -57,24 +57,10 @@ public class CaveExitRoom extends CaveRoom {
 		super.paint(level);
 
 		int exit;
-		int tries = 30;
-		boolean valid;
 		do {
 			exit = level.pointToCell(random(2));
 
-			//need extra logic here as these rooms can spawn small and cramped in very rare cases
-			if (tries-- > 0){
-				valid = level.map[exit] != Terrain.WALL && level.findMob(exit) == null;
-			} else {
-				valid = false;
-				for (int i : PathFinder.NEIGHBOURS4){
-					if (level.map[exit+i] != Terrain.WALL){
-						valid = true;
-					}
-				}
-				valid = valid && level.findMob(exit) == null;
-			}
-		} while (!valid);
+		} while (level.map[exit] == Terrain.WALL || level.findMob(exit) != null);
 		Painter.set( level, exit, Terrain.EXIT );
 
 		for (int i : PathFinder.NEIGHBOURS8){

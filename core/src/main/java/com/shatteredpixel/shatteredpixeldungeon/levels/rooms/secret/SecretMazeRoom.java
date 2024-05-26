@@ -26,8 +26,6 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
-import com.shatteredpixel.shatteredpixeldungeon.items.armor.Armor;
-import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.levels.features.Maze;
@@ -97,19 +95,13 @@ public class SecretMazeRoom extends SecretRoom {
 		
 		Item prize;
 		//1 floor set higher in probability, never cursed
-		//1 floor set higher in probability, never cursed
-		if (Random.Int(2) == 0) {
-			prize = Generator.randomWeapon((Dungeon.depth / 5) + 1, true);
-			if (((Weapon)prize).hasCurseEnchant()){
-				((Weapon) prize).enchant(null);
+		do {
+			if (Random.Int(2) == 0) {
+				prize = Generator.randomWeapon((Dungeon.depth / 5) + 1, true);
+			} else {
+				prize = Generator.randomArmor((Dungeon.depth / 5) + 1);
 			}
-		} else {
-			prize = Generator.randomArmor((Dungeon.depth / 5) + 1);
-			if (((Armor)prize).hasCurseGlyph()){
-				((Armor) prize).inscribe(null);
-			}
-		}
-		prize.cursed = false;
+		} while (prize.cursed || Challenges.isItemBlocked(prize));
 		prize.cursedKnown = true;
 		
 		//33% chance for an extra update.

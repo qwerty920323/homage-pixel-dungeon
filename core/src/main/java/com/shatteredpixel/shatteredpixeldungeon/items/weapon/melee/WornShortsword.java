@@ -70,9 +70,4 @@ public class WornShortsword extends MeleeWeapon {
 		}
 	}
 
-	public String upgradeAbilityStat(int level){
-		int dmgBoost = 3 + level;
-		return augment.damageFactor(min(level)+dmgBoost) + "-" + augment.damageFactor(max(level)+dmgBoost);
-	}
-
 }

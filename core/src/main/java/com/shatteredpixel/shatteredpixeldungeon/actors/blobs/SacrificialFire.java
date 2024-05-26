@@ -65,11 +65,6 @@ public class SacrificialFire extends Blob {
 	private Item prize;
 
 	@Override
-	public Notes.Landmark landmark() {
-		return Notes.Landmark.SACRIFICIAL_FIRE;
-	}
-
-	@Override
 	protected void evolve() {
 		int cell;
 		for (int i=area.top-1; i <= area.bottom; i++) {
@@ -91,6 +86,8 @@ public class SacrificialFire extends Blob {
 						}
 
 						if (off[cell] > 0 && Dungeon.level.visited[cell]) {
+
+							Notes.add( Notes.Landmark.SACRIFICIAL_FIRE);
 
 							if (Dungeon.level.mobCount() == 0
 									&& bonusSpawns > 0) {
@@ -190,7 +187,7 @@ public class SacrificialFire extends Blob {
 					GLog.w( Messages.get(SacrificialFire.class, "worthy"));
 				} else {
 					clear(firePos);
-					if (volume <= 0) Notes.remove( landmark() );
+					Notes.remove(Notes.Landmark.SACRIFICIAL_FIRE);
 
 					for (int i : PathFinder.NEIGHBOURS9){
 						CellEmitter.get(firePos+i).burst( SacrificialParticle.FACTORY, 20 );

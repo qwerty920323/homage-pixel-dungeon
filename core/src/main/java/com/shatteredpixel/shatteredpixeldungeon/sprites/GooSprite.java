@@ -73,11 +73,9 @@ public class GooSprite extends MobSprite {
 		play(idle);
 
 		spray = centerEmitter();
-		if (spray != null) {
-			spray.autoKill = false;
-			spray.pour(GooParticle.FACTORY, 0.04f);
-			spray.on = false;
-		}
+		spray.autoKill = false;
+		spray.pour( GooParticle.FACTORY, 0.04f );
+		spray.on = false;
 	}
 
 	@Override
@@ -147,10 +145,8 @@ public class GooSprite extends MobSprite {
 	@Override
 	public void update() {
 		super.update();
-		if (spray != null) {
-			spray.pos(center());
-			spray.visible = visible;
-		}
+		spray.pos(center());
+		spray.visible = visible;
 	}
 
 	public static class GooParticle extends PixelParticle.Shrinking {

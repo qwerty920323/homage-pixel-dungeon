@@ -23,7 +23,6 @@ package com.shatteredpixel.shatteredpixeldungeon.actors.buffs;
 
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.effects.FloatingText;
-import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.VialOfBlood;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
@@ -36,8 +35,6 @@ public class Healing extends Buff {
 	
 	private float percentHealPerTick;
 	private int flatHealPerTick;
-
-	private boolean healingLimited = false;
 	
 	{
 		//unlike other buffs, this one acts after the hero and takes priority against other effects
@@ -56,9 +53,10 @@ public class Healing extends Buff {
 			if (target.HP == target.HT && target instanceof Hero) {
 				((Hero) target).resting = false;
 			}
+
+			target.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(healingThisTick()), FloatingText.HEALING);
 		}
 
-		target.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(healingThisTick()), FloatingText.HEALING);
 		healingLeft -= healingThisTick();
 		
 		if (healingLeft <= 0){
@@ -74,13 +72,9 @@ public class Healing extends Buff {
 	}
 	
 	private int healingThisTick(){
-		int heal = (int)GameMath.gate(1,
+		return (int)GameMath.gate(1,
 				Math.round(healingLeft * percentHealPerTick) + flatHealPerTick,
 				healingLeft);
-		if (healingLimited && heal > VialOfBlood.maxHealPerTurn()){
-			heal = VialOfBlood.maxHealPerTurn();
-		}
-		return heal;
 	}
 
 	public void setHeal(int amount, float percentPerTick, int flatPerTick){
@@ -88,13 +82,6 @@ public class Healing extends Buff {
 		healingLeft = Math.max(healingLeft, amount);
 		percentHealPerTick = Math.max(percentHealPerTick, percentPerTick);
 		flatHealPerTick = Math.max(flatHealPerTick, flatPerTick);
-	}
-
-	public void applyVialEffect(){
-		healingLimited = VialOfBlood.delayBurstHealing();
-		if (healingLimited){
-			healingLeft = Math.round(healingLeft*VialOfBlood.totalHealMultiplier());
-		}
 	}
 	
 	public void increaseHeal( int amount ){
@@ -110,8 +97,6 @@ public class Healing extends Buff {
 	private static final String LEFT = "left";
 	private static final String PERCENT = "percent";
 	private static final String FLAT = "flat";
-
-	private static final String HEALING_LIMITED = "healing_limited";
 	
 	@Override
 	public void storeInBundle(Bundle bundle) {
@@ -119,7 +104,6 @@ public class Healing extends Buff {
 		bundle.put(LEFT, healingLeft);
 		bundle.put(PERCENT, percentHealPerTick);
 		bundle.put(FLAT, flatHealPerTick);
-		bundle.put(HEALING_LIMITED, healingLimited);
 	}
 	
 	@Override
@@ -128,7 +112,6 @@ public class Healing extends Buff {
 		healingLeft = bundle.getInt(LEFT);
 		percentHealPerTick = bundle.getFloat(PERCENT);
 		flatHealPerTick = bundle.getInt(FLAT);
-		healingLimited = bundle.getBoolean(HEALING_LIMITED);
 	}
 	
 	@Override

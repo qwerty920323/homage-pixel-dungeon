@@ -22,7 +22,6 @@
 package com.shatteredpixel.shatteredpixeldungeon.items.scrolls;
 
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
-import com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Blindness;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Invisibility;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MagicImmune;
@@ -42,7 +41,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfBlast;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfBlink;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfClairvoyance;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfDeepSleep;
-import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfDetectMagic;
+import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfDisarming;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfEnchantment;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfFear;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfFlock;
@@ -50,7 +49,6 @@ import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfIntuition;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfShock;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
-import com.shatteredpixel.shatteredpixeldungeon.scenes.AlchemyScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.HeroSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
@@ -104,10 +102,6 @@ public abstract class Scroll extends Item {
 	public static void initLabels() {
 		handler = new ItemStatusHandler<>( (Class<? extends Scroll>[])Generator.Category.SCROLL.classes, runes );
 	}
-
-	public static void clearLabels(){
-		handler = null;
-	}
 	
 	public static void save( Bundle bundle ) {
 		handler.save( bundle );
@@ -155,9 +149,6 @@ public abstract class Scroll extends Item {
 		if (handler != null && handler.contains(this)) {
 			image = handler.image(this);
 			rune = handler.label(this);
-		} else {
-			image = ItemSpriteSheet.SCROLL_KAUNAN;
-			rune = "KAUNAN";
 		}
 	}
 	
@@ -192,17 +183,14 @@ public abstract class Scroll extends Item {
 	
 	public abstract void doRead();
 
-	public void readAnimation() {
+	protected void readAnimation() {
 		Invisibility.dispel();
 		curUser.spend( TIME_TO_READ );
 		curUser.busy();
 		((HeroSprite)curUser.sprite).read();
 
-		if (!anonymous) {
-			Catalog.countUse(getClass());
-			if (Random.Float() < talentChance) {
-				Talent.onScrollUsed(curUser, curUser.pos, talentFactor);
-			}
+		if (!anonymous && Random.Float() < talentChance) {
+			Talent.onScrollUsed(curUser, curUser.pos, talentFactor);
 		}
 
 	}
@@ -238,16 +226,12 @@ public abstract class Scroll extends Item {
 	public String name() {
 		return isKnown() ? super.name() : Messages.get(this, rune);
 	}
-
+	
 	@Override
 	public String info() {
-		//skip custom notes if anonymized and un-Ided
-		return (anonymous && (handler == null || !handler.isKnown( this ))) ? desc() : super.info();
-	}
-
-	@Override
-	public String desc() {
-		return isKnown() ? super.desc() : Messages.get(this, "unknown_desc");
+		return isKnown() ?
+			desc() :
+			Messages.get(this, "unknown_desc");
 	}
 	
 	@Override
@@ -269,7 +253,7 @@ public abstract class Scroll extends Item {
 	}
 	
 	public static boolean allKnown() {
-		return handler != null && handler.known().size() == Generator.Category.SCROLL.classes.length;
+		return handler.known().size() == Generator.Category.SCROLL.classes.length;
 	}
 	
 	@Override
@@ -314,7 +298,7 @@ public abstract class Scroll extends Item {
 			stones.put(ScrollOfRetribution.class,   StoneOfBlast.class);
 			stones.put(ScrollOfRage.class,          StoneOfAggression.class);
 			stones.put(ScrollOfRecharging.class,    StoneOfShock.class);
-			stones.put(ScrollOfRemoveCurse.class,   StoneOfDetectMagic.class);
+			stones.put(ScrollOfRemoveCurse.class,   StoneOfDisarming.class);
 			stones.put(ScrollOfTeleportation.class, StoneOfBlink.class);
 			stones.put(ScrollOfTerror.class,        StoneOfFear.class);
 			stones.put(ScrollOfTransmutation.class, StoneOfAugmentation.class);
@@ -344,13 +328,7 @@ public abstract class Scroll extends Item {
 			Scroll s = (Scroll) ingredients.get(0);
 			
 			s.quantity(s.quantity() - 1);
-			if (ShatteredPixelDungeon.scene() instanceof AlchemyScene){
-				if (!s.isIdentified()){
-					((AlchemyScene) ShatteredPixelDungeon.scene()).showIdentify(s);
-				}
-			} else {
-				s.identify();
-			}
+			s.identify();
 			
 			return Reflection.newInstance(stones.get(s.getClass())).quantity(2);
 		}

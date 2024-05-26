@@ -56,7 +56,6 @@ import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.CloakOfShadows;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.HornOfPlenty;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.Ring;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfRecharging;
-import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.ShardOfOblivion;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.Wand;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.SpiritBow;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
@@ -95,6 +94,8 @@ public enum Talent {
 	ENDLESS_RAGE(11, 3), DEATHLESS_FURY(12, 3), ENRAGED_CATALYST(13, 3),
 	//Gladiator T3
 	CLEAVE(14, 3), LETHAL_DEFENSE(15, 3), ENHANCED_COMBO(16, 3),
+	//Brawler T3 싸움꾼
+	BRAWLER1(27, 3), BRAWLER2(28, 3), BRAWLER3(29, 3),
 	//Heroic Leap T4
 	BODY_SLAM(17, 4), IMPACT_WAVE(18, 4), DOUBLE_JUMP(19, 4),
 	//Shockwave T4
@@ -112,6 +113,8 @@ public enum Talent {
 	EMPOWERED_STRIKE(43, 3), MYSTICAL_CHARGE(44, 3), EXCESS_CHARGE(45, 3),
 	//Warlock T3
 	SOUL_EATER(46, 3), SOUL_SIPHON(47, 3), NECROMANCERS_MINIONS(48, 3),
+	//Scholar  연구가
+	WIDE_SUMMON(59, 3), FAST_CHARGER(60, 3), DUAL_SPAWN(61, 3),
 	//Elemental Blast T4
 	BLAST_RADIUS(49, 4), ELEMENTAL_POWER(50, 4), REACTIVE_BARRIER(51, 4),
 	//Wild Magic T4
@@ -129,6 +132,8 @@ public enum Talent {
 	ENHANCED_LETHALITY(75, 3), ASSASSINS_REACH(76, 3), BOUNTY_HUNTER(77, 3),
 	//Freerunner T3
 	EVASIVE_ARMOR(78, 3), PROJECTILE_MOMENTUM(79, 3), SPEEDY_STEALTH(80, 3),
+	//Graverobber T3  도굴꾼
+	COLLECT_MISC(91, 3), TREASURE_HUNTER(92, 3), SYNESTHESIA(93, 3),
 	//Smoke Bomb T4
 	HASTY_RETREAT(81, 4), BODY_REPLACEMENT(82, 4), SHADOW_STEP(83, 4),
 	//Death Mark T4
@@ -146,6 +151,8 @@ public enum Talent {
 	FARSIGHT(107, 3), SHARED_ENCHANTMENT(108, 3), SHARED_UPGRADES(109, 3),
 	//Warden T3
 	DURABLE_TIPS(110, 3), BARKSKIN(111, 3), SHIELDING_DEW(112, 3),
+	//Ranger T3 // 순찰자
+	EXPLOSIVE_ATACK(123, 3), PROJECTILES_SHARE(124, 3), GROWING_ARROW(125, 3),
 	//Spectral Blades T4
 	FAN_OF_BLADES(113, 4), PROJECTING_BLADES(114, 4), SPIRIT_BLADES(115, 4),
 	//Natures Power T4
@@ -163,6 +170,8 @@ public enum Talent {
 	VARIED_CHARGE(139, 3), TWIN_UPGRADES(140, 3), COMBINED_LETHALITY(141, 3),
 	//Monk T3
 	UNENCUMBERED_SPIRIT(142, 3), MONASTIC_VIGOR(143, 3), COMBINED_ENERGY(144, 3),
+	//BLADEDANCER T3 무예가
+	GROWING_STAMINA(155, 3), QUICKSTEP(156, 3), COMBINED_AGILITY(157, 3),
 	//Challenge T4
 	CLOSE_THE_GAP(145, 4), INVIGORATING_VICTORY(146, 4), ELIMINATION_MATCH(147, 4),
 	//Elemental Strike T4
@@ -268,27 +277,7 @@ public enum Talent {
 		public void tintIcon(Image icon) { icon.hardlight(0.35f, 0f, 0.7f); }
 		public float iconFadePercent() { return Math.max(0, visualcooldown() / 50); }
 	};
-	public static class LiquidAgilEVATracker extends FlavourBuff{};
-	public static class LiquidAgilACCTracker extends FlavourBuff{
-		public int uses;
-
-		{ type = buffType.POSITIVE; }
-		public int icon() { return BuffIndicator.INVERT_MARK; }
-		public void tintIcon(Image icon) { icon.hardlight(0.5f, 0f, 1f); }
-		public float iconFadePercent() { return Math.max(0, 1f - (visualcooldown() / 5)); }
-
-		private static final String USES = "uses";
-		@Override
-		public void storeInBundle(Bundle bundle) {
-			super.storeInBundle(bundle);
-			bundle.put(USES, uses);
-		}
-		@Override
-		public void restoreFromBundle(Bundle bundle) {
-			super.restoreFromBundle(bundle);
-			uses = bundle.getInt(USES);
-		}
-	};
+	public static class RestoredAgilityTracker extends FlavourBuff{};
 	public static class LethalHasteCooldown extends FlavourBuff{
 		public int icon() { return BuffIndicator.TIME; }
 		public void tintIcon(Image icon) { icon.hardlight(0.35f, 0f, 0.7f); }
@@ -297,7 +286,7 @@ public enum Talent {
 	public static class SwiftEquipCooldown extends FlavourBuff{
 		public boolean secondUse;
 		public boolean hasSecondUse(){
-			return secondUse;
+			return secondUse && cooldown() > 14f;
 		}
 
 		public int icon() { return BuffIndicator.TIME; }
@@ -361,25 +350,17 @@ public enum Talent {
 	public static class CombinedLethalityAbilityTracker extends FlavourBuff{
 		public MeleeWeapon weapon;
 	};
+	public static class CombinedLethalityTriggerTracker extends FlavourBuff{
+		{ type = buffType.POSITIVE; }
+		public int icon() { return BuffIndicator.CORRUPT; }
+		public void tintIcon(Image icon) { icon.hardlight(0.6f, 0.15f, 0.6f); }
+		public float iconFadePercent() { return Math.max(0, 1f - (visualcooldown() / 5)); }
+	};
 	public static class CombinedEnergyAbilityTracker extends FlavourBuff{
-		public boolean monkAbilused = false;
+		public int energySpent = -1;
 		public boolean wepAbilUsed = false;
-
-		private static final String MONK_ABIL_USED  = "monk_abil_used";
-		private static final String WEP_ABIL_USED   = "wep_abil_used";
-		@Override
-		public void storeInBundle(Bundle bundle) {
-			super.storeInBundle(bundle);
-			bundle.put(MONK_ABIL_USED, monkAbilused);
-			bundle.put(WEP_ABIL_USED, wepAbilUsed);
-		}
-		@Override
-		public void restoreFromBundle(Bundle bundle) {
-			super.restoreFromBundle(bundle);
-			monkAbilused = bundle.getBoolean(MONK_ABIL_USED);
-			wepAbilUsed = bundle.getBoolean(WEP_ABIL_USED);
-		}
 	}
+	public static class CombinedIncreaseAbilityTracker extends FlavourBuff{}
 	public static class CounterAbilityTacker extends FlavourBuff{};
 
 	int icon;
@@ -452,17 +433,11 @@ public enum Talent {
 		}
 
 		if (talent == VETERANS_INTUITION && hero.pointsInTalent(VETERANS_INTUITION) == 2){
-			if (hero.belongings.armor() != null && !ShardOfOblivion.passiveIDDisabled())  {
-				hero.belongings.armor.identify();
-			}
+			if (hero.belongings.armor() != null)  hero.belongings.armor.identify();
 		}
 		if (talent == THIEFS_INTUITION && hero.pointsInTalent(THIEFS_INTUITION) == 2){
-			if (hero.belongings.ring instanceof Ring && !ShardOfOblivion.passiveIDDisabled()) {
-				hero.belongings.ring.identify();
-			}
-			if (hero.belongings.misc instanceof Ring && !ShardOfOblivion.passiveIDDisabled()) {
-				hero.belongings.misc.identify();
-			}
+			if (hero.belongings.ring instanceof Ring) hero.belongings.ring.identify();
+			if (hero.belongings.misc instanceof Ring) hero.belongings.misc.identify();
 			for (Item item : Dungeon.hero.belongings){
 				if (item instanceof Ring){
 					((Ring) item).setKnown();
@@ -474,9 +449,7 @@ public enum Talent {
 			if (hero.belongings.misc instanceof Ring) ((Ring) hero.belongings.misc).setKnown();
 		}
 		if (talent == ADVENTURERS_INTUITION && hero.pointsInTalent(ADVENTURERS_INTUITION) == 2){
-			if (hero.belongings.weapon() != null && !ShardOfOblivion.passiveIDDisabled()){
-				hero.belongings.weapon().identify();
-			}
+			if (hero.belongings.weapon() != null) hero.belongings.weapon().identify();
 		}
 
 		if (talent == PROTECTIVE_SHADOWS && hero.invisible > 0){
@@ -654,10 +627,7 @@ public enum Talent {
 			Dungeon.observe();
 		}
 		if (hero.hasTalent(LIQUID_AGILITY)){
-			Buff.prolong(hero, LiquidAgilEVATracker.class, hero.cooldown() + Math.max(0, factor-1));
-			if (factor >= 0.5f){
-				Buff.prolong(hero, LiquidAgilACCTracker.class, 5f).uses = Math.round(factor);
-			}
+			Buff.prolong(hero, RestoredAgilityTracker.class, hero.cooldown() + Math.max(0, factor-1));
 		}
 	}
 
@@ -695,21 +665,17 @@ public enum Talent {
 	}
 
 	public static void onItemEquipped( Hero hero, Item item ){
-		boolean identify = false;
 		if (hero.pointsInTalent(VETERANS_INTUITION) == 2 && item instanceof Armor){
-			identify = true;
+			item.identify();
 		}
 		if (hero.hasTalent(THIEFS_INTUITION) && item instanceof Ring){
 			if (hero.pointsInTalent(THIEFS_INTUITION) == 2){
-				identify = true;
+				item.identify();
+			} else {
+				((Ring) item).setKnown();
 			}
-			((Ring) item).setKnown();
 		}
 		if (hero.pointsInTalent(ADVENTURERS_INTUITION) == 2 && item instanceof Weapon){
-			identify = true;
-		}
-
-		if (identify && !ShardOfOblivion.passiveIDDisabled()){
 			item.identify();
 		}
 	}
@@ -729,7 +695,7 @@ public enum Talent {
 
 		if (hero.hasTalent(Talent.PROVOKED_ANGER)
 			&& hero.buff(ProvokedAngerTracker.class) != null){
-			dmg += 1 + hero.pointsInTalent(Talent.PROVOKED_ANGER);
+			dmg += Random.IntRange(hero.pointsInTalent(Talent.PROVOKED_ANGER) , 2);
 			hero.buff(ProvokedAngerTracker.class).detach();
 		}
 
@@ -778,7 +744,7 @@ public enum Talent {
 				}
 			} else if (hero.buff(DeadlyFollowupTracker.class) != null
 					&& hero.buff(DeadlyFollowupTracker.class).object == enemy.id()){
-				dmg = Math.round(dmg * (1.0f + .1f*hero.pointsInTalent(DEADLY_FOLLOWUP)));
+				dmg = Math.round(dmg * (1.0f + .08f*hero.pointsInTalent(DEADLY_FOLLOWUP)));
 			}
 		}
 
@@ -937,11 +903,17 @@ public enum Talent {
 			case GLADIATOR:
 				Collections.addAll(tierTalents, CLEAVE, LETHAL_DEFENSE, ENHANCED_COMBO);
 				break;
+			case BRAWLER:      //싸움꾼
+				Collections.addAll(tierTalents, BRAWLER1, BRAWLER2, BRAWLER3);
+				break;
 			case BATTLEMAGE:
 				Collections.addAll(tierTalents, EMPOWERED_STRIKE, MYSTICAL_CHARGE, EXCESS_CHARGE);
 				break;
 			case WARLOCK:
 				Collections.addAll(tierTalents, SOUL_EATER, SOUL_SIPHON, NECROMANCERS_MINIONS);
+				break;
+			case SCHOLAR:      //연구가
+				Collections.addAll(tierTalents, WIDE_SUMMON, FAST_CHARGER, DUAL_SPAWN);
 				break;
 			case ASSASSIN:
 				Collections.addAll(tierTalents, ENHANCED_LETHALITY, ASSASSINS_REACH, BOUNTY_HUNTER);
@@ -949,17 +921,26 @@ public enum Talent {
 			case FREERUNNER:
 				Collections.addAll(tierTalents, EVASIVE_ARMOR, PROJECTILE_MOMENTUM, SPEEDY_STEALTH);
 				break;
+			case GRAVEROBBER:  //도굴꾼
+				Collections.addAll(tierTalents, COLLECT_MISC, TREASURE_HUNTER, SYNESTHESIA);
+				break;
 			case SNIPER:
 				Collections.addAll(tierTalents, FARSIGHT, SHARED_ENCHANTMENT, SHARED_UPGRADES);
 				break;
 			case WARDEN:
 				Collections.addAll(tierTalents, DURABLE_TIPS, BARKSKIN, SHIELDING_DEW);
 				break;
+			case RANGER:       //순찰자
+				Collections.addAll(tierTalents, EXPLOSIVE_ATACK, PROJECTILES_SHARE, GROWING_ARROW);
+				break;
 			case CHAMPION:
 				Collections.addAll(tierTalents, VARIED_CHARGE, TWIN_UPGRADES, COMBINED_LETHALITY);
 				break;
 			case MONK:
 				Collections.addAll(tierTalents, UNENCUMBERED_SPIRIT, MONASTIC_VIGOR, COMBINED_ENERGY);
+				break;
+			case BLADEDANCER:  //무예가
+				Collections.addAll(tierTalents, GROWING_STAMINA, QUICKSTEP, COMBINED_AGILITY);
 				break;
 		}
 		for (Talent talent : tierTalents){

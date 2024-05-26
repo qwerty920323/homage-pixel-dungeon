@@ -37,11 +37,8 @@ import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.MissileWeapon;
-import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.watabou.noosa.audio.Sample;
-
-import java.util.ArrayList;
 
 public class CurseInfusion extends InventorySpell {
 	
@@ -121,11 +118,6 @@ public class CurseInfusion extends InventorySpell {
 			output = CurseInfusion.class;
 			outQuantity = OUT_QUANTITY;
 		}
-
-		@Override
-		public Item brew(ArrayList<Item> ingredients) {
-			Catalog.countUse(MetalShard.class);
-			return super.brew(ingredients);
-		}
+		
 	}
 }

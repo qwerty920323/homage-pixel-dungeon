@@ -32,7 +32,6 @@ import com.shatteredpixel.shatteredpixeldungeon.ui.RenderedTextBlock;
 import com.shatteredpixel.shatteredpixeldungeon.ui.Tooltip;
 import com.shatteredpixel.shatteredpixeldungeon.ui.Window;
 import com.shatteredpixel.shatteredpixeldungeon.utils.Holiday;
-import com.shatteredpixel.shatteredpixeldungeon.windows.WndJournal;
 import com.watabou.gltextures.TextureCache;
 import com.watabou.glwrap.Blending;
 import com.watabou.input.ControllerHandler;
@@ -273,7 +272,7 @@ public class PixelScene extends Scene {
 		}
 	}
 
-	//this system only preserves windows with a public zero-arg constructor
+	//FIXME this system currently only works for a subset of windows
 	private static ArrayList<Class<?extends Window>> savedWindows = new ArrayList<>();
 	private static Class<?extends PixelScene> savedClass = null;
 	
@@ -295,7 +294,7 @@ public class PixelScene extends Scene {
 				try{
 					add(Reflection.newInstanceUnhandled(w));
 				} catch (Exception e){
-					//just eat the exception
+					//window has no public zero-arg constructor, just eat the exception
 				}
 			}
 		}
@@ -383,9 +382,6 @@ public class PixelScene extends Scene {
 						banner.y = align(uiCamera, (uiCamera.height - banner.height) / 2 - banner.height / 2 - 16 - offset);
 						left += BadgeBanner.SIZE * BadgeBanner.DEFAULT_SCALE;
 					}
-
-					WndJournal.last_index = 4;
-					WndJournal.BadgesTab.global = badge.type != Badges.BadgeType.LOCAL;
 
 				}
 			}

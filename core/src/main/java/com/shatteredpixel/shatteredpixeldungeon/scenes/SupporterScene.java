@@ -31,7 +31,6 @@ import com.shatteredpixel.shatteredpixeldungeon.ui.Icons;
 import com.shatteredpixel.shatteredpixeldungeon.ui.RenderedTextBlock;
 import com.shatteredpixel.shatteredpixeldungeon.ui.StyledButton;
 import com.shatteredpixel.shatteredpixeldungeon.ui.Window;
-import com.shatteredpixel.shatteredpixeldungeon.windows.IconTitle;
 import com.watabou.noosa.Camera;
 import com.watabou.noosa.Image;
 import com.watabou.noosa.NinePatch;
@@ -61,10 +60,10 @@ public class SupporterScene extends PixelScene {
 		btnExit.setPos(w - btnExit.width(), 0);
 		add(btnExit);
 
-		IconTitle title = new IconTitle(Icons.GOLD.get(), Messages.get(this, "title"));
-		title.setSize(200, 0);
+		RenderedTextBlock title = PixelScene.renderTextBlock(Messages.get(this, "title"), 9);
+		title.hardlight(Window.TITLE_COLOR);
 		title.setPos(
-				(w - title.reqWidth()) / 2f,
+				(w - title.width()) / 2f,
 				(20 - title.height()) / 2f
 		);
 		align(title);

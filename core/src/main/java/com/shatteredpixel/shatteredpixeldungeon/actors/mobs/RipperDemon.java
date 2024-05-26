@@ -69,7 +69,7 @@ public class RipperDemon extends Mob {
 
 	@Override
 	public int damageRoll() {
-		return Random.NormalIntRange( 15, 25 );
+		return Char.combatRoll( 15, 25 );
 	}
 
 	@Override
@@ -84,7 +84,7 @@ public class RipperDemon extends Mob {
 
 	@Override
 	public int drRoll() {
-		return super.drRoll() + Random.NormalIntRange(0, 4);
+		return super.drRoll() + Char.combatRoll(0, 4);
 	}
 
 	private static final String LAST_ENEMY_POS = "last_enemy_pos";
@@ -157,23 +157,12 @@ public class RipperDemon extends Mob {
 				//ensure there is somewhere to land after leaping
 				if (leapVictim != null){
 					int bouncepos = -1;
-					//attempt to bounce in free passable space
 					for (int i : PathFinder.NEIGHBOURS8){
 						if ((bouncepos == -1 || Dungeon.level.trueDistance(pos, leapPos+i) < Dungeon.level.trueDistance(pos, bouncepos))
 								&& Actor.findChar(leapPos+i) == null && Dungeon.level.passable[leapPos+i]){
 							bouncepos = leapPos+i;
 						}
 					}
-					//try again, allowing a bounce into any non-solid terrain
-					if (bouncepos == -1){
-						for (int i : PathFinder.NEIGHBOURS8){
-							if ((bouncepos == -1 || Dungeon.level.trueDistance(pos, leapPos+i) < Dungeon.level.trueDistance(pos, bouncepos))
-									&& Actor.findChar(leapPos+i) == null && !Dungeon.level.solid[leapPos+i]){
-								bouncepos = leapPos+i;
-							}
-						}
-					}
-					//if no valid position, cancel the leap
 					if (bouncepos == -1) {
 						leapPos = -1;
 						return true;
@@ -196,7 +185,7 @@ public class RipperDemon extends Mob {
 								leapVictim.sprite.flash();
 								Sample.INSTANCE.play(Assets.Sounds.HIT);
 							} else {
-								leapVictim.sprite.showStatus( CharSprite.NEUTRAL, leapVictim.defenseVerb() );
+								enemy.sprite.showStatus( CharSprite.NEUTRAL, enemy.defenseVerb() );
 								Sample.INSTANCE.play(Assets.Sounds.MISS);
 							}
 						}

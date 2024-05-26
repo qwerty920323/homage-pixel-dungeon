@@ -25,7 +25,9 @@ import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AllyBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.ChampionEnemy;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Pushing;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfRemoveCurse;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
@@ -73,7 +75,7 @@ public class SpectralNecromancer extends Necromancer {
 	public void die(Object cause) {
 		for (int ID : wraithIDs){
 			Actor a = Actor.findById(ID);
-			if (a instanceof Wraith && ((Wraith) a).alignment == alignment){
+			if (a instanceof Wraith){
 				((Wraith) a).die(null);
 			}
 		}
@@ -134,7 +136,7 @@ public class SpectralNecromancer extends Necromancer {
 
 				Char blocker = Actor.findChar(summoningPos);
 				if (blocker.alignment != alignment){
-					blocker.damage( Random.NormalIntRange(2, 10), new SummoningBlockDamage() );
+					blocker.damage( Char.combatRoll(2, 10), new SummoningBlockDamage() );
 					if (blocker == Dungeon.hero && !blocker.isAlive()){
 						Badges.validateDeathFromEnemyMagic();
 						Dungeon.fail(this);
@@ -150,18 +152,15 @@ public class SpectralNecromancer extends Necromancer {
 		summoning = firstSummon = false;
 
 		Wraith wraith = Wraith.spawnAt(summoningPos, Wraith.class);
-		if (wraith == null){
-			spend(TICK);
-			return;
-		}
-		wraith.adjustStats(4);
+		wraith.adjustStats(0);
 		Dungeon.level.occupyCell( wraith );
 		((SpectralNecromancerSprite)sprite).finishSummoning();
 
-		for (Buff b : buffs()){
-			if (b.revivePersists) {
-				Buff.affect(wraith, b.getClass());
-			}
+		for (Buff b : buffs(AllyBuff.class)){
+			Buff.affect( wraith, b.getClass());
+		}
+		for (Buff b : buffs(ChampionEnemy.class)){
+			Buff.affect( wraith, b.getClass());
 		}
 		wraithIDs.add(wraith.id());
 	}

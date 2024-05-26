@@ -28,7 +28,6 @@ import com.shatteredpixel.shatteredpixeldungeon.effects.Enchanting;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.PurpleParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.Armor;
 import com.shatteredpixel.shatteredpixeldungeon.items.bags.Bag;
-import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
@@ -86,7 +85,7 @@ public class Stylus extends Item {
 	
 	private void inscribe( Armor armor ) {
 
-		if (!armor.cursedKnown){
+		if (!armor.isIdentified() ){
 			GLog.w( Messages.get(this, "identify"));
 			return;
 		} else if (armor.cursed || armor.hasCurseGlyph()){
@@ -95,7 +94,6 @@ public class Stylus extends Item {
 		}
 		
 		detach(curUser.belongings.backpack);
-		Catalog.countUse(getClass());
 
 		GLog.w( Messages.get(this, "inscribed"));
 

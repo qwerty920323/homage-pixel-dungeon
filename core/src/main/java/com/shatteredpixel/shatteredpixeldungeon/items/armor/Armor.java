@@ -57,11 +57,8 @@ import com.shatteredpixel.shatteredpixeldungeon.items.armor.glyphs.Stone;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.glyphs.Swiftness;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.glyphs.Thorns;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.glyphs.Viscosity;
-import com.shatteredpixel.shatteredpixeldungeon.items.bags.Bag;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfArcana;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.ParchmentScrap;
-import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.ShardOfOblivion;
-import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.HeroSprite;
@@ -205,30 +202,6 @@ public class Armor extends EquipableItem {
 	}
 
 	@Override
-	public boolean collect(Bag container) {
-		if(super.collect(container)){
-			if (Dungeon.hero != null && Dungeon.hero.isAlive() && isIdentified() && glyph != null){
-				Catalog.setSeen(glyph.getClass());
-			}
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	@Override
-	public Item identify(boolean byHero) {
-		if (glyph != null && byHero && Dungeon.hero != null && Dungeon.hero.isAlive()){
-			Catalog.setSeen(glyph.getClass());
-		}
-		return super.identify(byHero);
-	}
-
-	public boolean readyToIdentify(){
-		return !isIdentified() && usesLeftToID <= 0;
-	}
-
-	@Override
 	public boolean doEquip( Hero hero ) {
 		
 		detach(hero.belongings.backpack);
@@ -280,6 +253,11 @@ public class Armor extends EquipableItem {
 
 	public BrokenSeal checkSeal(){
 		return seal;
+	}
+
+	@Override
+	protected float timeToEquip(Hero hero ) {
+		return 2f / hero.speed();
 	}
 
 	@Override
@@ -473,16 +451,9 @@ public class Armor extends EquipableItem {
 			availableUsesToID -= uses;
 			usesLeftToID -= uses;
 			if (usesLeftToID <= 0) {
-				if (ShardOfOblivion.passiveIDDisabled()){
-					if (usesLeftToID > -1){
-						GLog.p(Messages.get(ShardOfOblivion.class, "identify_ready"), name());
-					}
-					usesLeftToID = -1;
-				} else {
-					identify();
-					GLog.p(Messages.get(Armor.class, "identify"));
-					Badges.validateItemLevelAquired(this);
-				}
+				identify();
+				GLog.p( Messages.get(Armor.class, "identify") );
+				Badges.validateItemLevelAquired( this );
 			}
 		}
 		
@@ -505,19 +476,19 @@ public class Armor extends EquipableItem {
 	
 	@Override
 	public String info() {
-		String info = super.info();
+		String info = desc();
 		
 		if (levelKnown) {
 
 			info += "\n\n" + Messages.get(Armor.class, "curr_absorb", tier, DRMin(), DRMax(), STRReq());
 			
-			if (Dungeon.hero != null && STRReq() > Dungeon.hero.STR()) {
+			if (STRReq() > Dungeon.hero.STR()) {
 				info += " " + Messages.get(Armor.class, "too_heavy");
 			}
 		} else {
 			info += "\n\n" + Messages.get(Armor.class, "avg_absorb", tier, DRMin(0), DRMax(0), STRReq(0));
 
-			if (Dungeon.hero != null && STRReq(0) > Dungeon.hero.STR()) {
+			if (STRReq(0) > Dungeon.hero.STR()) {
 				info += " " + Messages.get(Armor.class, "probably_too_heavy");
 			}
 		}
@@ -544,16 +515,14 @@ public class Armor extends EquipableItem {
 			info += "\n\n" + Messages.get(Armor.class, "cursed_worn");
 		} else if (cursedKnown && cursed) {
 			info += "\n\n" + Messages.get(Armor.class, "cursed");
+		} else if (seal != null) {
+			info += "\n\n" + Messages.get(Armor.class, "seal_attached", seal.maxShield(tier, level()));
 		} else if (!isIdentified() && cursedKnown){
 			if (glyph != null && glyph.curse()) {
 				info += "\n\n" + Messages.get(Armor.class, "weak_cursed");
 			} else {
 				info += "\n\n" + Messages.get(Armor.class, "not_cursed");
 			}
-		}
-
-		if (seal != null) {
-			info += "\n\n" + Messages.get(Armor.class, "seal_attached", seal.maxShield(tier, level()));
 		}
 		
 		return info;
@@ -582,36 +551,30 @@ public class Armor extends EquipableItem {
 			}
 		}
 		level(n);
-
-		//we use a separate RNG here so that variance due to things like parchment scrap
-		//does not affect levelgen
-		Random.pushGenerator(Random.Long());
-
-			//30% chance to be cursed
-			//15% chance to be inscribed
-			float effectRoll = Random.Float();
-			if (effectRoll < 0.3f * ParchmentScrap.curseChanceMultiplier()) {
-				inscribe(Glyph.randomCurse());
-				cursed = true;
-			} else if (effectRoll >= 1f - (0.15f * ParchmentScrap.enchantChanceMultiplier())){
-				inscribe();
-			}
-
-		Random.popGenerator();
+		
+		//30% chance to be cursed
+		//15% chance to be inscribed
+		float effectRoll = Random.Float();
+		if (effectRoll < 0.3f * ParchmentScrap.curseChanceMultiplier()) {
+			inscribe(Glyph.randomCurse());
+			cursed = true;
+		} else if (effectRoll >= 1f - (0.15f * ParchmentScrap.enchantChanceMultiplier())){
+			inscribe();
+		}
 
 		return this;
 	}
 
 	public int STRReq(){
-		return STRReq(level());
-	}
-
-	public int STRReq(int lvl){
-		int req = STRReq(tier, lvl);
+		int req = STRReq(level());
 		if (masteryPotionBonus){
 			req -= 2;
 		}
 		return req;
+	}
+
+	public int STRReq(int lvl){
+		return STRReq(tier, lvl);
 	}
 
 	protected static int STRReq(int tier, int lvl){
@@ -649,10 +612,6 @@ public class Armor extends EquipableItem {
 		// in case they take that talent in the future
 		if (seal != null){
 			seal.setGlyph(glyph);
-		}
-		if (glyph != null && isIdentified() && Dungeon.hero != null
-				&& Dungeon.hero.isAlive() && Dungeon.hero.belongings.contains(this)){
-			Catalog.setSeen(glyph.getClass());
 		}
 		return this;
 	}
@@ -701,7 +660,7 @@ public class Armor extends EquipableItem {
 				10  //3.33% each
 		};
 
-		public static final Class<?>[] curses = new Class<?>[]{
+		private static final Class<?>[] curses = new Class<?>[]{
 				AntiEntropy.class, Corrosion.class, Displacement.class, Metabolism.class,
 				Multiplicity.class, Stench.class, Overgrowth.class, Bulk.class
 		};

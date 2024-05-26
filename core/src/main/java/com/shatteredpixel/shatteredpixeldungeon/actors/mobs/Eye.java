@@ -33,7 +33,6 @@ import com.shatteredpixel.shatteredpixeldungeon.effects.particles.PurpleParticle
 import com.shatteredpixel.shatteredpixeldungeon.items.Dewdrop;
 import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
-import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfAggression;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfDisintegration;
 import com.shatteredpixel.shatteredpixeldungeon.levels.traps.DisintegrationTrap;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
@@ -70,7 +69,7 @@ public class Eye extends Mob {
 
 	@Override
 	public int damageRoll() {
-		return Random.NormalIntRange(20, 30);
+		return Char.combatRoll(20, 30);
 	}
 
 	@Override
@@ -80,7 +79,7 @@ public class Eye extends Mob {
 	
 	@Override
 	public int drRoll() {
-		return super.drRoll() + Random.NormalIntRange(0, 10);
+		return super.drRoll() + Char.combatRoll(0, 10);
 	}
 	
 	private Ballistica beam;
@@ -155,12 +154,6 @@ public class Eye extends Mob {
 		if (beamCharged) dmg /= 4;
 		super.damage(dmg, src);
 	}
-
-	@Override
-	public void die(Object cause) {
-		flying = false;
-		super.die(cause);
-	}
 	
 	//used so resistances can differentiate between melee and magical attacks
 	public static class DeathGaze{}
@@ -191,19 +184,8 @@ public class Eye extends Mob {
 			}
 
 			if (hit( this, ch, true )) {
-				int dmg = Random.NormalIntRange( 30, 50 );
+				int dmg = Char.combatRoll( 30, 50 );
 				dmg = Math.round(dmg * AscensionChallenge.statModifier(this));
-
-				//logic for fists or Yog-Dzewa taking 1/2 or 1/4 damage from aggression stoned minions
-				if ( ch.buff(StoneOfAggression.Aggression.class) != null
-						&& ch.alignment == alignment
-						&& (Char.hasProp(ch, Property.BOSS) || Char.hasProp(ch, Property.MINIBOSS))){
-					dmg *= 0.5f;
-					if (ch instanceof YogDzewa){
-						dmg *= 0.5f;
-					}
-				}
-
 				ch.damage( dmg, new DeathGaze() );
 
 				if (Dungeon.level.heroFOV[pos]) {

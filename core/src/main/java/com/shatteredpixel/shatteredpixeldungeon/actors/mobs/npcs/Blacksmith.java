@@ -57,20 +57,16 @@ public class Blacksmith extends NPC {
 
 		properties.add(Property.IMMOVABLE);
 	}
-
-	@Override
-	public Notes.Landmark landmark() {
-		return (!Quest.completed() || Quest.rewardsAvailable()) ? Notes.Landmark.TROLL : null;
-	}
-
+	
 	@Override
 	protected boolean act() {
 		if (Dungeon.hero.buff(AscensionChallenge.class) != null){
 			die(null);
-			Notes.remove( landmark() );
+			Notes.remove( Notes.Landmark.TROLL );
 			return true;
-		} else if (!Quest.rewardsAvailable() && Quest.completed()){
-			Notes.remove( landmark() );
+		}
+		if (Dungeon.level.visited[pos] && !Quest.started()){
+			Notes.add( Notes.Landmark.TROLL );
 		}
 		return super.act();
 	}
@@ -125,6 +121,7 @@ public class Blacksmith extends NPC {
 
 							Quest.given = true;
 							Quest.completed = false;
+							Notes.add( Notes.Landmark.TROLL );
 							Item pick = Quest.pickaxe != null ? Quest.pickaxe : new Pickaxe();
 							if (pick.doPickUp( Dungeon.hero )) {
 								GLog.i( Messages.capitalize(Messages.get(Dungeon.hero, "you_now_have", pick.name()) ));
@@ -469,14 +466,10 @@ public class Blacksmith extends NPC {
 			}
 
 			// 30% base chance to be enchanted, stored separately so status isn't revealed early
-			//we generate first so that the outcome doesn't affect the number of RNG rolls
-			smithEnchant = Weapon.Enchantment.random();
-			smithGlyph = Armor.Glyph.random();
-
 			float enchantRoll = Random.Float();
-			if (enchantRoll > 0.3f * ParchmentScrap.enchantChanceMultiplier()){
-				smithEnchant = null;
-				smithGlyph = null;
+			if (enchantRoll <= 0.3f * ParchmentScrap.enchantChanceMultiplier()){
+				smithEnchant = Weapon.Enchantment.random();
+				smithGlyph = Armor.Glyph.random();
 			}
 
 		}

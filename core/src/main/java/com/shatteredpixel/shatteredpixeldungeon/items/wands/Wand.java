@@ -48,7 +48,6 @@ import com.shatteredpixel.shatteredpixeldungeon.items.bags.Bag;
 import com.shatteredpixel.shatteredpixeldungeon.items.bags.MagicalHolster;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfEnergy;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfRecharging;
-import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.ShardOfOblivion;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.WondrousResin;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
@@ -123,11 +122,7 @@ public abstract class Wand extends Item {
 
 	@Override
 	public int targetingPos(Hero user, int dst) {
-		if (cursed && cursedKnown){
-			return new Ballistica(user.pos, dst, Ballistica.MAGIC_BOLT).collisionPos;
-		} else {
-			return new Ballistica(user.pos, dst, collisionProperties).collisionPos;
-		}
+		return new Ballistica( user.pos, dst, collisionProperties ).collisionPos;
 	}
 
 	public abstract void onZap(Ballistica attack);
@@ -243,10 +238,6 @@ public abstract class Wand extends Item {
 		
 		return this;
 	}
-
-	public boolean readyToIdentify(){
-		return !isIdentified() && usesLeftToID <= 0;
-	}
 	
 	public void onHeroGainExp( float levelPercent, Hero hero ){
 		levelPercent *= Talent.itemIDSpeedFactor(hero, this);
@@ -258,7 +249,7 @@ public abstract class Wand extends Item {
 
 	@Override
 	public String info() {
-		String desc = super.info();
+		String desc = desc();
 
 		desc += "\n\n" + statsDesc();
 
@@ -274,7 +265,7 @@ public abstract class Wand extends Item {
 			desc += "\n\n" + Messages.get(Wand.class, "not_cursed");
 		}
 
-		if (Dungeon.hero != null && Dungeon.hero.subClass == HeroSubClass.BATTLEMAGE){
+		if (Dungeon.hero.subClass == HeroSubClass.BATTLEMAGE){
 			desc += "\n\n" + Messages.get(this, "bmage_desc");
 		}
 
@@ -283,18 +274,6 @@ public abstract class Wand extends Item {
 
 	public String statsDesc(){
 		return Messages.get(this, "stats_desc");
-	}
-
-	public String upgradeStat1(int level){
-		return null;
-	}
-
-	public String upgradeStat2(int level){
-		return null;
-	}
-
-	public String upgradeStat3(int level){
-		return null;
 	}
 	
 	@Override
@@ -398,7 +377,7 @@ public abstract class Wand extends Item {
 		curCharges = Math.min( curCharges, maxCharges );
 	}
 	
-	public int initialCharges() {
+	protected int initialCharges() {
 		return 2;
 	}
 
@@ -429,19 +408,9 @@ public abstract class Wand extends Item {
 			availableUsesToID -= uses;
 			usesLeftToID -= uses;
 			if (usesLeftToID <= 0 || Dungeon.hero.pointsInTalent(Talent.SCHOLARS_INTUITION) == 2) {
-				if (ShardOfOblivion.passiveIDDisabled()){
-					if (usesLeftToID > -1){
-						GLog.p(Messages.get(ShardOfOblivion.class, "identify_ready"), name());
-					}
-					usesLeftToID = -1;
-				} else {
-					identify();
-					GLog.p(Messages.get(Wand.class, "identify"));
-					Badges.validateItemLevelAquired(this);
-				}
-			}
-			if (ShardOfOblivion.passiveIDDisabled()){
-				Buff.prolong(curUser, ShardOfOblivion.WandUseTracker.class, 50f);
+				identify();
+				GLog.p( Messages.get(Wand.class, "identify") );
+				Badges.validateItemLevelAquired( this );
 			}
 		}
 
@@ -482,7 +451,7 @@ public abstract class Wand extends Item {
 		if (Dungeon.hero.hasTalent(Talent.LINGERING_MAGIC)
 				&& charger != null && charger.target == Dungeon.hero){
 
-			Buff.prolong(Dungeon.hero, Talent.LingeringMagicTracker.class, 5f);
+			Buff.affect(Dungeon.hero, Talent.LingeringMagicTracker.class, 5f);
 		}
 
 		Invisibility.dispel();
@@ -716,13 +685,11 @@ public abstract class Wand extends Item {
 							public void call() {
 								curWand.onZap(shot);
 								if (Random.Float() < WondrousResin.extraCurseEffectChance()){
-									WondrousResin.forcePositive = true;
 									CursedWand.cursedZap(curWand,
 											curUser,
 											new Ballistica(curUser.pos, target, Ballistica.MAGIC_BOLT), new Callback() {
 												@Override
 												public void call() {
-													WondrousResin.forcePositive = false;
 													curWand.wandUsed();
 												}
 											});

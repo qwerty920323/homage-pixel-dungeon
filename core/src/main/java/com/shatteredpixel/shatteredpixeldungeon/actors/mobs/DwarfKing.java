@@ -52,7 +52,6 @@ import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfForce;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTeleportation;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.Wand;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfLightning;
-import com.shatteredpixel.shatteredpixeldungeon.journal.Bestiary;
 import com.shatteredpixel.shatteredpixeldungeon.levels.CityBossLevel;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
@@ -90,7 +89,7 @@ public class DwarfKing extends Mob {
 
 	@Override
 	public int damageRoll() {
-		return Random.NormalIntRange( 15, 25 );
+		return Char.combatRoll( 15, 25 );
 	}
 
 	@Override
@@ -100,7 +99,7 @@ public class DwarfKing extends Mob {
 
 	@Override
 	public int drRoll() {
-		return super.drRoll() + Random.NormalIntRange(0, 10);
+		return super.drRoll() + Char.combatRoll(0, 10);
 	}
 
 	private int phase = 1;
@@ -498,14 +497,9 @@ public class DwarfKing extends Mob {
 				for (Summoning s : buffs(Summoning.class)) {
 					s.detach();
 				}
-				Bestiary.skipCountingEncounters = true;
-				for (Mob m : getSubjects()) {
-					m.die(null);
-				}
-				Bestiary.skipCountingEncounters = false;
-				for (Buff b: buffs()){
-					if (b instanceof LifeLink){
-						b.detach();
+				for (Mob m : Dungeon.level.mobs.toArray(new Mob[0])) {
+					if (m instanceof Ghoul || m instanceof Monk || m instanceof Warlock || m instanceof Golem) {
+						m.die(null);
 					}
 				}
 			}
@@ -567,11 +561,9 @@ public class DwarfKing extends Mob {
 
 		Dungeon.level.unseal();
 
-		Bestiary.skipCountingEncounters = true;
 		for (Mob m : getSubjects()){
 			m.die(null);
 		}
-		Bestiary.skipCountingEncounters = false;
 
 		LloydsBeacon beacon = Dungeon.hero.belongings.getItem(LloydsBeacon.class);
 		if (beacon != null) {
@@ -694,7 +686,7 @@ public class DwarfKing extends Mob {
 					}
 				} else {
 					Char ch = Actor.findChar(pos);
-					ch.damage(Random.NormalIntRange(20, 40), this);
+					ch.damage(Char.combatRoll(20, 40), this);
 					if (((DwarfKing)target).phase == 2){
 						if (Dungeon.isChallenged(Challenges.STRONGER_BOSSES)){
 							target.damage(target.HT/18, new KingDamager());
@@ -757,10 +749,6 @@ public class DwarfKing extends Mob {
 	}
 
 	public static class KingDamager extends Buff {
-
-		{
-			revivePersists = true;
-		}
 
 		@Override
 		public boolean act() {

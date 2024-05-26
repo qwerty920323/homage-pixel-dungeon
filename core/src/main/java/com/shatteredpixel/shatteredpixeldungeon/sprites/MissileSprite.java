@@ -22,6 +22,7 @@
 package com.shatteredpixel.shatteredpixeldungeon.sprites;
 
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.RangerArrow;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.GnollGeomancer;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.SpiritBow;
@@ -168,6 +169,13 @@ public class MissileSprite extends ItemSprite implements Tweener.Listener {
 				|| item instanceof ScorpioSprite.ScorpioShot
 				|| item instanceof TenguSprite.TenguShuriken){
 			speed *= 1.5f;
+
+			RangerArrow rangerArrow = Dungeon.hero.buff(RangerArrow.class);
+			if (item instanceof SpiritBow.SpiritArrow
+					&& rangerArrow != null
+					&& rangerArrow.piercingCheck){ //관통 화살
+				speed *= 2f;
+			}
 		}
 		
 		PosTweener tweener = new PosTweener( this, to, d.length() / speed );
