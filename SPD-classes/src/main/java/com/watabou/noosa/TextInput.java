@@ -76,35 +76,7 @@ public class TextInput extends Component {
 		TextField.TextFieldStyle style = skin.get(TextField.TextFieldStyle.class);
 		style.font = Game.platform.getFont(size, "", false, false);
 		style.background = null;
-		if (multiline){
-			textField = new TextArea("", style){
-				@Override
-				public void cut() {
-					super.cut();
-					onClipBoardUpdate();
-				}
-
-				@Override
-				public void copy() {
-					super.copy();
-					onClipBoardUpdate();
-				}
-			};
-		} else {
-			textField = new TextField("", style){
-				@Override
-				public void cut() {
-					super.cut();
-					onClipBoardUpdate();
-				}
-
-				@Override
-				public void copy() {
-					super.copy();
-					onClipBoardUpdate();
-				}
-			};
-		}
+		textField = multiline ? new TextArea("", style) : new TextField("", style);
 		textField.setProgrammaticChangeEvents(true);
 
 		if (!multiline) textField.setAlignment(Align.center);
@@ -118,7 +90,6 @@ public class TextInput extends Component {
 					style.font = f;
 					textField.setStyle(style);
 				}
-				onChanged();
 			}
 		});
 
@@ -146,16 +117,8 @@ public class TextInput extends Component {
 	}
 
 	public void enterPressed(){
-		//fires any time enter is pressed, do nothing by default
+		//do nothing by default
 	};
-
-	public void onChanged(){
-		//fires any time the text box is changed, do nothing by default
-	}
-
-	public void onClipBoardUpdate(){
-		//fires any time the clipboard is updated via cut or copy, do nothing by default
-	}
 
 	public void setText(String text){
 		textField.setText(text);

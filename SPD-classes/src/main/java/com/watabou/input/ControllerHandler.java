@@ -85,12 +85,7 @@ public class ControllerHandler implements ControllerListener {
 	}
 
 	public static boolean vibrationSupported(){
-		try {
-			//library can throw a NPE here is controller was disconnected during sleep
-			return isControllerConnected() && Controllers.getCurrent().canVibrate();
-		} catch (Exception e){
-			return false;
-		}
+		return isControllerConnected() && Controllers.getCurrent().canVibrate();
 	}
 
 	public static void vibrate( int millis ){
