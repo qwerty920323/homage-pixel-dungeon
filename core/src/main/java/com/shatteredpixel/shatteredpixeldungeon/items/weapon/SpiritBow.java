@@ -485,7 +485,7 @@ public class SpiritBow extends Weapon {
 					RangerArrow.rangerArrow(user,cell,enemy,0);
 					super.cast(user, dst);
 
-				} else if (rangerAttack(user,enemy,cell,true)){
+				} else if (rangerAttack(user,enemy,cell,true) && enemy != null){
 					user.sprite.zap( cell );
 					user.busy();
 

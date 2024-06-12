@@ -114,7 +114,7 @@ public enum Talent {
 	//Warlock T3
 	SOUL_EATER(46, 3), SOUL_SIPHON(47, 3), NECROMANCERS_MINIONS(48, 3),
 	//Scholar  연구가
-	WIDE_SUMMON(59, 3), FAST_CHARGER(60, 3), DUAL_SPAWN(61, 3),
+	WIDE_SUMMON(59, 3), FAST_CHARGER(60, 3), RESIST_SPAWN(61, 3),
 	//Elemental Blast T4
 	BLAST_RADIUS(49, 4), ELEMENTAL_POWER(50, 4), REACTIVE_BARRIER(51, 4),
 	//Wild Magic T4
@@ -913,7 +913,7 @@ public enum Talent {
 				Collections.addAll(tierTalents, SOUL_EATER, SOUL_SIPHON, NECROMANCERS_MINIONS);
 				break;
 			case SCHOLAR:      //연구가
-				Collections.addAll(tierTalents, WIDE_SUMMON, FAST_CHARGER, DUAL_SPAWN);
+				Collections.addAll(tierTalents, WIDE_SUMMON, FAST_CHARGER, RESIST_SPAWN);
 				break;
 			case ASSASSIN:
 				Collections.addAll(tierTalents, ENHANCED_LETHALITY, ASSASSINS_REACH, BOUNTY_HUNTER);

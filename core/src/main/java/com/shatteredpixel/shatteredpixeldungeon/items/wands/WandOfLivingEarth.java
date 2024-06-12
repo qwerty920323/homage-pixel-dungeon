@@ -415,4 +415,18 @@ public class WandOfLivingEarth extends DamageWand {
 		}
 
 	}
+
+	@Override
+	public int bonusRange(){
+		return super.bonusRange();
+	}
+	@Override
+	public int scholarTurnCount(){
+		return super.scholarTurnCount() + 2;
+	}
+	@Override
+	public void scholarAbility(Ballistica bolt, int cell) {
+		int pos = bolt.collisionPos;
+
+	}
 }

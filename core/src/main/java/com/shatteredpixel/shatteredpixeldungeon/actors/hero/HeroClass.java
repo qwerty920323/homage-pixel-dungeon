@@ -68,6 +68,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfAggression;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfEnchantment;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfBlastWave;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfCorrosion;
+import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfCorruption;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfDisintegration;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfFireblast;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfFrost;
@@ -214,9 +215,6 @@ public enum HeroClass {
 		PotionOfExperience pe = new PotionOfExperience();
 		pe.quantity(30).collect();
 
-		PotionOfMindVision pm = new PotionOfMindVision();
-		pm.quantity(30).collect();
-
 		ScrollOfUpgrade su = new ScrollOfUpgrade();
 		su.quantity(30).collect();
 		ScrollOfIdentify d = new ScrollOfIdentify();
@@ -234,8 +232,7 @@ public enum HeroClass {
 		sdss.quantity(1).collect();
 		WandOfBlastWave sdsdaw = new WandOfBlastWave();
 		sdsdaw.quantity(1).collect();
-		WandOfRegrowth rre;
-        rre = new WandOfRegrowth();
+		WandOfRegrowth rre = new WandOfRegrowth();
         rre.quantity(1).collect();
 		WandOfCorrosion wes = new WandOfCorrosion();
 		wes.quantity(1).collect();
@@ -245,12 +242,12 @@ public enum HeroClass {
 		sth.quantity(1).collect();
 		WandOfDisintegration tyy = new WandOfDisintegration();
 		tyy.quantity(1).collect();
+		WandOfCorruption eewaa = new WandOfCorruption();
+		eewaa.quantity(1).collect();
 
 		PotionOfFrost pf = new PotionOfFrost();
 		pf.quantity(100).collect();
 
-		StoneOfAggression st = new StoneOfAggression();
-		st.quantity(100).collect();
 		//
 	}
 
@@ -312,9 +309,6 @@ public enum HeroClass {
 		//테스트용 아이템
 		TengusMask tm = new TengusMask();
 		tm.quantity(1).collect();
-		PotionOfExperience pe = new PotionOfExperience();
-		pe.quantity(30).collect();
-
 	}
 
 	public String title() {

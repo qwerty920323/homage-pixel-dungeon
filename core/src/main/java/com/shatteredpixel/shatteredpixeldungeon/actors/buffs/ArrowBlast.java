@@ -99,7 +99,7 @@ public class ArrowBlast extends FlavourBuff implements ActionIndicator.Action {
 
             for (int i = arrowCounter; i >0; i--){
                 // (활레벨*증강)/2 ~ (활레벨 *증강)
-                endDamage += bonus * (Random.IntRange( Math.round(bow().level()/2f) , Math.round(bow().level())));
+                endDamage += bonus * (Char.combatRoll( Math.round(bow().level()/2f) , Math.round(bow().level())));
                 arrowCounter--;
             }
         }

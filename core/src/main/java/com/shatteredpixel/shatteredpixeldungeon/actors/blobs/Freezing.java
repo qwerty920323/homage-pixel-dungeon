@@ -31,8 +31,11 @@ import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SnowParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
+import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfFireblast;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.special.MagicalFireRoom;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
+import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 
 public class Freezing extends Blob {
 	
@@ -40,7 +43,7 @@ public class Freezing extends Blob {
 	protected void evolve() {
 		
 		int cell;
-		
+
 		Fire fire = (Fire)Dungeon.level.blobs.get( Fire.class );
 		
 		for (int i = area.left-1; i <= area.right; i++) {
@@ -55,7 +58,11 @@ public class Freezing extends Blob {
 					}
 					
 					Freezing.freeze(cell);
-					
+
+					if (Dungeon.level.ice[cell] && cur[cell] <= 1){ //scholar
+						cur[cell]++;
+					}
+
 					off[cell] = cur[cell] - 1;
 					volume += off[cell];
 				} else {
@@ -124,6 +131,11 @@ public class Freezing extends Blob {
 		MagicalFireRoom.EternalFire eternalFire = (MagicalFireRoom.EternalFire)Dungeon.level.blobs.get(MagicalFireRoom.EternalFire.class);
 		if (eternalFire != null && eternalFire.volume > 0) {
 			eternalFire.clear( cell );
+		}
+
+		WandOfFireblast.MiniEternalFire miniEternalFire = (WandOfFireblast.MiniEternalFire)Dungeon.level.blobs.get(WandOfFireblast.MiniEternalFire.class);
+		if (miniEternalFire != null && miniEternalFire.volume > 0) { //scholar
+			miniEternalFire.clear( cell );
 		}
 		
 		Heap heap = Dungeon.level.heaps.get( cell );

@@ -22,10 +22,13 @@
 package com.shatteredpixel.shatteredpixeldungeon.items.wands;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
+import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Freezing;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AllyBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Amok;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AscensionChallenge;
@@ -56,6 +59,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Terror;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Vertigo;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Vulnerable;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Weakness;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Bee;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.DwarfKing;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mimic;
@@ -64,14 +68,22 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Piranha;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Statue;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Swarm;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Wraith;
+import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.NPC;
+import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.MagicMissile;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ScholarParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
+import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
+import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
+import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
+import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
+import com.watabou.utils.PathFinder;
 import com.watabou.utils.Random;
 
 import java.util.HashMap;
@@ -269,6 +281,139 @@ public class WandOfCorruption extends Wand {
 		particle.speed.set(0, 5);
 		particle.setSize( 0.5f, 2f);
 		particle.shuffleXY(1f);
+	}
+
+	//scholar
+	@Override
+	public int scholarTurnCount(){
+		return super.scholarTurnCount() + 5;
+	}
+	@Override
+	public void scholarAbility(Ballistica bolt, int cell) {
+		super.scholarAbility(bolt,cell);
+
+		for (int p : PathFinder.NEIGHBOURS9){
+			if (!Dungeon.level.solid[cell+p]) {
+
+				GameScene.add(Blob.seed(cell + p, scholarTurnCount(), CorruptArea.class));
+
+			}
+		}
+	}
+
+	public static class CorruptArea extends Blob {
+		private static float turnLeft =0;
+		@Override
+		protected void evolve() {
+			super.evolve();
+
+			int cell;
+			if (volume == 0){
+				turnLeft = 0;
+
+			} else {
+				for (int i = area.left - 1; i <= area.right; i++) {
+					for (int j = area.top - 1; j <= area.bottom; j++) {
+						cell = i + j * Dungeon.level.width();
+						if (cur[cell] > 0) {
+
+							off[cell] = cur[cell]-1;
+							volume += off[cell];
+
+							darkness(cell);
+						}
+					}
+				}
+			}
+
+		}
+
+		public static void darkness(int cell ){
+			Char ch = Actor.findChar( cell );
+			if (ch != null
+					&& !(ch instanceof NPC)
+					&& !ch.isImmune(CorruptArea.class)) {
+				Buff.affect(ch,Corrupt.class).set(2);
+				chargeForChar(ch);
+			}
+
+		}
+
+		public CorruptArea turn(int left){
+			turnLeft = left;
+			return this;
+		}
+
+		@Override
+		public void use( BlobEmitter emitter ) {
+			super.use( emitter );
+			emitter.pour(ScholarParticle.YELLOW, 0.05f);
+		}
+
+		@Override
+		public String tileDesc() {
+			return Messages.get(this, "desc");
+		}
+
+		private static final String LEFT	= "left";
+		@Override
+		public void storeInBundle( Bundle bundle ) {
+			super.storeInBundle( bundle );
+			bundle.put( LEFT, turnLeft );
+		}
+
+		@Override
+		public void restoreFromBundle( Bundle bundle ) {
+			super.restoreFromBundle( bundle );
+			turnLeft = bundle.getFloat( LEFT );
+		}
+
+	}
+
+	public static class Corrupt extends Buff {
+		private static float duration;
+
+		{
+		//	type = buffType.NEGATIVE;
+		//	announced = true;
+		}
+
+		private float left;
+
+		public void set( float duration ) {
+			this.left = this.duration = Math.max(duration, left);
+		}
+
+		private static final String LEFT	 = "left";
+		private static final String DURATION =  "left";
+		@Override
+		public void storeInBundle( Bundle bundle ) {
+			super.storeInBundle( bundle );
+			bundle.put( LEFT, left );
+			bundle.put( DURATION, duration );
+		}
+
+		@Override
+		public void restoreFromBundle( Bundle bundle ) {
+			super.restoreFromBundle(bundle);
+			left = bundle.getFloat( LEFT );
+			duration = bundle.getFloat( DURATION );
+		}
+
+		@Override
+		public boolean act() {
+
+			spend( TICK );
+			left -= TICK;
+
+			CorruptArea ca = (CorruptArea) Dungeon.level.blobs.get(CorruptArea.class);
+
+			if (left <= 0 || !(ca != null && ca.volume > 0 && ca.cur[target.pos] > 0)) {
+				detach();
+			}
+
+			return true;
+		}
 	}
 
 }

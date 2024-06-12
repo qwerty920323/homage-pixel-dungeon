@@ -116,6 +116,8 @@ public class DungeonTileSheet {
 
 		//water
 		chasmStitcheable.put( Terrain.WATER,        CHASM_WATER );
+		//ice
+		chasmStitcheable.put( Terrain.ICE,          CHASM_FLOOR );
 	}
 
 	public static int stitchChasmTile(int above){
@@ -155,6 +157,40 @@ public class DungeonTileSheet {
 		return tile == Terrain.WATER || directVisuals.get(tile, CHASM) < CHASM;
 	}
 
+	/**********************************************************************
+	 * Ice Tiles //scholar
+	 **********************************************************************/
+
+	//scholar
+	public static final int ICE =                                         xy(9, 9);   //16 slots
+
+	public static HashSet<Integer> iceStitcheable = new HashSet<>(Arrays.asList(
+			Terrain.ICE, Terrain.WATER
+	));
+
+	public static int stitchIceTile(int top, int right, int bottom, int left){
+		int result = ICE;
+		int sum = 0;
+		if (iceStitcheable.contains(top)){
+			sum++;
+			result +=1;
+		}
+		if (iceStitcheable.contains(right)){
+			sum++;
+			result +=2;
+		}
+		if (iceStitcheable.contains(bottom)){
+			sum++;
+			result +=3;
+		}
+		if (iceStitcheable.contains(left)) {
+			sum++;
+			result +=4;
+		}
+		if (sum>1)      return ICE;
+		else if(sum==0) return result +=5;
+		else            return result;
+	}
 
 	/**********************************************************************
 	 Flat Tiles

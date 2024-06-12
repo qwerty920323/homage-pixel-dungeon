@@ -65,6 +65,7 @@ public class Notes {
 	}
 	
 	public enum Landmark {
+		WELL_OF_MINI_HEALTH, // scholar
 		WELL_OF_HEALTH,
 		WELL_OF_AWARENESS,
 		ALCHEMY,

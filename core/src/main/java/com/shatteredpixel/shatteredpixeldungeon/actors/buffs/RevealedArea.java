@@ -29,6 +29,8 @@ import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
 import com.watabou.noosa.Image;
 import com.watabou.utils.Bundle;
 
+import java.util.ArrayList;
+
 public class RevealedArea extends FlavourBuff{
 
 	{
@@ -40,13 +42,12 @@ public class RevealedArea extends FlavourBuff{
 	@Override
 	public void detach() {
 		GameScene.updateFog(pos, 2);
+
 		super.detach();
 	}
 
 	@Override
-	public int icon() {
-		return BuffIndicator.MIND_VISION;
-	}
+	public int icon() {return BuffIndicator.MIND_VISION;}
 
 	@Override
 	public void tintIcon(Image icon) {
@@ -67,6 +68,7 @@ public class RevealedArea extends FlavourBuff{
 	private static final String BRANCH = "branch";
 	private static final String DEPTH = "depth";
 	private static final String POS = "pos";
+
 
 	@Override
 	public void storeInBundle(Bundle bundle) {

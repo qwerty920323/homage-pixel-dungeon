@@ -9,6 +9,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Effects;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TimekeepersHourglass;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfForce;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
@@ -55,6 +56,11 @@ public class CrazyDance extends Buff{
 
     @Override
     public boolean act(){
+        if (target.buff(Frost.class) != null
+                || target.buff(Paralysis.class) != null
+                || target.buff(MagicalSleep.class) != null
+                || target.buff(TimekeepersHourglass.timeStasis.class) != null)
+            detach();
 
         spend( STEP );
         left -= STEP;
@@ -62,6 +68,7 @@ public class CrazyDance extends Buff{
         if (left <= 0) {
             detach();
         }
+
         return true;
     }
 
