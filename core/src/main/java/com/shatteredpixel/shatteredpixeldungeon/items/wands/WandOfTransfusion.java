@@ -26,27 +26,43 @@ import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.WellWater;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Barrier;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Charm;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.ShieldBuff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mimic;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Beam;
+import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.FloatingText;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.BloodParticle;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ShadowParticle;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ShaftParticle;
+import com.shatteredpixel.shatteredpixeldungeon.items.Item;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Blocking;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
+import com.shatteredpixel.shatteredpixeldungeon.journal.Notes;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
+import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
+import com.shatteredpixel.shatteredpixeldungeon.tiles.CustomTilemap;
 import com.shatteredpixel.shatteredpixeldungeon.tiles.DungeonTilemap;
+import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
+import com.watabou.noosa.Image;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
+import com.watabou.utils.Point;
 import com.watabou.utils.PointF;
 import com.watabou.utils.Random;
 
@@ -72,7 +88,6 @@ public class WandOfTransfusion extends DamageWand {
 
 	@Override
 	public void onZap(Ballistica beam) {
-
 		for (int c : beam.subPath(0, beam.dist))
 			CellEmitter.center(c).burst( BloodParticle.BURST, 1 );
 
@@ -210,4 +225,229 @@ public class WandOfTransfusion extends DamageWand {
 		bundle.put( FREECHARGE, freeCharge );
 	}
 
+	//scholar
+	@Override
+	public int bonusRange(){
+		int bonus = super.bonusRange();
+		int selfDmg = 2;
+				//Math.round(Dungeon.hero.HT * 0.05f);
+		return selfDmg + (selfDmg * bonus / 2);
+	}
+	@Override
+	public int scholarTurnCount(){
+		return super.scholarTurnCount() + 5;
+	}
+	@Override
+	public void scholarAbility(Ballistica bolt, int cell) {
+		super.scholarAbility(bolt,cell);
+
+		int pos = bolt.collisionPos;
+		int terr = Dungeon.level.map[pos];
+
+		WaterOfMiniHealth miniHealth = (WaterOfMiniHealth) Dungeon.level.blobs.get(WaterOfMiniHealth.class);
+		int healthPos = -1;
+		for (int i = 0; i < Dungeon.level.length(); i++) {
+			if (miniHealth != null && miniHealth.volume > 0 && miniHealth.cur[i] > 0) {
+				healthPos = i;
+			}
+		}
+
+		if (healthPos>0) {
+			if (healthPos == pos && terr == Terrain.WELL) {
+				setWell(pos, bonusRange(),-1);
+			} else if (terrCheck(pos)) {
+
+				if (healthPos != pos) {
+					CellEmitter.get(healthPos).start(Speck.factory(Speck.LIGHT), 0.2f, 4);
+					Level.set(healthPos, miniHealth.terrian);
+					GameScene.updateMap(healthPos);
+					miniHealth.clear(healthPos);
+				}
+
+				setWell(pos, bonusRange(), terr);
+
+			}
+		} else if (terrCheck(pos)){
+			setWell(pos, bonusRange(), terr);
+		}
+	}
+	public void setWell (int pos, int selfDmg, int terr) {
+		Level.set(pos, Terrain.WELL);
+		WaterOfMiniHealth water = Blob.seed(pos, 1, WaterOfMiniHealth.class);
+		water.setHealth(selfDmg, scholarTurnCount());
+		if (terr >= 0) water.terrian = terr;
+
+		CellEmitter.get(pos).start( Speck.factory( Speck.LIGHT ), 0.2f , 4 );
+		GameScene.add(water);
+		GameScene.updateMap(pos);
+	}
+
+	public boolean terrCheck (int pos){
+		int terr = Dungeon.level.map[pos];
+		Point p = Dungeon.level.cellToPoint(pos);
+
+		//if a custom tilemap is over that cell, don't put water there
+		for (CustomTilemap cust : Dungeon.level.customTiles){
+			Point custPoint = new Point(p);
+			custPoint.x -= cust.tileX;
+			custPoint.y -= cust.tileY;
+			if (custPoint.x >= 0 && custPoint.y >= 0
+					&& custPoint.x < cust.tileW && custPoint.y < cust.tileH){
+				if (cust.image(custPoint.x, custPoint.y) != null){
+					return false;
+				}
+			}
+		}
+
+		if (Dungeon.level.passable[pos]) {
+			if (!(terr == Terrain.ENTRANCE || terr == Terrain.EXIT
+					|| terr == Terrain.PEDESTAL || terr == Terrain.UNLOCKED_EXIT
+					|| terr == Terrain.SECRET_TRAP || terr == Terrain.INACTIVE_TRAP
+					|| terr == Terrain.DOOR || terr == Terrain.OPEN_DOOR)) {
+
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static class WaterOfMiniHealth extends WellWater {
+
+		private int shield = 0;
+		private int time   = 0;
+		public int terrian = -1;
+
+		@Override
+		protected void evolve() {
+			super.evolve();
+			Notes.remove(record());
+		}
+		@Override
+		protected boolean affectHero( Hero hero ) {
+
+			if (!hero.isAlive()) return false;
+
+			Sample.INSTANCE.play( Assets.Sounds.DRINK );
+
+			BlockBuff b = Buff.affect(hero, BlockBuff.class);
+			b.setTimeAndShiled(time, shield);
+
+			hero.sprite.emitter().start( Speck.factory( Speck.LIGHT ), 0.4f , 4 );
+			hero.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(shield), FloatingText.SHIELDING);
+
+			CellEmitter.get( hero.pos ).start( ShaftParticle.FACTORY, 0.2f , 3 );
+
+			shield = time = 0;
+
+			Dungeon.hero.interrupt();
+
+			GLog.p( Messages.get(this, "procced") );
+
+			return true;
+		}
+
+		public WaterOfMiniHealth setHealth (int health, int hunger){
+			this.shield += health;
+			this.time = hunger;
+			return this;
+		}
+
+		@Override
+		protected Item affectItem(Item item, int pos) {
+			return null;
+		}
+
+		@Override
+		public void use( BlobEmitter emitter ) {
+			super.use( emitter );
+			emitter.start( Speck.factory( Speck.LIGHT ), Math.max(0.4f, 1 - (shield /100)), 0 );
+		}
+
+		@Override
+		public String tileDesc() {
+			return Messages.get(this, "desc", shield, time);
+		}
+
+		@Override
+		protected Notes.Landmark record() {
+			return Notes.Landmark.WELL_OF_MINI_HEALTH;
+		}
+
+		private static final String SHIELD  = "shield";
+		private static final String TIME    = "time";
+		private static final String TERRIAN	= "terrian";
+		@Override
+		public void restoreFromBundle(Bundle bundle) {
+			super.restoreFromBundle(bundle);
+			shield = bundle.getInt( SHIELD );
+			time = bundle.getInt( TIME );
+			terrian = bundle.getInt( TERRIAN );
+		}
+
+		@Override
+		public void storeInBundle(Bundle bundle) {
+			super.storeInBundle(bundle);
+			bundle.put( SHIELD, shield );
+			bundle.put( TIME, time );
+			bundle.put( TERRIAN, terrian );
+		}
+	}
+
+	public static class BlockBuff extends ShieldBuff {
+
+		{
+			type = buffType.POSITIVE;
+		}
+
+		@Override
+		public boolean act() {
+			detach();
+			return true;
+		}
+
+		@Override
+		public void setShield(int shield) {
+			super.setShield(shield);
+		}
+
+		public void setTimeAndShiled(int time, int shield) {
+			postpone(time);
+			setShield(shield);
+		}
+
+		@Override
+		public void fx(boolean on) {
+			if (on) {
+				target.sprite.add(CharSprite.State.SHIELDED);
+			} else if (target.buff(Barrier.class) == null) {
+				target.sprite.remove(CharSprite.State.SHIELDED);
+			}
+		}
+
+		@Override
+		public int icon() {
+			return BuffIndicator.ARMOR;
+		}
+
+		@Override
+		public void tintIcon(Image icon) {
+			icon.hardlight(0.5f, 1f, 2f);
+		}
+
+		@Override
+		public float iconFadePercent() {
+			return Math.max(0, (5f - visualcooldown()) / 5f);
+		}
+
+		@Override
+		public String iconTextDisplay() {
+			return Integer.toString((int)visualcooldown());
+		}
+
+		@Override
+		public String desc() {
+			return Messages.get(this, "desc", shielding(), dispTurns(visualcooldown()));
+		}
+
+	}
 }

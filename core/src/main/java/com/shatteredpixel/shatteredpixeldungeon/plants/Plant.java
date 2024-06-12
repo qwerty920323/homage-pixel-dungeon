@@ -33,6 +33,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.LeafParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
+import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfCorruption;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfRegrowth;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
@@ -98,6 +99,24 @@ public abstract class Plant implements Bundlable {
 		}
 		
 	}
+
+	//scholar
+	public boolean corrupt(){
+		if (!(this instanceof Mageroyal
+				|| this instanceof Earthroot
+				|| this instanceof Starflower
+				|| this instanceof Sungrass
+				|| this instanceof Swiftthistle)) {
+			return false;
+		}
+
+		WandOfCorruption.CorruptArea corrupt = (WandOfCorruption.CorruptArea)Dungeon.level.blobs.get( WandOfCorruption.CorruptArea.class );
+		if (corrupt != null && corrupt.volume > 0 && corrupt.cur[this.pos] > 0) {
+			return true;
+		}
+
+		return false;
+	}
 	
 	private static final String POS	= "pos";
 
@@ -119,6 +138,9 @@ public abstract class Plant implements Bundlable {
 		String desc = Messages.get(this, "desc");
 		if (Dungeon.hero.subClass == HeroSubClass.WARDEN){
 			desc += "\n\n" + Messages.get(this, "warden_desc");
+		}
+		if (corrupt()){
+			desc += "\n\n" + Messages.get(this, "corrupt_desc");
 		}
 		return desc;
 	}

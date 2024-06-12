@@ -22,31 +22,47 @@
 package com.shatteredpixel.shatteredpixeldungeon.items.wands;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
+import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Blindness;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Cripple;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.FlashDots;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Light;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.RevealedArea;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.RevealedCell;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.NPC;
+import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Beam;
+import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.RainbowParticle;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ShadowParticle;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TalismanOfForesight;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfMagicMapping;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
+import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.tiles.DungeonTilemap;
+import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
+import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
+import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
 import com.watabou.utils.PathFinder;
 import com.watabou.utils.PointF;
 import com.watabou.utils.Random;
+
+import java.util.ArrayList;
 
 public class WandOfPrismaticLight extends DamageWand {
 
@@ -159,5 +175,223 @@ public class WandOfPrismaticLight extends DamageWand {
 		particle.setSize( 1f, 2f);
 		particle.radiateXY( 0.5f);
 	}
+
+	//scholar
+	@Override
+	public int scholarTurnCount(){
+		return super.scholarTurnCount() + 3;
+	}
+
+	@Override
+	public void scholarAbility(Ballistica bolt, int cell) {
+		super.scholarAbility(bolt,cell);
+
+		int distance = Dungeon.level.distance(curUser.pos,bolt.collisionPos); //거리
+		int maxDist = distance;
+		int count = bonusRange();
+		int amount = 250;
+
+		for (int pos : bolt.path) {
+
+			ArrayList<Integer> spawnPoints = new ArrayList<>();
+			for (int i = 0; i < PathFinder.NEIGHBOURS8.length; i++) {
+				int p = pos + PathFinder.NEIGHBOURS8[i];
+				if (Dungeon.level.passable[p] || Dungeon.level.avoid[p]) {
+					spawnPoints.add(p);
+				}
+			}
+
+			ArrayList<Integer> respawnPoints = new ArrayList<>();
+
+			while (count > 0 && spawnPoints.size() > 0) {
+				int index = Random.index(spawnPoints);
+
+				respawnPoints.add(spawnPoints.remove(index));
+				count--;
+			}
+
+			Char ch = Actor.findChar(pos);
+
+			if (maxDist > 0 && ch != Dungeon.hero) {
+				if (!Dungeon.level.solid[pos]) {
+					amount *= (maxDist + distance) / distance;
+
+					FireFlyLight flyLight = Blob.seed(pos, amount, FireFlyLight.class);
+					flyLight.turn(scholarTurnCount());
+					GameScene.add(flyLight);
+					amount -= 10;
+
+					for (Integer bonuscell : respawnPoints) {
+						FireFlyLight f = Blob.seed(bonuscell, amount, FireFlyLight.class);
+						f.turn(scholarTurnCount());
+						GameScene.add(f);
+					}
+				}
+
+				GameScene.updateMap(pos);
+				maxDist--;
+			}
+		}
+	}
+
+	public static class FireFlyLight extends Blob {
+		private static float turnLeft = 0;
+		@Override
+		protected void evolve() {
+			super.evolve();
+
+			int cell;
+			if (volume == 0){
+				turnLeft = 0;
+
+			} else {
+				for (int i = area.left - 1; i <= area.right; i++) {
+					for (int j = area.top - 1; j <= area.bottom; j++) {
+						cell = i + j * Dungeon.level.width();
+						if (cur[cell] > 0) {
+
+							off[cell] = cur[cell] / 2;
+							shine(cell);
+						}
+
+						volume += off[cell];
+					}
+				}
+			}
+
+		}
+
+		public static void shine(int cell ){
+			Char ch = Actor.findChar( cell );
+			if (ch != null
+					&& !(ch instanceof NPC)
+					&& !ch.isImmune(FireFlyLight.class)
+					&& ch.buff(FireFly.class) == null) {
+
+				turnLeft = resistSpawn(ch, (int)turnLeft);
+				Buff.affect( ch, FireFly.class ).set(turnLeft);
+				Buff.append(Dungeon.hero, TalismanOfForesight.CharAwareness.class, turnLeft).charID = ch.id();
+				chargeForChar(ch);
+			}
+
+			RevealedCell r = Buff.prolong(Dungeon.hero, RevealedCell.class, 1);
+			r.set(cell, Dungeon.depth, Dungeon.branch);
+			r.blobsCheck();
+		}
+
+		public FireFlyLight turn(int left){
+			turnLeft = left;
+			return this;
+		}
+
+		@Override
+		public void use( BlobEmitter emitter ) {
+			super.use( emitter );
+			emitter.pour( FlashDots.GREEN, 0.85f );
+		}
+
+		@Override
+		public String tileDesc() {
+			return Messages.get(this, "desc");
+		}
+
+		private static final String LEFT	= "left";
+		@Override
+		public void storeInBundle( Bundle bundle ) {
+			super.storeInBundle( bundle );
+			bundle.put( LEFT, turnLeft );
+		}
+
+		@Override
+		public void restoreFromBundle( Bundle bundle ) {
+			super.restoreFromBundle( bundle );
+			turnLeft = bundle.getFloat( LEFT );
+		}
+
+	}
+
+	public static class FireFly extends Buff implements Hero.Doom{
+		private static float duration;
+
+		{
+			type = buffType.NEGATIVE;
+			announced = true;
+		}
+
+		private float left;
+
+		public void set( float duration ) {
+			this.left = this.duration = Math.max(duration, left);
+		}
+
+		private static final String LEFT	 = "left";
+		private static final String DURATION =  "left";
+		@Override
+		public void storeInBundle( Bundle bundle ) {
+			super.storeInBundle( bundle );
+			bundle.put( LEFT, left );
+			bundle.put( DURATION, duration );
+		}
+
+		@Override
+		public void restoreFromBundle( Bundle bundle ) {
+			super.restoreFromBundle(bundle);
+			left = bundle.getFloat( LEFT );
+			duration = bundle.getFloat( DURATION );
+		}
+
+		@Override
+		public boolean act() {
+			if ((target.properties().contains(Char.Property.UNDEAD)
+					|| target.properties().contains(Char.Property.DEMONIC))) {
+				int damage = Char.combatRoll( 1, 1+Dungeon.scalingDepth()/4 );
+				target.damage( damage, this );
+			}
+
+			spend( TICK );
+			left -= TICK;
+
+			if (left <= 0) {
+				detach();
+			}
+
+			return true;
+		}
+
+		@Override
+		public int icon() {
+			return BuffIndicator.SCHOLAR_BUFF;
+		}
+
+		@Override
+		public float iconFadePercent() {
+			return Math.max(0, (duration - left) / duration);
+		}
+
+		@Override
+		public String iconTextDisplay() {
+			return Integer.toString((int)left);
+		}
+
+		@Override
+		public void fx(boolean on) {
+			if (on) target.sprite.add(CharSprite.State.FIREFLY);
+			else target.sprite.remove(CharSprite.State.FIREFLY);
+		}
+
+		@Override
+		public String desc() {
+			return Messages.get(this, "desc", 1, 1+(Dungeon.scalingDepth()/4),(int)left);
+		}
+
+		@Override
+		public void onDeath() {
+			Badges.validateDeathFromFriendlyMagic();
+			Dungeon.fail( this );
+			GLog.n(Messages.get(this, "ondeath"));
+		}
+
+	}
+
 
 }

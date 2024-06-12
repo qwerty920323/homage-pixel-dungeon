@@ -26,19 +26,40 @@ import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Electricity;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Fire;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Freezing;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Regrowth;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Blindness;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.BlobImmunity;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.FlavourBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Paralysis;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Effects;
 import com.shatteredpixel.shatteredpixeldungeon.effects.MagicMissile;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Pushing;
+import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
+import com.shatteredpixel.shatteredpixeldungeon.items.Item;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.Potion;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Elastic;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.MissileWeapon;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.levels.features.Door;
+import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.special.MagicalFireRoom;
 import com.shatteredpixel.shatteredpixeldungeon.levels.traps.TenguDartTrap;
+import com.shatteredpixel.shatteredpixeldungeon.levels.traps.Trap;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
+import com.shatteredpixel.shatteredpixeldungeon.mechanics.ConeAOE;
+import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
+import com.shatteredpixel.shatteredpixeldungeon.sprites.MissileSprite;
 import com.shatteredpixel.shatteredpixeldungeon.tiles.DungeonTilemap;
 import com.watabou.noosa.Game;
 import com.watabou.noosa.Group;
@@ -48,6 +69,8 @@ import com.watabou.utils.Callback;
 import com.watabou.utils.PathFinder;
 import com.watabou.utils.PointF;
 import com.watabou.utils.Random;
+
+import java.util.ArrayList;
 
 public class WandOfBlastWave extends DamageWand {
 
@@ -279,4 +302,208 @@ public class WandOfBlastWave extends DamageWand {
 		}
 
 	}
+
+	//scholar
+
+	@Override
+	public int bonusRange () {return  super.bonusRange()+2;}
+	@Override
+	public int scholarTurnCount(){
+		return super.scholarTurnCount() + 5;
+	}
+	@Override
+	public void scholarAbility(Ballistica bolt, int cell){
+
+		super.scholarAbility(bolt,cell);
+		whirlwind(bolt.collisionPos);
+	}
+
+	private void whirlwinds(int pos){
+		WandOfBlastWave.BlastWave.blast(pos);
+
+		ArrayList<Class> affectedBlobs = new ArrayList<>(new BlobImmunity().immunities());
+
+		ArrayList<Blob> blobs = new ArrayList<>();
+
+		int dist = bonusRange();
+		int projectileProps = Ballistica.STOP_SOLID | Ballistica.STOP_TARGET;
+
+		Ballistica blast = new Ballistica(pos, curUser.pos, Ballistica.WONT_STOP);
+
+		ConeAOE aoe = new ConeAOE(blast, dist, 360, projectileProps);
+
+		for (int p : PathFinder.NEIGHBOURS8) {
+			int pathCell = pos + p;
+
+			for (Class c : affectedBlobs) {
+				Blob b = Dungeon.level.blobs.get(c);
+				if (b != null && b.volume > 0) {
+
+					if (b.cur[pos] > 0) {
+						b.cur[pos] = 0;
+					}
+
+					if (b.cur[pathCell] > 0) {
+						if (b instanceof Regrowth
+								|| b instanceof MagicalFireRoom.EternalFire) {
+							// 마법의 불, 성장풀 은 제외
+						} else if (!blobs.contains(b)){
+							blobs.add(b);
+						}
+					}
+				}
+			}
+
+			for (Ballistica ray : aoe.outerRays) {
+				if (!blobs.isEmpty()) {
+
+					for (Blob blob : blobs) {
+						int amount = Math.max(blob.cur[pathCell], scholarTurnCount());
+						int end = ray.path.get(ray.dist);
+
+						if (blob instanceof Fire || blob instanceof Freezing || blob instanceof Electricity){
+							if (Blob.volumeAt(end, blob.getClass()) == 0){
+								GameScene.add(Blob.seed(end, amount+1, blob.getClass()));
+							}
+						} else {
+							GameScene.add(Blob.seed(end, (amount+1)/3, blob.getClass()));
+						}
+
+						blob.clear(pathCell);
+					}
+
+					if (Actor.findChar(pathCell) != null)
+						chargeForChar(Actor.findChar(pathCell));
+
+				}
+			}
+			blobs.clear();
+		}
+/*
+		for (Ballistica ray : aoe.outerRays) {
+			((MagicMissile) curUser.sprite.parent.recycle(MagicMissile.class)).reset(
+					MagicMissile.FORCE_CONE,
+					pos,
+					ray.path.get(ray.dist),
+					null
+			);
+		}
+*/
+
+	}
+
+	private void whirlwind(int pos){
+		WandOfBlastWave.BlastWave.blast(pos);
+
+		ArrayList<Class> affectedBlobs = new ArrayList<>(new BlobImmunity().immunities());
+
+		ArrayList<Blob> blobs = new ArrayList<>();
+
+		int dist = bonusRange();
+
+		for (int p : PathFinder.NEIGHBOURS8) {
+			int pathCell = pos + p;
+
+			for (Class c : affectedBlobs) {
+				Blob b = Dungeon.level.blobs.get(c);
+				if (b != null && b.volume > 0) {
+
+					if (b.cur[pathCell] > 0 || b.cur[pos] > 0) {
+						if (b instanceof Regrowth
+								|| b instanceof MagicalFireRoom.EternalFire) {
+							// 마법의 불, 성장풀 은 제외
+						} else if (!blobs.contains(b)){
+							blobs.add(b);
+						}
+					}
+				}
+			}
+
+			if (!blobs.isEmpty()) {
+				for (Blob blob : blobs) {
+					blob.cur[pathCell] -= scholarTurnCount();
+					blob.cur[pos] -= scholarTurnCount();
+				}
+				blobs.clear();
+			}
+
+			if (Actor.findChar(pathCell) != null)
+				chargeForChar(Actor.findChar(pathCell));
+
+
+			//Heap 밀어내기 로직
+			Ballistica ballistica = new Ballistica(pos, pathCell, Ballistica.MAGIC_BOLT);
+			Heap heap = Dungeon.level.heaps.get(pathCell);
+
+			int cell = ballistica.collisionPos;
+
+			if (ballistica.dist > dist){
+				cell = ballistica.path.get(dist);
+			}
+
+			Char enemy = Actor.findChar(cell);
+			if (enemy != null)
+				Buff.affect(curUser,WhirlWindTracker.class,0f);
+
+
+			if (heap != null && heap.type == Heap.Type.HEAP) {
+				Item item = heap.peek();
+
+				if (item.quantity() <= 1) {
+					heap.pickUp();
+				}
+
+				int finalCell = cell;
+				((MissileSprite) curUser.sprite.parent.recycle(MissileSprite.class)).
+						reset(pathCell,
+								cell,
+								item,
+								new Callback() {
+									@Override
+									public void call() {
+										Item i = item.detach(curUser.belongings.backpack);
+
+										if (i != null) {
+											if (i instanceof Potion) {
+												Dungeon.level.drop(i, finalCell).sprite.drop();
+
+											} else if (enemy != null
+													&& enemy.alignment != curUser.alignment
+													&& i instanceof MissileWeapon){
+												MissileWeapon m = (MissileWeapon) i;
+												m.toThrowWeapon(enemy.pos);
+
+											} else {
+												i.toThrow(finalCell);
+											}
+										}
+
+										if (curUser.hasTalent(Talent.IMPROVISED_PROJECTILES)
+												&& !(item instanceof MissileWeapon)
+												&& curUser.buff(Talent.ImprovisedProjectileCooldown.class) == null){
+											if (enemy != null && enemy.alignment != curUser.alignment){
+												Sample.INSTANCE.play(Assets.Sounds.HIT);
+												Buff.affect(enemy, Blindness.class, 1f + curUser.pointsInTalent(Talent.IMPROVISED_PROJECTILES));
+												Buff.affect(curUser, Talent.ImprovisedProjectileCooldown.class, 50f);
+											}
+										}
+
+										if (curUser.buff(WhirlWindTracker.class) != null) {
+											curUser.buff(WhirlWindTracker.class).detach();
+											curUser.spendAndNext(1f);
+										}
+									}
+								});
+			} else {
+				if (curUser.buff(WhirlWindTracker.class) != null) {
+					curUser.buff(WhirlWindTracker.class).detach();
+					curUser.spendAndNext(1f);
+				}
+			}
+			curUser.busy();
+			curUser.next();
+		}
+	}
+
+	public static class WhirlWindTracker extends FlavourBuff {} //heap 던질때 턴 소모 계산을 위함
 }

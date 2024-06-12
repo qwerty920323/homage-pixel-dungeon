@@ -26,15 +26,21 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AllyBuff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Doom;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Roots;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Shadows;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.mage.WildMagic;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.DwarfKing;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.NPC;
+import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
+import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.MagicMissile;
+import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.LeafParticle;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ShaftParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.Dewdrop;
 import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
@@ -48,12 +54,14 @@ import com.shatteredpixel.shatteredpixeldungeon.plants.Sungrass;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.LotusSprite;
+import com.shatteredpixel.shatteredpixeldungeon.tiles.CustomTilemap;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
 import com.watabou.utils.ColorMath;
 import com.watabou.utils.GameMath;
 import com.watabou.utils.PathFinder;
+import com.watabou.utils.Point;
 import com.watabou.utils.Random;
 
 import java.util.ArrayList;
@@ -247,7 +255,7 @@ public class WandOfRegrowth extends Wand {
 		cone = new ConeAOE( bolt,
 				maxDist,
 				20 + 10*chargesPerCast(),
-				Ballistica.STOP_SOLID | Ballistica.STOP_TARGET);
+				Ballistica.STOP_SOLID | Ballistica.STOP_TARGET | Ballistica.IGNORE_SOLID);
 
 		//cast to cells at the tip, rather than all cells, better performance.
 		Ballistica longestRay = null;
@@ -485,6 +493,228 @@ public class WandOfRegrowth extends Wand {
 		public void restoreFromBundle(Bundle bundle) {
 			super.restoreFromBundle(bundle);
 			wandLvl = bundle.getInt(WAND_LVL);
+		}
+	}
+
+	//scholar
+
+	@Override
+	public int bonusRange () {return super.bonusRange()+2;}
+	@Override
+	public int scholarTurnCount(){
+		return super.scholarTurnCount() + 5;
+	}
+
+	@Override
+	public void scholarAbility(Ballistica bolt, int cell) {
+		super.scholarAbility(bolt,cell);
+
+		int count = bonusRange();
+		int maxDist = 2 + 2*chargesPerCast();
+
+		Ballistica ballistica = new Ballistica(curUser.pos, cell, Ballistica.PROJECTILE | Ballistica.IGNORE_SOLID);
+		int pos = ballistica.collisionPos;
+
+		int dist = ballistica.dist - maxDist;
+		if (dist > 0) {
+			pos = ballistica.path.get(ballistica.dist - dist);
+		}
+
+		int backTrace = ballistica.dist-1;
+		while (Actor.findChar( pos ) != null && pos != curUser.pos) {
+			pos = ballistica.path.get(backTrace);
+			backTrace--;
+		}
+
+		int terr = Dungeon.level.map[pos];
+		if (pos != curUser.pos && canBarricate(pos)
+				&& (terr == Terrain.EMPTY || terr == Terrain.EMBERS || terr == Terrain.EMPTY_DECO ||
+				terr == Terrain.GRASS || terr == Terrain.HIGH_GRASS || terr == Terrain.FURROWED_GRASS)) {
+
+			CellEmitter.get( pos ).burst( LeafParticle.GENERAL, 16 );
+			Level.set(pos, Terrain.BARRICADE);
+
+			Collapse a = Buff.append(Dungeon.hero, Collapse.class);
+			a.set(scholarTurnCount()+1, Dungeon.depth, Dungeon.branch, pos);
+
+			ArrayList<Integer> spawnPoints = new ArrayList<>();
+			for (int i = 0; i < PathFinder.NEIGHBOURS8.length; i++) {
+				int p = pos + PathFinder.NEIGHBOURS8[i];
+				if (Dungeon.level.passable[p]) {
+					spawnPoints.add(p);
+				}
+			}
+
+			ArrayList<Integer> respawnPoints = new ArrayList<>();
+
+			while (count > 0 && spawnPoints.size() > 0) {
+				int index = Random.index( spawnPoints );
+
+				respawnPoints.add( spawnPoints.remove( index ) );
+				count--;
+			}
+
+			for (Integer poss : respawnPoints) {
+				GameScene.add(Blob.seed(poss, scholarTurnCount()+1, MiniFoliage.class));
+			}
+
+			Sample.INSTANCE.play( Assets.Sounds.PLANT );
+			GameScene.updateMap( pos );
+			GameScene.updateFog();
+
+		}
+	}
+
+	public boolean canBarricate (int pos) {
+		Point p = Dungeon.level.cellToPoint(pos);
+
+		//if a custom tilemap is over that cell, don't put water there
+		for (CustomTilemap cust : Dungeon.level.customTiles){
+			Point custPoint = new Point(p);
+			custPoint.x -= cust.tileX;
+			custPoint.y -= cust.tileY;
+			if (custPoint.x >= 0 && custPoint.y >= 0
+					&& custPoint.x < cust.tileW && custPoint.y < cust.tileH){
+				if (cust.image(custPoint.x, custPoint.y) != null){
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	public static class Collapse extends Buff {
+
+		{
+			revivePersists = true;
+		}
+
+		protected float left;
+
+		public int pos, depth, branch;
+
+		@Override
+		public boolean act() {
+			spend(TICK);
+
+			if (depth == Dungeon.depth && branch == Dungeon.branch)
+				left -= TICK;
+
+			if (left <= 0) {
+				detach();
+			}
+
+			return true;
+		}
+
+		@Override
+		public void detach() {
+			if (Dungeon.level.map[pos] == Terrain.BARRICADE) {
+				CellEmitter.get(pos).burst(LeafParticle.GENERAL,16);
+				Level.set(pos, Terrain.GRASS);
+				GameScene.updateMap(pos);
+				GameScene.updateFog();
+			}
+			super.detach();
+		}
+		public void set(float left, int depth, int branch, int pos){
+			this.left = left;
+			this.depth = depth;
+			this.branch = branch;
+			this.pos = pos;
+		}
+
+		private static final String BRANCH = "branch";
+		private static final String DEPTH = "depth";
+		private static final String POS = "pos";
+		private static final String LEFT   = "left";
+
+		@Override
+		public void storeInBundle(Bundle bundle) {
+			super.storeInBundle(bundle);
+			bundle.put(DEPTH, depth);
+			bundle.put(BRANCH, branch);
+			bundle.put(POS, pos);
+			bundle.put(LEFT, left);
+
+		}
+
+		@Override
+		public void restoreFromBundle(Bundle bundle) {
+			super.restoreFromBundle(bundle);
+			depth = bundle.getInt(DEPTH);
+			branch = bundle.getInt(BRANCH);
+			pos = bundle.getInt(POS);
+			left = bundle.getInt(LEFT);
+		}
+
+	}
+
+	public static class MiniFoliage extends Blob {
+		@Override
+		protected void evolve() {
+
+			int[] map = Dungeon.level.map;
+			boolean barricade = false;
+
+			int cell;
+			for (int i = area.left; i < area.right; i++) {
+				for (int j = area.top; j < area.bottom; j++) {
+					cell = i + j*Dungeon.level.width();
+					if (cur[cell] > 0) {
+
+						off[cell] = cur[cell] - 1 ;
+
+						if (map[cell] == Terrain.EMBERS) {
+							map[cell] = Terrain.GRASS;
+							GameScene.updateMap(cell);
+						}
+
+						loof:
+						for (int p : PathFinder.NEIGHBOURS8){
+							int pathPos = cell + p;
+							if (map[pathPos] == Terrain.BARRICADE){
+								barricade = true;
+								break loof;
+							}
+
+						}
+
+						if (!barricade) {
+							if (volume == 0) return;
+							volume -= cur[cell];
+							cur[cell] = off[cell] = 0;
+						}
+
+						if (Actor.findChar(cell) != null) chargeForChar(Actor.findChar(cell));
+
+					} else {
+						off[cell] = 0;
+					}
+
+					volume += off[cell];
+				}
+			}
+
+			Hero hero = Dungeon.hero;
+			if (hero.isAlive() && cur[hero.pos] > 0) {
+				Shadows s = Buff.affect( hero, Shadows.class );
+				if (s != null){
+					s.prolong();
+				}
+			}
+
+		}
+
+		@Override
+		public void use( BlobEmitter emitter ) {
+			super.use( emitter );
+			emitter.start( ShaftParticle.FACTORY, 0.9f, 0 );
+		}
+
+		@Override
+		public String tileDesc() {
+			return Messages.get(this, "desc");
 		}
 	}
 

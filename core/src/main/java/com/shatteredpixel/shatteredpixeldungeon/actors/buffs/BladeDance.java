@@ -268,9 +268,8 @@ public class BladeDance extends Buff implements ActionIndicator.Action {
 
     @Override
     public int indicatorColor() {
-        if (hero.buff(Talent.CombinedIncreaseAbilityTracker.class) != null) {
-            return 0x33CC00;
-        }
+     //   if (hero.buff(Talent.CombinedIncreaseAbilityTracker.class) != null) return 0x33CC00;
+
         return 0xff6633;
     }
 
@@ -283,7 +282,7 @@ public class BladeDance extends Buff implements ActionIndicator.Action {
         BuffIndicator.refreshHero();
         ActionIndicator.clearAction(this);
 
-        boolean bonus = hero.buff(Talent.CombinedIncreaseAbilityTracker.class) != null;
+   //     boolean bonus = hero.buff(Talent.CombinedIncreaseAbilityTracker.class) != null;
 
         hero.busy();
         crazyDance = true;

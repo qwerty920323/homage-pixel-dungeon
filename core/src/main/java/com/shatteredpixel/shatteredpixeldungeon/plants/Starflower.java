@@ -25,6 +25,7 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Bless;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Hex;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Recharging;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
@@ -50,6 +51,13 @@ public class Starflower extends Plant {
 			if (ch instanceof Hero && ((Hero) ch).subClass == HeroSubClass.WARDEN){
 				Buff.prolong(ch, Recharging.class, Recharging.DURATION);
 				SpellSprite.show( ch, SpellSprite.CHARGE );
+			}
+			if (corrupt()) {
+				if (ch.properties().contains(Char.Property.UNDEAD)
+						|| ch.properties().contains(Char.Property.DEMONIC)){
+					ch.damage(ch.HP/2, this);
+				}
+				Buff.affect(ch, Hex.class, Hex.DURATION);
 			}
 		}
 

@@ -30,16 +30,30 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Chill;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.FlavourBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Frost;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.huntress.NaturesPower;
+import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.MagicMissile;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.LeafParticle;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SnowParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.special.MagicalFireRoom;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
+import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.watabou.noosa.audio.Sample;
+import com.watabou.noosa.particles.Emitter;
+import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
 import com.watabou.utils.PointF;
 import com.watabou.utils.Random;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class WandOfFrost extends DamageWand {
 
@@ -74,6 +88,16 @@ public class WandOfFrost extends DamageWand {
 			//bolt ends 1 tile short of fire, so check next tile too
 			if (bolt.path.size() > bolt.dist+1){
 				eternalFire.clear( bolt.path.get(bolt.dist+1) );
+			}
+
+		}
+
+		WandOfFireblast.MiniEternalFire miniEternalFire = (WandOfFireblast.MiniEternalFire)Dungeon.level.blobs.get(WandOfFireblast.MiniEternalFire.class);
+		if (miniEternalFire != null && miniEternalFire.volume > 0) {
+			miniEternalFire.clear( bolt.collisionPos );
+			//bolt ends 1 tile short of fire, so check next tile too
+			if (bolt.path.size() > bolt.dist+1){
+				miniEternalFire.clear( bolt.path.get(bolt.dist+1) );
 			}
 
 		}
@@ -160,4 +184,136 @@ public class WandOfFrost extends DamageWand {
 		particle.radiateXY(Random.Float(1f));
 	}
 
+	//scholar
+	@Override
+	public int bonusRange () {return 4 + 2 * super.bonusRange();}
+	@Override
+	public int scholarTurnCount(){
+		return super.scholarTurnCount() + 10;
+	}
+	@Override
+	public void scholarAbility(Ballistica bolt, int cell) {
+		super.scholarAbility(bolt,cell);
+		int iceToPlace = bonusRange(); //범위
+
+		ArrayList<Integer> cells = new ArrayList<>(bolt.path);
+		ArrayList<Integer> integers = new ArrayList<>();
+
+		for (Iterator<Integer> i = cells.iterator(); i.hasNext(); ) {
+			int pos = i.next();
+			int terr = Dungeon.level.map[pos];
+			if (!(terr == Terrain.EMPTY || terr == Terrain.EMPTY_DECO || terr == Terrain.WATER)) {
+				i.remove();
+			} else if (Char.hasProp(Actor.findChar(pos), Char.Property.IMMOVABLE)) {
+				i.remove();
+			} else if (Dungeon.level.plants.get(pos) != null) {
+				i.remove();
+			} else if (Dungeon.level.distance(curUser.pos, pos) > bolt.dist) {
+				i.remove();
+			} else {
+				Char ch = Actor.findChar(pos);
+				if (ch == Dungeon.hero) i.remove();
+			}
+		}
+
+		for (int pos : bolt.path) {
+			if (iceToPlace > 0 && cells.contains(pos)) {
+				if (!Dungeon.level.solid[pos]) {
+					if (Dungeon.level.water[pos]) {
+
+					}
+					integers.add(pos);
+					CellEmitter.get(pos).burst(SnowParticle.FACTORY, 8);
+					Level.set(pos, Terrain.ICE);
+				}
+
+				GameScene.updateMap(pos);
+				iceToPlace--;
+				//moves cell to the back
+				cells.remove((Integer) pos);
+				cells.add(pos);
+			}
+		}
+
+		Iceing ice = Buff.append(Dungeon.hero, Iceing.class);
+		ice.set(scholarTurnCount()+1, Dungeon.depth, Dungeon.branch);
+        ice.cells.addAll(integers);
+	}
+
+	public static class Iceing extends Buff {
+
+		{
+			revivePersists = true;
+		}
+		protected float left;
+		int depth;
+		int branch;
+
+		protected ArrayList<Integer> cells = new ArrayList<>();
+
+		@Override
+		public boolean act() {
+
+			spend(TICK);
+
+			if (depth == Dungeon.depth && branch == Dungeon.branch)
+				left -= TICK;
+
+			if (left <= 0) {
+				detach();
+			}
+
+			return true;
+		}
+
+		@Override
+		public void detach() {
+			if (depth == Dungeon.depth && branch == Dungeon.branch) {
+				for (int j = 0; j <cells.size(); j++) {
+					int cell = cells.get(j);
+					if (Dungeon.level.map[cell] == Terrain.ICE) {
+						CellEmitter.get(cell).burst(SnowParticle.FACTORY, 12);
+
+						Dungeon.level.setCellToWater(true, cell);
+						GameScene.updateMap(cell);
+					}
+				}
+			}
+			super.detach();
+		}
+
+		public void set(float left, int depth, int branch){
+			this.left = left;
+			this.depth = depth;
+			this.branch = branch;
+		}
+
+		private static final String DEPTH  = "depth";
+		private static final String BRANCH = "branch";
+		private static final String CELLS  = "cells";
+		private static final String LEFT   = "left";
+		@Override
+		public void storeInBundle(Bundle bundle) {
+			super.storeInBundle(bundle);
+			int[] values = new int[cells.size()];
+			for (int i = 0; i < values.length; i++)
+				values[i] = cells.get(i);
+			bundle.put(CELLS, values);
+			bundle.put(DEPTH, depth);
+			bundle.put(BRANCH, branch);
+			bundle.put(LEFT, left);
+		}
+
+		@Override
+		public void restoreFromBundle(Bundle bundle) {
+			super.restoreFromBundle(bundle);
+			int[] values = bundle.getIntArray( CELLS );
+			for (int value : values)
+				cells.add(value);
+			depth = bundle.getInt(DEPTH);
+			branch = bundle.getInt(BRANCH);
+			left = bundle.getInt(LEFT);
+		}
+
+	}
 }

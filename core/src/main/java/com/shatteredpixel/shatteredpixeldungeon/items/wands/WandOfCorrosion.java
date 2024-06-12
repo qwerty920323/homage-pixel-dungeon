@@ -28,23 +28,42 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.CorrosiveGas;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Fire;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.BlobImmunity;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Ooze;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.DwarfKing;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
+import com.shatteredpixel.shatteredpixeldungeon.effects.Lightning;
 import com.shatteredpixel.shatteredpixeldungeon.effects.MagicMissile;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.CorrosionParticle;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.EarthParticle;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SmokeParticle;
+import com.shatteredpixel.shatteredpixeldungeon.items.armor.curses.Corrosion;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
+import com.shatteredpixel.shatteredpixeldungeon.levels.traps.Trap;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
+import com.shatteredpixel.shatteredpixeldungeon.mechanics.ConeAOE;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
+import com.shatteredpixel.shatteredpixeldungeon.tiles.CustomTilemap;
+import com.shatteredpixel.shatteredpixeldungeon.tiles.DungeonTilemap;
 import com.watabou.noosa.audio.Sample;
+import com.watabou.noosa.particles.Emitter;
+import com.watabou.utils.BArray;
+import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
 import com.watabou.utils.ColorMath;
 import com.watabou.utils.PathFinder;
+import com.watabou.utils.Point;
 import com.watabou.utils.Random;
+
+import java.util.ArrayList;
+import java.util.HashSet;
 
 public class WandOfCorrosion extends Wand {
 
@@ -125,4 +144,130 @@ public class WandOfCorrosion extends Wand {
 			return Messages.get(this, "stats_desc", 2);
 	}
 
+	//scholar
+	@Override
+	public int bonusRange () {return  super.bonusRange()+2;}
+	@Override
+	public int scholarTurnCount(){
+		return super.scholarTurnCount() + 5;
+	}
+	@Override
+	public void scholarAbility(Ballistica bolt, int cell){
+		super.scholarAbility(bolt,cell);
+		Buff.append( curUser, CorrosionArea.class ).set( scholarTurnCount(), bonusRange(), bolt.collisionPos );
+	}
+
+	public static class CorrosionArea extends Buff {
+
+		{
+			type = buffType.POSITIVE;
+			revivePersists = true;
+		}
+
+		private float left;
+		int pos, range;
+
+		public void set( float duration , int range, int cell) {
+			this.left = Math.max(duration, left);
+			this.range = range;
+			this.pos = cell;
+		}
+
+		private static final String POS    = "pos";
+		private static final String LEFT   = "left";
+		private static final String RANGE  = "range";
+
+
+		@Override
+		public void storeInBundle( Bundle bundle ) {
+			super.storeInBundle( bundle );
+			bundle.put( LEFT, left );
+			bundle.put(POS, pos);
+			bundle.put(RANGE, range);
+
+		}
+
+		@Override
+		public void restoreFromBundle( Bundle bundle ) {
+			super.restoreFromBundle(bundle);
+			left = bundle.getFloat( LEFT );
+			pos = bundle.getInt(POS);
+			range = bundle.getInt(RANGE);
+
+		}
+
+		@Override
+		public boolean act() {
+
+			spend(TICK);
+
+			left -= TICK;
+
+			PathFinder.buildDistanceMap(pos, BArray.not(Dungeon.level.solid, null), range);
+
+			for (int i = 0; i < Dungeon.level.length(); i++) {
+				if (PathFinder.distance[i] < Integer.MAX_VALUE) {
+
+					CorrosiveGas gas = (CorrosiveGas) Dungeon.level.blobs.get(CorrosiveGas.class);
+					if (gas != null && gas.volume > 0 && gas.cur[i] > 0) {
+						setCellToEmpty(i);
+					}
+				}
+			}
+
+			if (left <= 0) {
+				detach();
+			}
+
+			return true;
+		}
+
+
+		public boolean setCellToEmpty( int cell ){
+			Point p = Dungeon.level.cellToPoint(cell);
+
+			//if a custom tilemap is over that cell, don't put water there
+			for (CustomTilemap cust : Dungeon.level.customTiles){
+				Point custPoint = new Point(p);
+				custPoint.x -= cust.tileX;
+				custPoint.y -= cust.tileY;
+				if (custPoint.x >= 0 && custPoint.y >= 0
+						&& custPoint.x < cust.tileW && custPoint.y < cust.tileH){
+					if (cust.image(custPoint.x, custPoint.y) != null){
+						return false;
+					}
+				}
+			}
+
+			int terr = Dungeon.level.map[cell];
+
+			if ((terr == Terrain.INACTIVE_TRAP || terr == Terrain.EMBERS)) {
+
+				if (terr == Terrain.INACTIVE_TRAP)
+					Dungeon.level.traps.remove(cell);
+
+				Level.set(cell, Terrain.EMPTY);
+
+				if (Dungeon.level.heroFOV[cell]) {
+					CellEmitter.get( cell ).burst( Speck.factory( Speck.WOOL ), 15);
+
+					Emitter e = CellEmitter.get(cell);
+					e.y -= DungeonTilemap.SIZE * 0.2f;
+					e.height *= 0.8f;
+					e.start(EarthParticle.FALLING, 0.01f,30);
+				}
+
+				GameScene.updateMap(cell);
+				return true;
+			}
+
+			return false;
+		}
+
+		@Override
+		public void detach() {
+
+			super.detach();
+		}
+	}
 }

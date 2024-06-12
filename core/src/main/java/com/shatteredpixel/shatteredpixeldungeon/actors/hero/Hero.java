@@ -126,6 +126,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.Scroll;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfMagicMapping;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.exotic.ScrollOfChallenge;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.Wand;
+import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfDisintegration;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfLivingEarth;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.SpiritBow;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
@@ -763,6 +764,10 @@ public class Hero extends Char {
 		if (buff(Endure.EndureTracker.class) != null){
 			buff(Endure.EndureTracker.class).endEnduring();
 		}
+
+		for (WandOfDisintegration.Piercing p : buffs(WandOfDisintegration.Piercing.class)){
+			p.depthCheck();
+		}
 		
 		if (!ready) {
 			//do a full observe (including fog update) if not resting.
@@ -782,7 +787,7 @@ public class Hero extends Char {
 			
 			curAction = null;
 
-			CrazyDance cd = buff(CrazyDance.class);
+			CrazyDance cd = buff(CrazyDance.class); //bladedancer
 			if (cd != null){
 				cd.crazyAttack();
 			} else {

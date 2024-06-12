@@ -215,6 +215,7 @@ abstract public class MissileWeapon extends Weapon {
 		super.doThrow(hero);
 	}
 
+	public void toThrowWeapon (int cell) {onThrow(cell);} //scholar
 	@Override
 	protected void onThrow( int cell ) {
 		Char enemy = Actor.findChar( cell );

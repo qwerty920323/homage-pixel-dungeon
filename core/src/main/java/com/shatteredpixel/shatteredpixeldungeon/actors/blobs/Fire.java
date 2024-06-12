@@ -27,8 +27,11 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Burning;
 import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
+import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.FlameParticle;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SnowParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Plant;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
@@ -55,6 +58,13 @@ public class Fire extends Blob {
 						freeze.clear(cell);
 						off[cell] = cur[cell] = 0;
 						continue;
+					}
+
+					if (Dungeon.level.map[cell] == Terrain.ICE){ //scholar
+						CellEmitter.get(cell).burst(SnowParticle.FACTORY, 12);
+
+						Dungeon.level.setCellToWater(true, cell);
+						GameScene.updateMap(cell);
 					}
 
 					burn( cell );

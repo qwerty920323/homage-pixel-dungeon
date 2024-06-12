@@ -21,15 +21,23 @@
 
 package com.shatteredpixel.shatteredpixeldungeon.plants;
 
+import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Bleeding;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.BlobImmunity;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Poison;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Vulnerable;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Weakness;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfHealing;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
+import com.watabou.utils.Random;
+
+import java.util.HashSet;
 
 public class Mageroyal extends Plant {
 
@@ -49,6 +57,16 @@ public class Mageroyal extends Plant {
 
 				if (((Hero) ch).subClass == HeroSubClass.WARDEN){
 					Buff.affect(ch, BlobImmunity.class, BlobImmunity.DURATION/2f);
+				}
+			}
+
+			if (corrupt()) {
+				int r = Random.Int(5);
+
+				if (r < 1) Buff.prolong(ch, Vulnerable.class, Vulnerable.DURATION);
+				else if (r < 3) Buff.affect(ch, Weakness.class, Weakness.DURATION);
+				else if (!ch.isImmune(Bleeding.class)) {
+					Buff.affect(ch, Bleeding.class).set(5 + Math.round(2* Dungeon.scalingDepth() / 3f));
 				}
 			}
 		}

@@ -175,7 +175,7 @@ public class RangerArrow extends Buff{
                     new Callback() {
                         @Override
                         public void call() {
-                            attackArrow(hero, enemy,1f);
+                            hero.shoot(enemy,bow().knockArrow());
 
                             for (Char ch : chars) {
                                 attackArrow(hero, ch, 0.2f);

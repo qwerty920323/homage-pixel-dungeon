@@ -23,8 +23,11 @@ package com.shatteredpixel.shatteredpixeldungeon.actors.blobs;
 
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
+import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
+import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfTransfusion;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Notes;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
@@ -116,7 +119,8 @@ public abstract class WellWater extends Blob {
 	
 	public static void affectCell( int cell ) {
 		
-		Class<?>[] waters = {WaterOfHealth.class, WaterOfAwareness.class};
+		Class<?>[] waters
+				= {WaterOfHealth.class, WaterOfAwareness.class, WandOfTransfusion.WaterOfMiniHealth.class};
 		
 		for (Class<?>waterClass : waters) {
 			WellWater water = (WellWater)Dungeon.level.blobs.get( waterClass );
@@ -126,6 +130,17 @@ public abstract class WellWater extends Blob {
 				water.affect( cell )) {
 				
 				Level.set( cell, Terrain.EMPTY_WELL );
+
+				//scholar
+				if (waterClass == WandOfTransfusion.WaterOfMiniHealth.class){
+					WandOfTransfusion.WaterOfMiniHealth w
+							= (WandOfTransfusion.WaterOfMiniHealth)Dungeon.level.blobs.get( WandOfTransfusion.WaterOfMiniHealth.class );
+
+					CellEmitter.get(cell).start( Speck.factory( Speck.LIGHT ), 0.2f , 4 );
+					Level.set( cell, w.terrian );
+					w.terrian = -1;
+				}
+
 				GameScene.updateMap( cell );
 				
 				return;
