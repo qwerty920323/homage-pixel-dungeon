@@ -140,7 +140,7 @@ public class DungeonTileSheet {
 			Terrain.TRAP, Terrain.INACTIVE_TRAP, Terrain.EMPTY_DECO,
 			Terrain.CUSTOM_DECO, Terrain.WELL, Terrain.STATUE, Terrain.ALCHEMY,
 			Terrain.CUSTOM_DECO_EMPTY, Terrain.MINE_CRYSTAL, Terrain.MINE_BOULDER,
-			Terrain.DOOR, Terrain.OPEN_DOOR, Terrain.LOCKED_DOOR, Terrain.CRYSTAL_DOOR
+			Terrain.DOOR, Terrain.OPEN_DOOR, Terrain.LOCKED_DOOR, Terrain.CRYSTAL_DOOR, Terrain.ICE //scholar
 	));
 
 	//+1 for ground above, +2 for ground right, +4 for ground below, +8 for ground left.
@@ -157,40 +157,27 @@ public class DungeonTileSheet {
 		return tile == Terrain.WATER || directVisuals.get(tile, CHASM) < CHASM;
 	}
 
-	/**********************************************************************
-	 * Ice Tiles //scholar
-	 **********************************************************************/
-
 	//scholar
-	public static final int ICE =                                         xy(9, 9);   //16 slots
 
-	public static HashSet<Integer> iceStitcheable = new HashSet<>(Arrays.asList(
-			Terrain.ICE, Terrain.WATER
-	));
+	/**********************************************************************
+	 * Ice Tiles
+	 **********************************************************************/
+	public static final int ICE_PIELD =                                         xy(1 , 17);   //16 slots
 
 	public static int stitchIceTile(int top, int right, int bottom, int left){
-		int result = ICE;
-		int sum = 0;
-		if (iceStitcheable.contains(top)){
-			sum++;
-			result +=1;
-		}
-		if (iceStitcheable.contains(right)){
-			sum++;
-			result +=2;
-		}
-		if (iceStitcheable.contains(bottom)){
-			sum++;
-			result +=3;
-		}
-		if (iceStitcheable.contains(left)) {
-			sum++;
-			result +=4;
-		}
-		if (sum>1)      return ICE;
-		else if(sum==0) return result +=5;
-		else            return result;
+		int result = ICE_PIELD;
+		if (waterStitcheable.contains(top))     result += 1;
+		if (waterStitcheable.contains(right))   result += 2;
+		if (waterStitcheable.contains(bottom))  result += 4;
+		if (waterStitcheable.contains(left))    result += 8;
+		return result; //물과 같은 방식의 타일 점유
 	}
+
+	private static final int ICE          =                           xy(9, 9);   //24 slots
+	private static final int ICE_GRASS     = ICE+0;
+	private static final int ICE_GRASS_ALT = ICE+1;
+
+	//scholar
 
 	/**********************************************************************
 	 Flat Tiles
@@ -445,6 +432,7 @@ public class DungeonTileSheet {
 		directVisuals.put(Terrain.UNLOCKED_EXIT,    UNLOCKED_EXIT);
 		directVisuals.put(Terrain.WELL,             WELL);
 
+		directVisuals.put(Terrain.ICE,              ICE_GRASS);
 	}
 
 	//These visuals directly represent game tiles (no stitching) when terrain is being shown as flat
@@ -520,6 +508,8 @@ public class DungeonTileSheet {
 		commonAltVisuals.put(FURROWED_UNDERHANG,    FURROWED_UNDERHANG_ALT);
 		commonAltVisuals.put(MINE_CRYSTAL_OVERHANG, MINE_CRYSTAL_OVERHANG_ALT);
 		commonAltVisuals.put(MINE_BOULDER_OVERHANG, MINE_BOULDER_OVERHANG_ALT);
+
+		commonAltVisuals.put(ICE_GRASS,             ICE_GRASS_ALT); //scholar
 	}
 
 	//These alt visuals trigger 5% of the time (and also override common alts when they show up)

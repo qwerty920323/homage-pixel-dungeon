@@ -59,7 +59,6 @@ public abstract class Trap implements Bundlable {
 
 	public boolean visible;
 	public boolean active = true;
-	public boolean on = true; //scholar
 	public boolean disarmedByActivation = true;
 	
 	public boolean canBeHidden = true;
@@ -89,18 +88,14 @@ public abstract class Trap implements Bundlable {
 	}
 
 	public void trigger() {
-		if (active && on) {
+		if (active) {
 			if (Dungeon.level.heroFOV[pos]) {
 				Sample.INSTANCE.play(Assets.Sounds.TRAP);
 			}
 			if (disarmedByActivation) disarm();
 			Dungeon.level.discover(pos);
 			activate();
-			on = false; // scholar ~
-		} else {
-			on = true;
-			GameScene.updateMap(pos);
-		}// ~ scholar
+		}
 	}
 
 	public abstract void activate();
@@ -121,21 +116,11 @@ public abstract class Trap implements Bundlable {
 		return Messages.get(this, "name");
 	}
 
-	public String desc() {
-		String desc = Messages.get(this, "desc");
-		if (Game.scene() instanceof GameScene){
-			if (!on && active){
-				desc += "\n\n" + Messages.get(this, "on_desc");
-			}
-		}
-		return desc; //~ scholar
-		//return Messages.get(this, "desc");
-	}
+	public String desc() {return Messages.get(this, "desc");}
 
 	private static final String POS	= "pos";
 	private static final String VISIBLE	= "visible";
 	private static final String ACTIVE = "active";
-	private static final String ON = "on";
 
 	@Override
 	public void restoreFromBundle( Bundle bundle ) {
@@ -144,7 +129,6 @@ public abstract class Trap implements Bundlable {
 		if (bundle.contains(ACTIVE)){
 			active = bundle.getBoolean(ACTIVE);
 		}
-		on = bundle.getBoolean(ON);
 	}
 
 	@Override
@@ -152,6 +136,5 @@ public abstract class Trap implements Bundlable {
 		bundle.put( POS, pos );
 		bundle.put( VISIBLE, visible );
 		bundle.put( ACTIVE, active );
-		bundle.put( ON, on);
 	}
 }

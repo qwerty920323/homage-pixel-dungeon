@@ -21,8 +21,10 @@
 
 package com.shatteredpixel.shatteredpixeldungeon.actors.buffs;
 
+import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.effects.FloatingText;
+import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfCorruption;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
 
@@ -40,12 +42,13 @@ public class Corruption extends AllyBuff {
 		target.HP = target.HT;
 		target.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(target.HT), FloatingText.HEALING);
 		for (Buff buff : target.buffs()) {
-			if (buff.type == Buff.buffType.NEGATIVE
+			if (buff.type == buffType.NEGATIVE
 					&& !(buff instanceof SoulMark)) {
 				buff.detach();
 			}
 		}
 	}
+
 	
 	@Override
 	public boolean act() {

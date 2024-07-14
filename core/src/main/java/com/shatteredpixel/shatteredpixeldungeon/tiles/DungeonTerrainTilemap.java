@@ -51,7 +51,7 @@ public class DungeonTerrainTilemap extends DungeonTilemap {
 					map[pos + PathFinder.CIRCLE4[3]]
 			);
 
-		} else if (tile == Terrain.ICE) { //scholar
+		} else if (tile == Terrain.LAST_ICE) { //scholar
 			return DungeonTileSheet.stitchIceTile(
 					map[pos + PathFinder.CIRCLE4[0]],
 					map[pos + PathFinder.CIRCLE4[1]],

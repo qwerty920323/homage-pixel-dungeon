@@ -1,17 +1,9 @@
 package com.shatteredpixel.shatteredpixeldungeon.actors.buffs;
 
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
-import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
-import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.CorrosiveGas;
-import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfPrismaticLight;
-import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
-import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
-import com.watabou.noosa.Image;
-import com.watabou.utils.BArray;
 import com.watabou.utils.Bundle;
-import com.watabou.utils.PathFinder;
 
 import java.util.ArrayList;
 // RevealedArea 와 같은 기능 but cell에서만 시야 제공
@@ -19,6 +11,7 @@ public class RevealedCell extends FlavourBuff{
 
     {
         type = Buff.buffType.POSITIVE;
+        actPriority = BLOB_PRIO + 1;
     }
 
     public int depth, branch;
@@ -40,8 +33,8 @@ public class RevealedCell extends FlavourBuff{
     }
 
     public void blobsCheck (){
-        WandOfPrismaticLight.FireFlyLight light
-                = (WandOfPrismaticLight.FireFlyLight) Dungeon.level.blobs.get(WandOfPrismaticLight.FireFlyLight.class);
+        WandOfPrismaticLight.FireFlyBlobs light
+                = (WandOfPrismaticLight.FireFlyBlobs) Dungeon.level.blobs.get(WandOfPrismaticLight.FireFlyBlobs.class);
 
         for (int i = 0; i < cells.size(); i++) {
             int pos = cells.get(i);

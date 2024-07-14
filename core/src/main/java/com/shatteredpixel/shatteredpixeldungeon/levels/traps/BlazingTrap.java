@@ -27,6 +27,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Fire;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.FlameParticle;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.watabou.utils.BArray;
 import com.watabou.noosa.audio.Sample;
@@ -45,7 +46,7 @@ public class BlazingTrap extends Trap {
 		PathFinder.buildDistanceMap( pos, BArray.not( Dungeon.level.solid, null ), 2 );
 		for (int i = 0; i < PathFinder.distance.length; i++) {
 			if (PathFinder.distance[i] < Integer.MAX_VALUE) {
-				if (Dungeon.level.pit[i] || Dungeon.level.water[i])
+				if (Dungeon.level.pit[i] || (Dungeon.level.water[i] || Dungeon.level.map[i] == Terrain.ICE))
 					GameScene.add(Blob.seed(i, 1, Fire.class));
 				else
 					GameScene.add(Blob.seed(i, 5, Fire.class));

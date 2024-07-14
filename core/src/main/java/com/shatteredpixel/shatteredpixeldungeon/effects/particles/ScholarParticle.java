@@ -17,6 +17,17 @@ public class ScholarParticle extends PixelParticle.Shrinking {
         }
     };
 
+    public static final Emitter.Factory WHITE = new Emitter.Factory() {
+        @Override
+        public void emit( Emitter emitter, int index, float x, float y ) {
+            ((ScholarParticle)emitter.recycle( ScholarParticle.class )).reset( x, y , 0xFFFFFF);
+        }
+        @Override
+        public boolean lightMode() {
+            return false;
+        }
+    };
+
     public ScholarParticle() {
         super();
 

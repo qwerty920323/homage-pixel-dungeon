@@ -59,16 +59,6 @@ public class Mageroyal extends Plant {
 					Buff.affect(ch, BlobImmunity.class, BlobImmunity.DURATION/2f);
 				}
 			}
-
-			if (corrupt()) {
-				int r = Random.Int(5);
-
-				if (r < 1) Buff.prolong(ch, Vulnerable.class, Vulnerable.DURATION);
-				else if (r < 3) Buff.affect(ch, Weakness.class, Weakness.DURATION);
-				else if (!ch.isImmune(Bleeding.class)) {
-					Buff.affect(ch, Bleeding.class).set(5 + Math.round(2* Dungeon.scalingDepth() / 3f));
-				}
-			}
 		}
 	}
 

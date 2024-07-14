@@ -29,8 +29,6 @@ import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
-import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.CorrosiveGas;
-import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Freezing;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.SmokeScreen;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Web;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.WellWater;
@@ -84,6 +82,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.HeavyBoome
 import com.shatteredpixel.shatteredpixeldungeon.levels.features.Chasm;
 import com.shatteredpixel.shatteredpixeldungeon.levels.features.Door;
 import com.shatteredpixel.shatteredpixeldungeon.levels.features.HighGrass;
+import com.shatteredpixel.shatteredpixeldungeon.levels.features.Ice;
 import com.shatteredpixel.shatteredpixeldungeon.levels.features.LevelTransition;
 import com.shatteredpixel.shatteredpixeldungeon.levels.painters.Painter;
 import com.shatteredpixel.shatteredpixeldungeon.levels.traps.Trap;
@@ -154,7 +153,6 @@ public abstract class Level implements Bundlable {
 	public boolean[] avoid;
 	public boolean[] water;
 	public boolean[] pit;
-	public boolean[] ice; //scholar
 
 	public boolean[] openSpace;
 	
@@ -330,7 +328,6 @@ public abstract class Level implements Bundlable {
 		avoid		= new boolean[length];
 		water		= new boolean[length];
 		pit			= new boolean[length];
-		ice			= new boolean[length]; //scholar
 
 		openSpace   = new boolean[length];
 		
@@ -936,7 +933,6 @@ public abstract class Level implements Bundlable {
 		level.avoid[cell]			= (flags & Terrain.AVOID) != 0;
 		level.pit[cell]			    = (flags & Terrain.PIT) != 0;
 		level.water[cell]			= terrain == Terrain.WATER;
-		level.ice[cell]		    	= terrain == Terrain.ICE; //scholar
 
 		for (int i : PathFinder.NEIGHBOURS9){
 			i = cell + i;
@@ -1090,7 +1086,7 @@ public abstract class Level implements Bundlable {
 		if (terr == Terrain.EMPTY || terr == Terrain.GRASS ||
 				terr == Terrain.EMBERS || terr == Terrain.EMPTY_SP ||
 				terr == Terrain.HIGH_GRASS || terr == Terrain.FURROWED_GRASS ||
-				terr == Terrain.EMPTY_DECO || terr == Terrain.ICE){ //scholar
+				terr == Terrain.EMPTY_DECO || terr ==Terrain.ICE){ //scholar
 			set(cell, Terrain.WATER);
 			GameScene.updateMap(cell);
 			return true;
@@ -1197,6 +1193,10 @@ public abstract class Level implements Bundlable {
 		case Terrain.DOOR:
 			Door.enter( cell );
 			break;
+
+		case Terrain.ICE:
+			Ice.trample( this, cell);
+			break;
 		}
 
 		TimekeepersHourglass.timeFreeze timeFreeze =
@@ -1295,22 +1295,6 @@ public abstract class Level implements Bundlable {
 					}
 				}
 			}
-/*/
-			if ( (c instanceof Hero)
-					&& Dungeon.level.blobs.containsKey(Freezing.class)
-					&& Dungeon.level.blobs.get(Freezing.class).volume > 0) {
-				if (blocking == null) {
-					System.arraycopy(Dungeon.level.losBlocking, 0, modifiableBlocking, 0, modifiableBlocking.length);
-					blocking = modifiableBlocking;
-				}
-				Blob s = Dungeon.level.blobs.get(Freezing.class);
-				for (int i = 0; i < blocking.length; i++) {
-					if (!blocking[i] && s.cur[i] > 0 ) {
-						blocking[i] = true;
-					}
-				}
-			}
-/*/
 			if (blocking == null){
 				blocking = Dungeon.level.losBlocking;
 			}
@@ -1440,7 +1424,8 @@ public abstract class Level implements Bundlable {
 			for (Mob m : mobs){
 				if (m instanceof WandOfWarding.Ward
 						|| m instanceof WandOfRegrowth.Lotus
-						|| m instanceof SpiritHawk.HawkAlly){
+						|| m instanceof SpiritHawk.HawkAlly
+						|| m.buff(WandOfPrismaticLight.FireFly.class) != null){ //scholar
 					if (m.fieldOfView == null || m.fieldOfView.length != length()){
 						m.fieldOfView = new boolean[length()];
 						Dungeon.level.updateFieldOfView( m, m.fieldOfView );
@@ -1583,8 +1568,10 @@ public abstract class Level implements Bundlable {
 				return Messages.get(Level.class, "bookshelf_name");
 			case Terrain.ALCHEMY:
 				return Messages.get(Level.class, "alchemy_name");
-			case Terrain.ICE: //scholar
+			case Terrain.LAST_ICE: //scholar
 				return Messages.get(Level.class, "ice_name");
+			case Terrain.ICE: //scholar
+				return Messages.get(Level.class, "ice_grass_name");
 			default:
 				return Messages.get(Level.class, "default_name");
 		}
@@ -1625,8 +1612,10 @@ public abstract class Level implements Bundlable {
 				return Messages.get(Level.class, "alchemy_desc");
 			case Terrain.EMPTY_WELL:
 				return Messages.get(Level.class, "empty_well_desc");
-			case Terrain.ICE: //scholar
+			case Terrain.LAST_ICE: //scholar
 				return Messages.get(Level.class, "ice_desc");
+			case Terrain.ICE: //scholar
+				return Messages.get(Level.class, "ice_grass_desc");
 			default:
 				return "";
 		}

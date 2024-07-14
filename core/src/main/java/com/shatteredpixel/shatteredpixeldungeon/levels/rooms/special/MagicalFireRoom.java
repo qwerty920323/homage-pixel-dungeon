@@ -229,13 +229,6 @@ public class MagicalFireRoom extends SpecialRoom {
 							Dungeon.level.heaps.get(cell).burn();
 						}
 
-						if (Dungeon.level.map[cell] == Terrain.ICE){ //scholar
-							CellEmitter.get(cell).burst(SnowParticle.FACTORY, 12);
-
-							Dungeon.level.setCellToWater(true, cell);
-							GameScene.updateMap(cell);
-						}
-
 					}
 
 					off[cell] = cur[cell];

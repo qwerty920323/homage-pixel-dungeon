@@ -34,9 +34,16 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Terror;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Vertigo;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.WardingEffect;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.NPC;
+import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.FloatingText;
 import com.shatteredpixel.shatteredpixeldungeon.effects.MagicMissile;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.EarthParticle;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.FlameParticle;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.LeafParticle;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SnowParticle;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SparkParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
@@ -46,6 +53,7 @@ import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.WardSprite;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.shatteredpixel.shatteredpixeldungeon.windows.WndOptions;
+import com.sun.media.sound.WaveFloatFileReader;
 import com.watabou.noosa.Game;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
@@ -80,7 +88,7 @@ public class WandOfWarding extends Wand {
 		
 		int maxWardEnergy = 0;
 		for (Buff buff : curUser.buffs()){
-			if (buff instanceof Wand.Charger){
+			if (buff instanceof Charger){
 				if (((Charger) buff).wand() instanceof WandOfWarding){
 					maxWardEnergy += 2 + ((Charger) buff).wand().level();
 				}
@@ -146,7 +154,10 @@ public class WandOfWarding extends Wand {
 			Dungeon.level.occupyCell(ward);
 			ward.sprite.emitter().burst(MagicMissile.WardParticle.UP, ward.tier);
 			Dungeon.level.pressCell(target);
-
+		}
+		//scholar
+		if (Dungeon.hero.subClass == HeroSubClass.SCHOLAR) {
+			scholarAbility(bolt, bolt.collisionPos);
 		}
 	}
 
@@ -338,9 +349,10 @@ public class WandOfWarding extends Wand {
 			if (enemy.isAlive()){
 				Wand.wandProc(enemy, wandLevel, 1);
 				//scholar
-				WardingEffect effect = Dungeon.hero.buff(WardingEffect.class);
-				if (effect != null){
-					effect.setEffectBonus(this,enemy,dmg);
+				WardingEffect effect = buff(WardingEffect.class);
+				if (effect != null && effect.atkCount > 0) {
+					WardingEffect.setBonusEffect(this, enemy, wandLevel);
+					effect.afterAttack();
 				}
 			}
 
@@ -437,7 +449,14 @@ public class WandOfWarding extends Wand {
 
 		@Override
 		public String description() {
-			return Messages.get(this, "desc_" + tier, 2+wandLevel, 8 + 4*wandLevel, tier );
+			String result = Messages.get(this, "desc_" + tier, 2+wandLevel, 8 + 4*wandLevel, tier );
+			WardingEffect effect = buff(WardingEffect.class);
+			if (effect != null && effect.atkCount > 0){
+				result += "\n\n" + Messages.get(WardingEffect.class, "terr", Dungeon.level.tileName(Dungeon.level.map[pos]));
+				result += " " + Messages.get(WardingEffect.class, WardingEffect.setBonusEffect(this, null, wandLevel), name(), 2);
+				result += " " + Messages.get(WardingEffect.class, "range", effect.atkCount, effect.left);
+			}
+			return result;
 		}
 		
 		{
@@ -451,7 +470,6 @@ public class WandOfWarding extends Wand {
 		private static final String TIER = "tier";
 		private static final String WAND_LEVEL = "wand_level";
 		private static final String TOTAL_ZAPS = "total_zaps";
-
 		@Override
 		public void storeInBundle(Bundle bundle) {
 			super.storeInBundle(bundle);
@@ -467,6 +485,47 @@ public class WandOfWarding extends Wand {
 			viewDistance = 3 + tier;
 			wandLevel = bundle.getInt(WAND_LEVEL);
 			totalZaps = bundle.getInt(TOTAL_ZAPS);
+		}
+	}
+
+	//scholar
+	@Override
+	public int bonusRange () {return super.bonusRange()+2;}
+	@Override
+	public int scholarTurnCount(){
+		return super.scholarTurnCount() + 10;
+	}
+	@Override
+	public void scholarAbility(Ballistica bolt, int cell) {
+		super.scholarAbility(bolt, cell);
+
+		int pos = bolt.collisionPos;
+
+		Char ch = Actor.findChar(pos);
+
+		if (ch != null && ch instanceof Ward) {
+			magicCirculation = false;
+			Buff.affect(ch, WardingEffect.class).setWarding(scholarTurnCount(), bonusRange());
+
+			String terr = WardingEffect.setBonusEffect(((Ward) ch), null, 0);
+
+            switch (terr) {
+                case "cripple":
+                    CellEmitter.bottom(ch.pos).start(EarthParticle.FACTORY, 0.05f, 8);
+                    break;
+                case "burning":
+                    ch.sprite.emitter().burst(FlameParticle.FACTORY, 12);
+                    break;
+                case "chill":
+					ch.sprite.emitter().burst(SnowParticle.FACTORY, 14);
+                    break;
+                case "paralysis":
+					ch.sprite.centerEmitter().burst(SparkParticle.FACTORY, 14);
+                    break;
+                case "roots":
+					CellEmitter.get(ch.pos).burst(LeafParticle.GENERAL, 14);
+                    break;
+            }
 		}
 	}
 }

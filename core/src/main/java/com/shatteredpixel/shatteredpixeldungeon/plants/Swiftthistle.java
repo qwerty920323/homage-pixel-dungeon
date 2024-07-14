@@ -54,7 +54,6 @@ public class Swiftthistle extends Plant {
 			if (ch instanceof Hero && ((Hero) ch).subClass == HeroSubClass.WARDEN){
 				Buff.affect(ch, Haste.class, 1f);
 			}
-			if (corrupt()) Buff.prolong(ch, Slow.class, Slow.DURATION);
 		}
 	}
 	

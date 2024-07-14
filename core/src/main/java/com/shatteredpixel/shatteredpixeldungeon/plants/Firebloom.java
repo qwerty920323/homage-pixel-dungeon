@@ -33,6 +33,7 @@ import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.FlameParticle;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
+import com.watabou.utils.PathFinder;
 
 public class Firebloom extends Plant {
 	
@@ -52,6 +53,16 @@ public class Firebloom extends Plant {
 		
 		if (Dungeon.level.heroFOV[pos]) {
 			CellEmitter.get( pos ).burst( FlameParticle.FACTORY, 5 );
+		}
+
+		if (nearbyTrigger(this)){ //scholar
+			for (int p : PathFinder.NEIGHBOURS8) {
+				GameScene.add( Blob.seed( pos + p, 2, Fire.class ) );
+
+				if (Dungeon.level.heroFOV[pos]) {
+					CellEmitter.get( pos + p ).burst( FlameParticle.FACTORY, 5 );
+				}
+			}
 		}
 	}
 	

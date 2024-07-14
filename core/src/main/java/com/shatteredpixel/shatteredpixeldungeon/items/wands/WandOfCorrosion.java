@@ -28,42 +28,31 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.CorrosiveGas;
-import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Fire;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.BlobImmunity;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Ooze;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.DwarfKing;
+import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
-import com.shatteredpixel.shatteredpixeldungeon.effects.Lightning;
 import com.shatteredpixel.shatteredpixeldungeon.effects.MagicMissile;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.CorrosionParticle;
-import com.shatteredpixel.shatteredpixeldungeon.effects.particles.EarthParticle;
-import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SmokeParticle;
-import com.shatteredpixel.shatteredpixeldungeon.items.armor.curses.Corrosion;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ScholarParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
+import com.shatteredpixel.shatteredpixeldungeon.levels.painters.Painter;
 import com.shatteredpixel.shatteredpixeldungeon.levels.traps.Trap;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
-import com.shatteredpixel.shatteredpixeldungeon.mechanics.ConeAOE;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
-import com.shatteredpixel.shatteredpixeldungeon.tiles.CustomTilemap;
-import com.shatteredpixel.shatteredpixeldungeon.tiles.DungeonTilemap;
 import com.watabou.noosa.audio.Sample;
-import com.watabou.noosa.particles.Emitter;
-import com.watabou.utils.BArray;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
 import com.watabou.utils.ColorMath;
 import com.watabou.utils.PathFinder;
-import com.watabou.utils.Point;
 import com.watabou.utils.Random;
-
-import java.util.ArrayList;
-import java.util.HashSet;
 
 public class WandOfCorrosion extends Wand {
 
@@ -146,128 +135,210 @@ public class WandOfCorrosion extends Wand {
 
 	//scholar
 	@Override
-	public int bonusRange () {return  super.bonusRange()+2;}
+	public int bonusRange () {return (super.bonusRange()) + 2;}
 	@Override
 	public int scholarTurnCount(){
-		return super.scholarTurnCount() + 5;
+		return super.scholarTurnCount() + 8;
 	}
 	@Override
 	public void scholarAbility(Ballistica bolt, int cell){
 		super.scholarAbility(bolt,cell);
-		Buff.append( curUser, CorrosionArea.class ).set( scholarTurnCount(), bonusRange(), bolt.collisionPos );
+		int pos = bolt.collisionPos;
+		setVent(pos);
 	}
 
-	public static class CorrosionArea extends Buff {
+	public void setVent (int pos) {
+		if (terrCheck(pos, Terrain.EMPTY_SP)) {
+			if (Dungeon.level.heroFOV[pos]) {
+				CellEmitter.get( pos ).burst( Speck.factory( Speck.WOOL ), 15);
+			}
+			//trap
+			Dungeon.level.setTrap(new GasVent().reveal(), pos);
+			Painter.set(Dungeon.level, pos, Terrain.INACTIVE_TRAP);
+			GameScene.updateMap(pos);
+			GameScene.updateFog();
 
+			//vent
+			int t = scholarTurnCount();
+			GasVentSeed g = (GasVentSeed) Dungeon.level.blobs.get(GasVentSeed.class);
+			for (int i = 0; i < Dungeon.level.length(); i++){
+				if (g != null && g.volume > 0 && g.cur[i] > 0){
+					g.cur[i] = turnCount(t,200) - (g.getCount(i) * t);
+				}
+			}
+
+			GasVentSeed c = (GasVentSeed)Blob.seed(pos, turnCount(t,200), GasVentSeed.class, Dungeon.level);
+			c.setCorrosionSeed(bonusRange(), t, buffedLvl());
+			GameScene.add(c);
+		}
+	}
+
+	public int turnCount (int turn, int amount) {
+
+		return amount - (amount % turn);
+	}
+
+	public static class GasVentSeed extends Blob {
 		{
-			type = buffType.POSITIVE;
-			revivePersists = true;
+			actPriority = BLOB_PRIO + 1;
 		}
 
-		private float left;
-		int pos, range;
+		public int count;
+		int turn, buffedLvl;
+		@Override
+		protected void evolve() {
+			int cell;
 
-		public void set( float duration , int range, int cell) {
-			this.left = Math.max(duration, left);
-			this.range = range;
-			this.pos = cell;
+			CorrosiveGas gas = (CorrosiveGas) Dungeon.level.blobs.get(CorrosiveGas.class);
+			for (int i=area.top-1; i <= area.bottom; i++) {
+				for (int j = area.left-1; j <= area.right; j++) {
+					cell = j + i* Dungeon.level.width();
+
+					if (cur[cell] > 0) {
+
+						off[cell] = cur[cell] - 1;
+						volume += off[cell];
+
+						if (Math.max(getCount(cell), 0) >= count
+								|| Dungeon.level.map[cell] != Terrain.INACTIVE_TRAP){
+							off[cell] = 0;
+							setTerr(cell);
+							continue;
+						}
+
+						boolean emit = off[cell] % turn == 0;
+
+						if (emit) {
+							// 부식 막대의 2/5
+							int amountGas = 20 + 10 * buffedLvl;
+
+							if (gas == null || gas.volume == 0) {
+
+							} else if (gas.cur[cell] < amountGas) {
+								//부식 가스가 있을때
+								amountGas += gas.cur[cell];
+								gas.clear(cell);
+							}
+
+							if (Dungeon.hero.fieldOfView[cell]) {
+								Sample.INSTANCE.play(Assets.Sounds.GAS);
+								CellEmitter.get( cell ).burst( ScholarParticle.YELLOW, 15);
+							}
+
+							CorrosiveTerrGas c = Blob.seed(cell, amountGas, CorrosiveTerrGas.class);
+							c.setStrength(buffedLvl + 2);
+							GameScene.add(c);
+						}
+					}
+				}
+			}
 		}
 
-		private static final String POS    = "pos";
-		private static final String LEFT   = "left";
-		private static final String RANGE  = "range";
+		/** count = emit count, turn = time to emit, buffedLvl = Corrosive lvl */
+		public void setCorrosionSeed(int count, int turn, int buffedLvl) {
+			this.count = count;
+			this.turn = turn;
+			this.buffedLvl = buffedLvl;
+		}
 
+		public void setTerr(int cell) {
+			Trap t = Dungeon.level.traps.get(cell);
+			if (t != null) Dungeon.level.traps.remove(cell);
 
+			if (Dungeon.level.map[cell] == Terrain.INACTIVE_TRAP) {
+				if (Dungeon.level.heroFOV[cell]) {
+					CellEmitter.get( cell ).burst( Speck.factory( Speck.WOOL ), 15);
+				}
+				Level.set(cell, Terrain.EMPTY);
+			}
+
+			GameScene.updateMap(cell);
+			GameScene.updateFog();
+			clear(cell);
+		}
+
+		public int getCount (int cell){
+			int startAmount = 200 - (200 % turn);
+			float emitCount = (startAmount - cur[cell]) / turn;
+			return (int) Math.floor(emitCount);
+		}
+
+		@Override
+		public void use( BlobEmitter emitter ) {
+			super.use( emitter );
+			emitter.pour(ScholarParticle.YELLOW, 0.35f );
+		}
+
+		private static final String COUNT = "count";
+		private static final String TURN = "turn";
+		private static final String BUFF_LVL = "buff_lvl";
 		@Override
 		public void storeInBundle( Bundle bundle ) {
 			super.storeInBundle( bundle );
-			bundle.put( LEFT, left );
-			bundle.put(POS, pos);
-			bundle.put(RANGE, range);
-
+			bundle.put(COUNT, count);
+			bundle.put(TURN, turn);
+			bundle.put(BUFF_LVL, buffedLvl);
 		}
 
 		@Override
 		public void restoreFromBundle( Bundle bundle ) {
 			super.restoreFromBundle(bundle);
-			left = bundle.getFloat( LEFT );
-			pos = bundle.getInt(POS);
-			range = bundle.getInt(RANGE);
-
+			count = bundle.getInt(COUNT);
+			turn = bundle.getInt(TURN);
+			buffedLvl = bundle.getInt(BUFF_LVL);
 		}
+	}
 
+	public static class CorrosiveTerrGas extends CorrosiveGas {
 		@Override
-		public boolean act() {
+		protected void evolve() {
+			super.evolve();
 
-			spend(TICK);
+			int cell;
 
-			left -= TICK;
-
-			PathFinder.buildDistanceMap(pos, BArray.not(Dungeon.level.solid, null), range);
-
-			for (int i = 0; i < Dungeon.level.length(); i++) {
-				if (PathFinder.distance[i] < Integer.MAX_VALUE) {
-
-					CorrosiveGas gas = (CorrosiveGas) Dungeon.level.blobs.get(CorrosiveGas.class);
-					if (gas != null && gas.volume > 0 && gas.cur[i] > 0) {
-						setCellToEmpty(i);
+			for (int i = area.left; i < area.right; i++){
+				for (int j = area.top; j < area.bottom; j++){
+					cell = i + j*Dungeon.level.width();
+					if (cur[cell] > 0) {
+						int terr = Dungeon.level.map[cell];
+						if (Dungeon.level.setCellToWater(false, cell)) {
+							if (Dungeon.level.heroFOV[cell] && terr != Terrain.EMPTY) {
+								CellEmitter.get( cell ).burst( Speck.factory( Speck.WOOL ), 15);
+							}
+							Level.set(cell, Terrain.EMPTY);
+							GameScene.updateMap(cell);
+							GameScene.updateFog();
+						}
 					}
 				}
 			}
-
-			if (left <= 0) {
-				detach();
-			}
-
-			return true;
 		}
+	}
+	public static class GasVent extends Trap {
 
+		{
+			color = GREY;
+			shape = GRILL;
 
-		public boolean setCellToEmpty( int cell ){
-			Point p = Dungeon.level.cellToPoint(cell);
-
-			//if a custom tilemap is over that cell, don't put water there
-			for (CustomTilemap cust : Dungeon.level.customTiles){
-				Point custPoint = new Point(p);
-				custPoint.x -= cust.tileX;
-				custPoint.y -= cust.tileY;
-				if (custPoint.x >= 0 && custPoint.y >= 0
-						&& custPoint.x < cust.tileW && custPoint.y < cust.tileH){
-					if (cust.image(custPoint.x, custPoint.y) != null){
-						return false;
-					}
-				}
-			}
-
-			int terr = Dungeon.level.map[cell];
-
-			if ((terr == Terrain.INACTIVE_TRAP || terr == Terrain.EMBERS)) {
-
-				if (terr == Terrain.INACTIVE_TRAP)
-					Dungeon.level.traps.remove(cell);
-
-				Level.set(cell, Terrain.EMPTY);
-
-				if (Dungeon.level.heroFOV[cell]) {
-					CellEmitter.get( cell ).burst( Speck.factory( Speck.WOOL ), 15);
-
-					Emitter e = CellEmitter.get(cell);
-					e.y -= DungeonTilemap.SIZE * 0.2f;
-					e.height *= 0.8f;
-					e.start(EarthParticle.FALLING, 0.01f,30);
-				}
-
-				GameScene.updateMap(cell);
-				return true;
-			}
-
-			return false;
+			canBeHidden = false;
+			active = false;
 		}
 
 		@Override
-		public void detach() {
+		public void activate() {
+			int turn = Math.max(scalingDepth()/2, 8);
+			int turnCount = 200 - (200 % turn);
+			GasVentSeed g = (GasVentSeed) Dungeon.level.blobs.get(GasVentSeed.class);
+			for (int i = 0; i < Dungeon.level.length(); i++){
+				if (g != null && g.volume > 0 && g.cur[i] > 0){
+					g.cur[i] = turnCount - (g.getCount(i) * turn);
+				}
+			}
 
-			super.detach();
+			int bonusRange = Dungeon.hero.pointsInTalent(Talent.WIDE_SUMMON);
+			GasVentSeed c = (GasVentSeed)Blob.seed(pos, turnCount, GasVentSeed.class, Dungeon.level);
+			c.setCorrosionSeed(bonusRange + 2, turn, 1+scalingDepth()/4);
+			Sample.INSTANCE.play(Assets.Sounds.GAS);
 		}
 	}
 }

@@ -28,7 +28,8 @@ import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
-import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Paralysis;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.DwarfKing;
 import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
@@ -36,6 +37,7 @@ import com.shatteredpixel.shatteredpixeldungeon.effects.Lightning;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SparkParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Shocking;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.levels.traps.Trap;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
@@ -99,6 +101,13 @@ public class WandOfLightning extends DamageWand {
 			} else {
 				ch.damage(Math.round(damageRoll() * multiplier), this);
 			}
+		}
+
+		//scholar
+		for (int i = 0; i < affected.size()-1; i++){
+			Char ch = affected.get(i);
+			Char hit = affected.get(i+1);
+			resetTrap(ch, hit);
 		}
 	}
 
@@ -184,146 +193,157 @@ public class WandOfLightning extends DamageWand {
 	}
 
 	//scholar
-	private int targetNeighbor = Random.Int(8);
-	@Override
-	public String info() {
-		String desc = super.info();
-		if (Dungeon.hero.subClass == HeroSubClass.SCHOLAR){
-	//		desc += "\n\n" + Messages.get(this, "scholar_lighting_desc",neighbor(),(neighbor()+6)%12);
-		}
-
-		return desc;
-	}
-	public int neighbor (){
-		if (targetNeighbor == 0 || targetNeighbor == 4)       return 11;
-		else if (targetNeighbor == 1 || targetNeighbor == 5)  return 12;
-		else if (targetNeighbor == 2 || targetNeighbor == 6)  return  1;
-		else                                                  return  3;
-	}
 	@Override
 	public int bonusRange () {return super.bonusRange()+2;} // 실제로는 0
 	@Override
 	public int scholarTurnCount(){
-		return (int) (super.scholarTurnCount() + 5f);
+		return super.scholarTurnCount() + 1;
 	}
 	@Override
 	public void scholarAbility(Ballistica bolt, int cell){
 		super.scholarAbility(bolt,cell);
-		Ballistica b = new Ballistica(curUser.pos, cell, Ballistica.PROJECTILE);
+		for (int pos : bolt.path){
+			Trap t = Dungeon.level.traps.get(pos);
 
-		shockAround(b.collisionPos);
-	}
-
-	private void shockAround(int pos){
-		int bonus = bonusRange()-2;
-
-		ArrayList<Integer> shockCells = new ArrayList<>();
-
-		shockCells.add(pos);
-		shockCells.add(pos + PathFinder.CIRCLE8[targetNeighbor]);
-		shockCells.add(pos + PathFinder.CIRCLE8[(targetNeighbor+4)%8]);
-
-		if (bonus>0) {
-			shockCells.add(pos + PathFinder.CIRCLE8[(targetNeighbor + 2) % 8]);
-
-			if (bonus>=2) {
-				shockCells.add(pos + PathFinder.CIRCLE8[(targetNeighbor + 6) % 8]);
-			}
-			if (bonus>=3) {
-				shockCells.add(pos + PathFinder.CIRCLE8[(targetNeighbor + bonus) % 8]);
+			if (t != null && t.visible && !t.active) {
+				CellEmitter.get(pos).burst(SparkParticle.FACTORY, 8);
+				Sample.INSTANCE.play(Assets.Sounds.LIGHTNING);
+				t.active = true;
+				Level.set(pos, Terrain.TRAP);
+				GameScene.updateMap(pos);
+				GameScene.updateFog();
 			}
 		}
 
-		for (int cell : shockCells) {
-			curUser.sprite.parent.add(new Lightning(DungeonTilemap.raisedTileCenterToWorld(pos),
-					DungeonTilemap.raisedTileCenterToWorld(cell), null));
-			CellEmitter.get(cell).burst(SparkParticle.FACTORY, 3);
-			Sample.INSTANCE.play(Assets.Sounds.LIGHTNING);
+		ShockerBlob s = (ShockerBlob) Dungeon.level.blobs.get(ShockerBlob.class);
+		if (s != null) s.fullyClear();
 
-			Char ch = Actor.findChar(cell);
+		ShockerBlob shockerBlob = Blob.seed(bolt.collisionPos, 1, ShockerBlob.class);
+		GameScene.add(shockerBlob);
+		shockerBlob.left = scholarTurnCount();
+	}
 
-			if (ch != null && ch != Dungeon.hero) {
-				ch.sprite.flash();
-				chargeForChar(ch);
-			}
+	public void resetTrap(Char ch, Char hit){
+		Ballistica bolt = new Ballistica(ch.pos, hit.pos, Ballistica.MAGIC_BOLT);
+		for (int pos : bolt.path){
+			Trap t = Dungeon.level.traps.get(pos);
 
-			Trap t = Dungeon.level.traps.get(cell);
-			int terr = Dungeon.level.map[cell];
-
-			if (t != null && t.active && terr == Terrain.TRAP) {
-				t.on = false;
-				SparkTrap sparkTrap = Blob.seed(cell, scholarTurnCount() + 1, SparkTrap.class);
-				GameScene.add(sparkTrap);
-				GameScene.updateMap(cell);
+			if (t != null && t.visible && !t.active) {
+				CellEmitter.get(pos).burst(SparkParticle.FACTORY, 8);
+				Sample.INSTANCE.play(Assets.Sounds.LIGHTNING);
+				t.active = true;
+				Level.set(pos, Terrain.TRAP);
+				GameScene.updateMap(pos);
+				GameScene.updateFog();
 			}
 		}
-
-		targetNeighbor = (targetNeighbor+1)%8;
-
 	}
 
-	private static final String NEIGHBER = "neighber";
 
-	@Override
-	public void storeInBundle(Bundle bundle) {
-		super.storeInBundle(bundle);
-		bundle.put(NEIGHBER, targetNeighbor);
-	}
+	public static class ShockerBlob extends Blob {
 
-	@Override
-	public void restoreFromBundle(Bundle bundle) {
-		super.restoreFromBundle(bundle);
-		targetNeighbor = bundle.getInt(NEIGHBER);
-	}
-
-	public static class SparkTrap extends Blob {
+		{
+			alwaysVisible = true;
+		}
+		private int targetNeighbor = Random.Int(8);
+		int left;
 		@Override
 		protected void evolve() {
-
 			int cell;
-			for (int i = area.left; i < area.right; i++) {
-				for (int j = area.top; j < area.bottom; j++) {
-					cell = i + j*Dungeon.level.width();
-					if (cur[cell] > 0) {
+			for (int i = area.left; i < area.right; i++){
+				for (int j = area.top; j < area.bottom; j++){
+					cell = i + j* Dungeon.level.width();
+					off[cell] = cur[cell];
+					volume += off[cell];
 
-						off[cell] = cur[cell] ;
-						volume += off[cell];
-
-						Trap t = Dungeon.level.traps.get(cell);
-						if (t != null && t.on) {
-							CellEmitter.get(cell).burst(SparkParticle.FACTORY, 6);
-							Sample.INSTANCE.play(Assets.Sounds.LIGHTNING);
-							clear(cell);
-							off[cell] = 0;
-						}
-
-						off[cell] = cur[cell] - 1;
-						volume += off[cell];
-						if (cur[cell] <=0) clear(cell);
-
-					} else {
-						off[cell] = 0;
+					if (off[cell] > 0) {
+						shockAround(cell, left);
 					}
 				}
 			}
 		}
 
-		@Override
-		public void clear( int cell ) {
-			super.clear(cell);
+		private void shockAround(int pos, int left){
+			int bonusRange = Dungeon.hero.pointsInTalent(Talent.WIDE_SUMMON);
 
-			Trap t = Dungeon.level.traps.get(cell);
-			if (t != null && !t.on) {
-				t.on = true;
-				CellEmitter.get(cell).burst(SparkParticle.FACTORY, 6);
-				Sample.INSTANCE.play(Assets.Sounds.LIGHTNING);
+			ArrayList<Integer> shockCells = new ArrayList<>();
+
+			//shockCells.add(pos);
+			shockCells.add(pos + PathFinder.CIRCLE8[targetNeighbor]);       //shockCells.get(0)
+			shockCells.add(pos + PathFinder.CIRCLE8[(targetNeighbor+4)%8]); //get(1)
+
+			if (bonusRange>0) {
+				shockCells.add(shockCells.get(0) + PathFinder.CIRCLE8[targetNeighbor]); //get(2)
+
+				if (bonusRange>=2) {
+					shockCells.add(shockCells.get(1) + PathFinder.CIRCLE8[(targetNeighbor+4)%8]);
+				}
+				if (bonusRange>=3) {
+					shockCells.add(shockCells.get(2) + PathFinder.CIRCLE8[targetNeighbor]);
+				}
 			}
+
+			for (int cell : shockCells) {
+				if (Dungeon.hero.fieldOfView[cell]) {
+					Dungeon.hero.sprite.parent.add(new Lightning(DungeonTilemap.raisedTileCenterToWorld(pos),
+							DungeonTilemap.raisedTileCenterToWorld(cell), null));
+					CellEmitter.get(cell).burst(SparkParticle.FACTORY, 3);
+
+				}
+
+				Char ch = Actor.findChar(cell);
+
+				if (ch != null && ch.buff(Paralysis.class) == null) {
+					//Buff.affect(ch, Paralysis.class, left);
+					ch.sprite.flash();
+
+					if (Dungeon.hero.fieldOfView[ch.pos])
+						Sample.INSTANCE.play(Assets.Sounds.LIGHTNING);
+				}
+
+				Trap t = Dungeon.level.traps.get(cell);
+
+				if (t != null && t.visible && !t.active) {
+					CellEmitter.get(cell).burst(SparkParticle.FACTORY, 8);
+					Sample.INSTANCE.play(Assets.Sounds.LIGHTNING);
+					t.active = true;
+					Level.set(cell, Terrain.TRAP);
+					GameScene.updateMap(cell);
+					GameScene.updateFog();
+				}
+			}
+
+			targetNeighbor = (targetNeighbor+1)%8;
+
 		}
 
 		@Override
-		public void use( BlobEmitter emitter ) {
-			super.use( emitter );
-			emitter.pour( SparkParticle.STATIC, 0.07f );
+		public void use(BlobEmitter emitter) {
+			super.use(emitter);
+			emitter.pour( SparkParticle.STATIC, 0.10f );
 		}
-	}// scholar
+
+		@Override
+		public String tileDesc() {
+			return Messages.get(this, "desc");
+		}
+
+		private static final String NEIGHBER = "neighber";
+		private static final String LEFT = "left";
+
+		@Override
+		public void storeInBundle(Bundle bundle) {
+			super.storeInBundle(bundle);
+			bundle.put(NEIGHBER, targetNeighbor);
+			bundle.put(LEFT, left);
+		}
+
+		@Override
+		public void restoreFromBundle(Bundle bundle) {
+			super.restoreFromBundle(bundle);
+			targetNeighbor = bundle.getInt(NEIGHBER);
+			left = bundle.getInt(LEFT);
+		}
+	}
+	// scholar
 }

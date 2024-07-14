@@ -52,13 +52,6 @@ public class Starflower extends Plant {
 				Buff.prolong(ch, Recharging.class, Recharging.DURATION);
 				SpellSprite.show( ch, SpellSprite.CHARGE );
 			}
-			if (corrupt()) {
-				if (ch.properties().contains(Char.Property.UNDEAD)
-						|| ch.properties().contains(Char.Property.DEMONIC)){
-					ch.damage(ch.HP/2, this);
-				}
-				Buff.affect(ch, Hex.class, Hex.DURATION);
-			}
 		}
 
 	}

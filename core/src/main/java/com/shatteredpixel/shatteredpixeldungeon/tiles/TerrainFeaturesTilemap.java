@@ -75,6 +75,8 @@ public class TerrainFeaturesTilemap extends DungeonTilemap {
 			return 13 + 16*stage + (DungeonTileSheet.tileVariance[pos] >= 50 ? 1 : 0);
 		} else if (tile == Terrain.EMBERS) {
 			return 9 + (16*5) + (DungeonTileSheet.tileVariance[pos] >= 50 ? 1 : 0);
+		} else if (tile == Terrain.ICE) { //scholar
+			return 11 + stage + (16 * (DungeonTileSheet.tileVariance[pos] >= 50 ? 6 : 5));
 		}
 
 		return -1;

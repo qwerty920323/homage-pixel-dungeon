@@ -36,7 +36,6 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Recharging;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Regeneration;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.ScrollEmpower;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.SoulMark;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.WardingEffect;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
@@ -44,6 +43,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.mage.WildMagic;
 import com.shatteredpixel.shatteredpixeldungeon.effects.FloatingText;
 import com.shatteredpixel.shatteredpixeldungeon.effects.MagicMissile;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.EnergyParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TalismanOfForesight;
 import com.shatteredpixel.shatteredpixeldungeon.items.bags.Bag;
@@ -52,6 +52,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfEnergy;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfRecharging;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.WondrousResin;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.CellSelector;
@@ -59,13 +60,13 @@ import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
-import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
+import com.shatteredpixel.shatteredpixeldungeon.tiles.CustomTilemap;
 import com.shatteredpixel.shatteredpixeldungeon.ui.QuickSlotButton;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
-import com.watabou.noosa.Image;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
+import com.watabou.utils.Point;
 import com.watabou.utils.PointF;
 import com.watabou.utils.Random;
 
@@ -213,6 +214,8 @@ public abstract class Wand extends Item {
 				Random.Float() > (Math.pow(0.92f, (wandLevel*chargesUsed)+1) - 0.07f)){
 			SoulMark.prolong(target, SoulMark.class, SoulMark.DURATION + wandLevel);
 		}
+
+		magicCirculation = false;
 	}
 
 	@Override
@@ -274,7 +277,8 @@ public abstract class Wand extends Item {
 		}
 
 		if (Dungeon.hero.subClass == HeroSubClass.SCHOLAR){
-			desc += "\n\n" + Messages.get(this, "scholar_desc", scholarTurnCount(), bonusRange());
+			int turn = scholarTurnCount() - (int)(Math.sqrt(8 * buffedLvl() + 1) - 1)/2;
+			desc += "\n\n" + Messages.get(this, "scholar_desc", isIdentified() ? scholarTurnCount() : turn , bonusRange());
 		}
 
 		return desc;
@@ -465,7 +469,12 @@ public abstract class Wand extends Item {
 		Invisibility.dispel();
 		updateQuickslot();
 
-		// heap 날리기 속도를 위한 scholar
+		if (magicCirculation && Dungeon.hero.hasTalent(Talent.MAGIC_CIRCULATION)){
+			float charge = 0.12f * Dungeon.hero.pointsInTalent(Talent.MAGIC_CIRCULATION);
+			noCharCharge(charge);
+		}
+
+		// heap 날리기 순서를 위해 scholar
 		if (curUser.buff(WandOfBlastWave.WhirlWindTracker.class) == null)
 			curUser.spendAndNext( TIME_TO_ZAP );
 	}
@@ -703,7 +712,8 @@ public abstract class Wand extends Item {
 								if (Random.Float() < WondrousResin.extraCurseEffectChance()){
 									CursedWand.cursedZap(curWand,
 											curUser,
-											new Ballistica(curUser.pos, target, Ballistica.MAGIC_BOLT), new Callback() {
+											new Ballistica(curUser.pos, target, Ballistica.MAGIC_BOLT | Ballistica.IGNORE_SOLID),
+											new Callback() {
 												@Override
 												public void call() {
 													curWand.wandUsed();
@@ -812,46 +822,86 @@ public abstract class Wand extends Item {
 		}
 	}
 
+
 	//scholar
 
+	public static boolean magicCirculation;
+
 	public int scholarTurnCount(){
-		int lvl = this.level();
-		if (isIdentified()) return (int)(Math.sqrt(8 * lvl + 1) - 1)/2;
-		return 0;
+		int bonusTurn = Dungeon.hero.pointsInTalent(Talent.STEP_GROWTH);
+		int turn = buffedLvl() > 0 ? 1 : 0;
+
+		//turn 1,2,5,9..
+		if (bonusTurn == 1) return bonusTurn(buffedLvl() + turn);
+		//turn 1,2,4,7..
+		else if (bonusTurn == 2) return turn + bonusTurn(buffedLvl() - turn);
+		//turn 1,2,3,5,8..
+		else if (bonusTurn == 3) {
+			return (buffedLvl() > 1 ? 1 : 0) + turn + bonusTurn(buffedLvl() - 2*turn);
+		} else
+			return bonusTurn(buffedLvl());
+	}
+	/* 1 3 6 10 15 */
+	public int bonusTurn(int lvl){
+		int level = lvl;
+		if (level > 0) {
+			return (int)(Math.sqrt(8 * level + 1) - 1)/2;
+		} else
+			return 0;
 	}
 
 	public int bonusRange () {return Dungeon.hero.pointsInTalent(Talent.WIDE_SUMMON);}
 
 	public void scholarAbility(Ballistica bolt, int cell){
-		//do nothing by default
-		WardingEffect effect = Buff.affect(curUser, WardingEffect.class);
-		effect.lastWand = this.getClass();
+		if (Dungeon.hero.hasTalent(Talent.MAGIC_CIRCULATION))
+			magicCirculation = true;
 	}
 
-	public static void chargeForChar(Char ch){
-		if (ch.isAlive()
-				&& ch.alignment != Char.Alignment.ALLY
-				&& Dungeon.hero.hasTalent(Talent.FAST_CHARGER)) {
-			Buff.affect(ch,ChargingForEnemyTracker.class,5 * Dungeon.hero.pointsInTalent(Talent.FAST_CHARGER));
+	public boolean terrCheck (int pos, int bonusTerrian){
+		int terr = Dungeon.level.map[pos];
+		Point p = Dungeon.level.cellToPoint(pos);
+
+		//if a custom tilemap is over that cell, don't put water there
+		for (CustomTilemap cust : Dungeon.level.customTiles){
+			Point custPoint = new Point(p);
+			custPoint.x -= cust.tileX;
+			custPoint.y -= cust.tileY;
+			if (custPoint.x >= 0 && custPoint.y >= 0
+					&& custPoint.x < cust.tileW && custPoint.y < cust.tileH){
+				if (cust.image(custPoint.x, custPoint.y) != null){
+					return false;
+				}
+			}
+		}
+
+		if ((terr == Terrain.EMPTY || terr == Terrain.EMPTY_DECO || terr == Terrain.EMBERS || terr == Terrain.ICE
+				|| terr == Terrain.GRASS || terr == Terrain.HIGH_GRASS || terr == Terrain.FURROWED_GRASS
+				|| terr == bonusTerrian)) {
+
+			return true;
+		}
+		return false;
+	}
+
+	public void noCharCharge (float charge){
+		if (curCharges < maxCharges) {
+			int quantity = Math.round(Math.max(10, 20 * charge * chargesPerCast()));
+			curUser.sprite.centerEmitter().burst(EnergyParticle.FACTORY,  quantity);
+
+			gainCharge(charge * chargesPerCast());
+			/*
+			partialCharge += charge * chargesPerCast();
+			while (partialCharge >= 1f) {
+				curCharges++;
+				partialCharge--;
+			}
+			if (curCharges >= maxCharges){
+				partialCharge = 0;
+				curCharges = maxCharges;
+			}
+			updateQuickslot();
+
+			 */
 		}
 	}
-
-	public static int resistSpawn (Char ch, int time){
-		if (ch.isAlive()
-				&& ch instanceof Hero
-				&& Dungeon.hero.hasTalent(Talent.RESIST_SPAWN)) {
-			return Math.round(time * (4 - Dungeon.hero.pointsInTalent(Talent.RESIST_SPAWN)) / 4);
-		}
-
-		return time;
-	}
-
-	public static class ChargingForEnemyTracker extends FlavourBuff {
-		public int icon() { return BuffIndicator.TIME; }
-		public void tintIcon(Image icon) { icon.hardlight(0.7f, 0.4f, 0.7f); }
-		public float iconFadePercent() {
-			int dura = 5 * Dungeon.hero.pointsInTalent(Talent.FAST_CHARGER);
-			return Math.max(0, (dura - visualcooldown()) / dura); }
-	};
-
 }

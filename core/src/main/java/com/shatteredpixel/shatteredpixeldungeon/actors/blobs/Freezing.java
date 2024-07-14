@@ -35,7 +35,6 @@ import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfFireblast;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.special.MagicalFireRoom;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
-import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 
 public class Freezing extends Blob {
 	
@@ -59,10 +58,6 @@ public class Freezing extends Blob {
 					
 					Freezing.freeze(cell);
 
-					if (Dungeon.level.ice[cell] && cur[cell] <= 1){ //scholar
-						cur[cell]++;
-					}
-
 					off[cell] = cur[cell] - 1;
 					volume += off[cell];
 				} else {
@@ -79,7 +74,7 @@ public class Freezing extends Blob {
 				Buff.affect(ch, Frost.class, 2f);
 			} else {
 				Chill chill = ch.buff(Chill.class);
-				float turnsToAdd = Dungeon.level.water[cell] ? 5f : 3f;
+				float turnsToAdd = Dungeon.level.water[cell] || Dungeon.level.map[ch.pos] == Terrain.ICE ? 5f : 3f;
 				if (chill != null){
 					float chillToCap = Chill.DURATION - chill.cooldown();
 					chillToCap /= ch.resist(Chill.class); //account for resistance to chill
@@ -116,7 +111,7 @@ public class Freezing extends Blob {
 		
 		Char ch = Actor.findChar( cell );
 		if (ch != null) {
-			if (Dungeon.level.water[ch.pos]){
+			if (Dungeon.level.water[ch.pos] || Dungeon.level.map[ch.pos] == Terrain.ICE){
 				Buff.prolong(ch, Frost.class, Frost.DURATION * 3);
 			} else {
 				Buff.prolong(ch, Frost.class, Frost.DURATION);

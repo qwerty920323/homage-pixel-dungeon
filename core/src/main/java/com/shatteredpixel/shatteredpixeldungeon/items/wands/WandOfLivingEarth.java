@@ -33,9 +33,13 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mimic;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.NPC;
+import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.FloatingText;
 import com.shatteredpixel.shatteredpixeldungeon.effects.MagicMissile;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.EarthParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
@@ -422,11 +426,22 @@ public class WandOfLivingEarth extends DamageWand {
 	}
 	@Override
 	public int scholarTurnCount(){
-		return super.scholarTurnCount() + 2;
+		return super.scholarTurnCount() + 8;
 	}
 	@Override
 	public void scholarAbility(Ballistica bolt, int cell) {
-		int pos = bolt.collisionPos;
+		for (int pos : bolt.path) {
+			setGround(pos);
+		}
 
+	}
+	public void setGround(int pos){
+		int terr = Dungeon.level.map[pos];
+		if (terr == Terrain.CHASM){
+
+			CellEmitter.bottom(pos).start(EarthParticle.FACTORY, 0.05f, 16);
+			Level.set(pos, Terrain.EMPTY );
+			GameScene.updateMap(pos);
+		}
 	}
 }

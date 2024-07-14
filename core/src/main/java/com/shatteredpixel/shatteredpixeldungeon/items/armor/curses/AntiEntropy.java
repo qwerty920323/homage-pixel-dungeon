@@ -29,6 +29,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Burning;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.FlameParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.Armor;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.Armor.Glyph;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite.Glowing;
 import com.watabou.utils.PathFinder;
@@ -48,7 +49,7 @@ public class AntiEntropy extends Glyph {
 				Freezing.affect(defender.pos+i);
 			}
 
-			if (!Dungeon.level.water[defender.pos]) {
+			if (!(Dungeon.level.water[defender.pos] || Dungeon.level.map[defender.pos] == Terrain.ICE)) {
 				Buff.affect(defender, Burning.class).reignite(defender, 4);
 			}
 			defender.sprite.emitter().burst( FlameParticle.FACTORY, 5 );

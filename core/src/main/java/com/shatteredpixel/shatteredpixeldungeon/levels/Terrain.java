@@ -66,7 +66,8 @@ public class Terrain {
 	public static final int MINE_BOULDER    = 36;
 
 	public static final int WATER		    = 29;
-	public static final int ICE  		    = 40; //scholar
+	public static final int LAST_ICE = 40; //scholar
+	public static final int ICE             = 41; //scholar
 	
 	public static final int PASSABLE		= 0x01;
 	public static final int LOS_BLOCKING	= 0x02;
@@ -120,8 +121,8 @@ public class Terrain {
 		flags[MINE_CRYSTAL] = SOLID;
 		flags[MINE_BOULDER] = SOLID;
 
-		flags[ICE] = PASSABLE; //scholar
-
+		flags[LAST_ICE] = PASSABLE; //scholar
+		flags[ICE] = PASSABLE;
 	}
 
 	public static int discover( int terr ) {

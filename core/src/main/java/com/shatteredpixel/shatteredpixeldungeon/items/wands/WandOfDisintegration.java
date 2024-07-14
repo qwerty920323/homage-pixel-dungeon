@@ -26,21 +26,21 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Web;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Beam;
+import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.PurpleParticle;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ScholarParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
+import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.tiles.DungeonTilemap;
-import com.watabou.noosa.particles.Emitter;
-import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
 import com.watabou.utils.Random;
 
@@ -80,7 +80,7 @@ public class WandOfDisintegration extends DamageWand {
 		ArrayList<Char> chars = new ArrayList<>();
 		//scholar
 		int disinter = 0;
-		ArrayList<Integer> solidCells = new ArrayList<>();
+		ArrayList<Integer> solidCells = new ArrayList<>(); //
 
 		Blob web = Dungeon.level.blobs.get(Web.class);
 
@@ -106,11 +106,10 @@ public class WandOfDisintegration extends DamageWand {
 			if (Dungeon.level.solid[c]) {
 				terrainPassed++;
 
-				//scholar
+				//scholar ~
 				if (Dungeon.level.disinter[c]) {
 					terrainPassed++;
 				}
-
 				disinter++;
 				if (disinter <= bonusRange()
 						&& Dungeon.level.distance(curUser.pos,c) <= bonusRange()){
@@ -142,7 +141,7 @@ public class WandOfDisintegration extends DamageWand {
 			ch.sprite.flash();
 		}
 
-		if (!solidCells.isEmpty()) disintergration(solidCells); //scholar
+		if (!solidCells.isEmpty()) disintergrationBlob(solidCells); //scholar
 	}
 
 	@Override
@@ -177,162 +176,86 @@ public class WandOfDisintegration extends DamageWand {
 	public int bonusRange () {return super.bonusRange()+2;}
 	@Override
 	public int scholarTurnCount(){
-		return super.scholarTurnCount() + 2;
+		return super.scholarTurnCount()+2;
 	}
 	@Override
 	public void scholarAbility(Ballistica bolt, int cell) {
 		super.scholarAbility(bolt,cell);
-		if (Actor.findChar(bolt.collisionPos) != null
-				&& ((Hero)curUser).subClass == HeroSubClass.SCHOLAR){
-			chargeForChar(Actor.findChar(bolt.collisionPos));
-		}
+		// only cursed wand use to this
+		if (this.cursed)setCursedSolid(bolt.collisionPos);
 	}
 
-	public void disintergration (ArrayList<Integer> cells) {
-		if (((Hero)curUser).subClass == HeroSubClass.SCHOLAR){
-			for (Piercing p : curUser.buffs(Piercing.class)){
-				if (!p.piercingPositions.isEmpty()
-						&& p.depth == Dungeon.depth
-						&& p.branch == Dungeon.branch){
-					p.alreadySet(cells);
-				}
+	public void setCursedSolid (int pos){
+		Ballistica beam = new Ballistica(curUser.pos, pos, Ballistica.WONT_STOP);
+		ArrayList <Integer> solidCells = new ArrayList<>();
+		for (int c : beam.subPath(1, bonusRange())) {
+			if (Dungeon.level.solid[c]) {
+				solidCells.add(c);
 			}
-			Buff.append( curUser, Piercing.class ).set( scholarTurnCount()+1,Dungeon.depth, Dungeon.branch, cells );
+		}
+		if (!solidCells.isEmpty()) disintergrationBlob(solidCells);
+	}
+
+	public void disintergrationBlob (ArrayList<Integer> cells) {
+		if (((Hero)curUser).subClass == HeroSubClass.SCHOLAR){
+			Piercing p = (Piercing) Dungeon.level.blobs.get(Piercing.class);
+			for (int cell : cells) {
+				if (Blob.volumeAt(cell, Piercing.class) != 0){
+					p.clear(cell);
+				}
+
+				GameScene.add(Blob.seed(cell, scholarTurnCount(), Piercing.class));
+				Dungeon.level.disinter[cell] = true;
+			}
 		}
 	}
 
-	public static class Piercing extends Buff {
-		private ArrayList<Integer> piercingPositions = new ArrayList<>();
-		private ArrayList<Emitter> piercingEmitters = new ArrayList<>();
+	public static class Piercing extends Blob {
 
 		{
-			revivePersists = true;
+			alwaysVisible = true;
 		}
-
-		private float left;
-		int depth, branch;
-		public void set( float duration ,int depth, int branch, ArrayList<Integer> cells) {
-			this.left = Math.max(duration, left);
-
-			piercingPositions.addAll(cells);
-			this.depth = depth;
-			this.branch = branch;
-
-			for (int i : cells)
-				Dungeon.level.disinter[i] = true;
-
-			if (target != null) {
-				fx(false);
-				fx(true);
-			}
-		}
-
-		public void alreadySet( ArrayList<Integer> cells) {
-			ArrayList<Integer> pass = new ArrayList<>();
-			for (int p : piercingPositions)
-				if (cells.contains(p)) pass.add(p);
-
-			remove(pass);
-		}
-
-		public void depthCheck () {
-			if (depth == Dungeon.depth && branch == Dungeon.branch){
-				return;
-			}
-
-			if (target != null)
-				fx(false);
-		}
-
-		private static final String BRANCH = "branch";
-		private static final String DEPTH  = "depth";
-		private static final String LEFT   = "left";
-		private static final String PIERCING_POS = "piercing_pos";
-
 		@Override
-		public void storeInBundle( Bundle bundle ) {
-			super.storeInBundle( bundle );
-			bundle.put(LEFT, left);
-			bundle.put(DEPTH, depth);
-			bundle.put(BRANCH, branch);
+		protected void evolve() {
+			int cell;
 
-			int[] values = new int[piercingPositions.size()];
-			for (int i = 0; i < values.length; i ++)
-				values[i] = piercingPositions.get(i);
-			bundle.put(PIERCING_POS, values);
-		}
+			for (int i = area.left - 1; i <= area.right; i++) {
+				for (int j = area.top - 1; j <= area.bottom; j++) {
+					cell = i + j * Dungeon.level.width();
+					if (cur[cell] > 0) {
+						off[cell] = cur[cell] - 1;
+						volume += off[cell];
 
-		@Override
-		public void restoreFromBundle( Bundle bundle ) {
-			super.restoreFromBundle(bundle);
-			left = bundle.getFloat(LEFT);
-			depth = bundle.getInt(DEPTH);
-			branch = bundle.getInt(BRANCH);
+						if (!Dungeon.level.solid[cell]) clear(cell);
 
-			int[] values = bundle.getIntArray(PIERCING_POS);
-			for (int value : values) {
-				piercingPositions.add(value);
-			}
-		}
+					} else {
+						off[cell] = 0;
+					}
 
-		@Override
-		public boolean act() {
-
-			spend( TICK );
-
-			if (depth == Dungeon.depth && branch == Dungeon.branch) {
-				left -= TICK;
-
-				ArrayList<Integer> pass = new ArrayList<>();
-				for (int i : piercingPositions) {
-					if (!Dungeon.level.solid[i]) {
-						Dungeon.level.disinter[i] = false;
-						pass.add(i);
+					if (off[cell] <= 0) {
+						Dungeon.level.disinter[cell] = false;
 					}
 				}
-				remove(pass);
-
-				if (left <= 0 || piercingPositions.isEmpty()) {
-					detach();
-				}
-
-			}
-
-			return true;
-		}
-
-		public void remove (ArrayList<Integer> pass){
-			if (!pass.isEmpty()){
-				for (int p : pass) piercingPositions.remove(Integer.valueOf(p));
-
-				if (target != null) {
-					fx(false);
-					fx(true);
-				}
 			}
 		}
 
 		@Override
-		public void detach() {
-			for (int i : piercingPositions){
-				Dungeon.level.disinter[i] = false;
-			}
-			super.detach();
+		public void clear( int cell ) {
+			super.clear(cell);
+			Dungeon.level.disinter[cell] = false;
 		}
+
 		@Override
-		public void fx(boolean on) {
-			if (on){
-				for (int i : piercingPositions){
-					Emitter e = CellEmitter.get(i);
-					e.pour(ScholarParticle.YELLOW, 0.05f);
-					piercingEmitters.add(e);
-				}
-			} else {
-				for (Emitter e : piercingEmitters){
-					e.on = false;
-				}
-				piercingEmitters.clear();
-			}
+		public void use(BlobEmitter emitter) {
+			super.use(emitter);
+			emitter.start(ScholarParticle.WHITE, 0.05f, 0);
 		}
+
+		@Override
+		public String tileDesc() {
+			return Messages.get(this, "desc");
+		}
+
 	}
+
 }

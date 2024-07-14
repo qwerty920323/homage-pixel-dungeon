@@ -36,6 +36,8 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.StormCloud;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.ToxicGas;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Web;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Tengu;
+import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfCorrosion;
+import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfFireblast;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfPrismaticLight;
 import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.special.MagicalFireRoom;
 import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
@@ -75,9 +77,12 @@ public class BlobImmunity extends FlavourBuff {
 		immunities.add( StormCloud.class );
 		immunities.add( ToxicGas.class );
 		immunities.add( Web.class );
-		immunities.add( WandOfPrismaticLight.FireFlyLight.class ); //scholar
+		//scholar
+		immunities.add( WandOfPrismaticLight.FireFlyBlobs.class );
+		immunities.add( WandOfFireblast.MiniEternalFire.class );
+		immunities.add( WandOfCorrosion.CorrosiveTerrGas.class );
 
-		immunities.add(Tengu.FireAbility.FireBlob.class);
+		immunities.add( Tengu.FireAbility.FireBlob.class);
 	}
 
 }

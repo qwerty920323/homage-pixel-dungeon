@@ -28,6 +28,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Fire;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
@@ -116,7 +117,7 @@ public abstract class ChampionEnemy extends Buff {
 
 		@Override
 		public void onAttackProc(Char enemy) {
-			if (!Dungeon.level.water[enemy.pos]) {
+			if (!(Dungeon.level.water[enemy.pos] || Dungeon.level.map[enemy.pos] == Terrain.ICE)) {
 				Buff.affect(enemy, Burning.class).reignite(enemy);
 			}
 		}
@@ -126,7 +127,8 @@ public abstract class ChampionEnemy extends Buff {
 			//don't trigger when killed by being knocked into a pit
 			if (target.flying || !Dungeon.level.pit[target.pos]) {
 				for (int i : PathFinder.NEIGHBOURS9) {
-					if (!Dungeon.level.solid[target.pos + i] && !Dungeon.level.water[target.pos + i]) {
+					if (!Dungeon.level.solid[target.pos + i]
+							&& !(Dungeon.level.water[target.pos + i] || Dungeon.level.map[target.pos + i] == Terrain.ICE)) {
 						GameScene.add(Blob.seed(target.pos + i, 2, Fire.class));
 					}
 				}

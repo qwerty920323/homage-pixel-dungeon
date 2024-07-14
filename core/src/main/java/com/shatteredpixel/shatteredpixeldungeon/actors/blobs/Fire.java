@@ -60,13 +60,6 @@ public class Fire extends Blob {
 						continue;
 					}
 
-					if (Dungeon.level.map[cell] == Terrain.ICE){ //scholar
-						CellEmitter.get(cell).burst(SnowParticle.FACTORY, 12);
-
-						Dungeon.level.setCellToWater(true, cell);
-						GameScene.updateMap(cell);
-					}
-
 					burn( cell );
 
 					fire = cur[cell] - 1;

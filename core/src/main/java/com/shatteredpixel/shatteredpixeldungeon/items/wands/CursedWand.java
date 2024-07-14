@@ -40,6 +40,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Frost;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Hex;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Recharging;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.GoldenMimic;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mimic;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Sheep;
@@ -97,6 +98,11 @@ public class CursedWand {
 		cursedFX(user, bolt, new Callback() {
 			@Override
 			public void call() {
+				if (origin.cursed
+						&& origin instanceof Wand
+						&& ((Hero)user).subClass == HeroSubClass.SCHOLAR ){
+					((Wand)origin).scholarAbility(bolt, bolt.collisionPos);
+				}
 				if (cursedEffect(origin, user, bolt.collisionPos)){
 					if (afterZap != null) afterZap.call();
 				}

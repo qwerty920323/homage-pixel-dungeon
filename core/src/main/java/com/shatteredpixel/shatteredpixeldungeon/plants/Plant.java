@@ -71,7 +71,35 @@ public abstract class Plant implements Bundlable {
 
 		wither();
 		activate( ch );
+		nearbyTrigger(this); //scholar
 	}
+
+	public boolean nearbyTrigger(Plant plant){ //scholar
+		WandOfRegrowth.MiniFoliage miniFoliage = (WandOfRegrowth.MiniFoliage)Dungeon.level.blobs.get(WandOfRegrowth.MiniFoliage.class);
+		if (miniFoliage != null && miniFoliage.volume >0 && miniFoliage.cur[pos] >0) {
+			for (int p : PathFinder.NEIGHBOURS8) {
+				Char ch = Actor.findChar(pos + p);
+
+				if (Dungeon.level.solid[pos + p])
+					continue;
+
+				if (ch instanceof Hero) {
+					((Hero) ch).interrupt();
+				}
+				//각각 식물에서 추가 범위를 얻음
+				if (!(plant instanceof Icecap
+						|| plant instanceof Firebloom
+						|| plant instanceof BlandfruitBush
+						|| plant instanceof WandOfRegrowth.Seedpod
+						|| plant instanceof WandOfRegrowth.Dewcatcher)) {
+					plant.activate(ch);
+				}
+			}
+			return true;
+		}
+		return false;
+	}
+
 	
 	public abstract void activate( Char ch );
 	
@@ -100,24 +128,6 @@ public abstract class Plant implements Bundlable {
 		
 	}
 
-	//scholar
-	public boolean corrupt(){
-		if (!(this instanceof Mageroyal
-				|| this instanceof Earthroot
-				|| this instanceof Starflower
-				|| this instanceof Sungrass
-				|| this instanceof Swiftthistle)) {
-			return false;
-		}
-
-		WandOfCorruption.CorruptArea corrupt = (WandOfCorruption.CorruptArea)Dungeon.level.blobs.get( WandOfCorruption.CorruptArea.class );
-		if (corrupt != null && corrupt.volume > 0 && corrupt.cur[this.pos] > 0) {
-			return true;
-		}
-
-		return false;
-	}
-	
 	private static final String POS	= "pos";
 
 	@Override
@@ -139,8 +149,10 @@ public abstract class Plant implements Bundlable {
 		if (Dungeon.hero.subClass == HeroSubClass.WARDEN){
 			desc += "\n\n" + Messages.get(this, "warden_desc");
 		}
-		if (corrupt()){
-			desc += "\n\n" + Messages.get(this, "corrupt_desc");
+		//scholar
+		WandOfRegrowth.MiniFoliage miniFoliage = (WandOfRegrowth.MiniFoliage)Dungeon.level.blobs.get(WandOfRegrowth.MiniFoliage.class);
+		if (miniFoliage != null && miniFoliage.volume >0 && miniFoliage.cur[pos] >0) {
+			desc += "\n\n" + Messages.get(this, "scholar_desc");
 		}
 		return desc;
 	}

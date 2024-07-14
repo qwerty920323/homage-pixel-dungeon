@@ -51,8 +51,7 @@ public class Sungrass extends Plant {
 			if (ch instanceof Hero && ((Hero) ch).subClass == HeroSubClass.WARDEN) {
 				Buff.affect(ch, Healing.class).setHeal(ch.HT, 0, 1);
 			} else {
-				if (corrupt()) Buff.affect(ch, Ooze.class).set( Ooze.DURATION );
-				else           Buff.affect(ch, Health.class).boost(ch.HT);
+				Buff.affect(ch, Health.class).boost(ch.HT);
 			}
 		}
 		

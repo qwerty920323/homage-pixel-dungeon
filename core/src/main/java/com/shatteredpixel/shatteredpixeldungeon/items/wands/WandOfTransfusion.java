@@ -31,7 +31,6 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.WellWater;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Barrier;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Charm;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.ShieldBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mimic;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
@@ -44,13 +43,13 @@ import com.shatteredpixel.shatteredpixeldungeon.effects.particles.BloodParticle;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ShadowParticle;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ShaftParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
-import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Blocking;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Notes;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
+import com.shatteredpixel.shatteredpixeldungeon.plants.Sungrass;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
@@ -228,14 +227,12 @@ public class WandOfTransfusion extends DamageWand {
 	//scholar
 	@Override
 	public int bonusRange(){
-		int bonus = super.bonusRange();
-		int selfDmg = 2;
-				//Math.round(Dungeon.hero.HT * 0.05f);
-		return selfDmg + (selfDmg * bonus / 2);
+		return scholarTurnCount() + super.bonusRange() + 2;
 	}
 	@Override
 	public int scholarTurnCount(){
-		return super.scholarTurnCount() + 5;
+		int result = Math.round((20 + 5*(Dungeon.hero.lvl-1))* 0.05f);
+		return result + super.scholarTurnCount();
 	}
 	@Override
 	public void scholarAbility(Ballistica bolt, int cell) {
@@ -252,10 +249,12 @@ public class WandOfTransfusion extends DamageWand {
 			}
 		}
 
+		int range = Random.Int(scholarTurnCount(), bonusRange());
+
 		if (healthPos>0) {
 			if (healthPos == pos && terr == Terrain.WELL) {
-				setWell(pos, bonusRange(),-1);
-			} else if (terrCheck(pos)) {
+				setWell(pos, range,-1);
+			} else if (terrCheck(pos, Terrain.EMPTY_WELL)) {
 
 				if (healthPos != pos) {
 					CellEmitter.get(healthPos).start(Speck.factory(Speck.LIGHT), 0.2f, 4);
@@ -264,17 +263,18 @@ public class WandOfTransfusion extends DamageWand {
 					miniHealth.clear(healthPos);
 				}
 
-				setWell(pos, bonusRange(), terr);
+				setWell(pos, range, terr);
 
 			}
-		} else if (terrCheck(pos)){
-			setWell(pos, bonusRange(), terr);
+		} else if (terrCheck(pos, Terrain.EMPTY_WELL)){
+			setWell(pos, range, terr);
 		}
 	}
-	public void setWell (int pos, int selfDmg, int terr) {
+	public void setWell (int pos, int range, int terr) {
 		Level.set(pos, Terrain.WELL);
+
 		WaterOfMiniHealth water = Blob.seed(pos, 1, WaterOfMiniHealth.class);
-		water.setHealth(selfDmg, scholarTurnCount());
+		water.setHealth(range);
 		if (terr >= 0) water.terrian = terr;
 
 		CellEmitter.get(pos).start( Speck.factory( Speck.LIGHT ), 0.2f , 4 );
@@ -282,45 +282,27 @@ public class WandOfTransfusion extends DamageWand {
 		GameScene.updateMap(pos);
 	}
 
-	public boolean terrCheck (int pos){
-		int terr = Dungeon.level.map[pos];
-		Point p = Dungeon.level.cellToPoint(pos);
 
-		//if a custom tilemap is over that cell, don't put water there
-		for (CustomTilemap cust : Dungeon.level.customTiles){
-			Point custPoint = new Point(p);
-			custPoint.x -= cust.tileX;
-			custPoint.y -= cust.tileY;
-			if (custPoint.x >= 0 && custPoint.y >= 0
-					&& custPoint.x < cust.tileW && custPoint.y < cust.tileH){
-				if (cust.image(custPoint.x, custPoint.y) != null){
-					return false;
-				}
-			}
-		}
-
-		if (Dungeon.level.passable[pos]) {
-			if (!(terr == Terrain.ENTRANCE || terr == Terrain.EXIT
-					|| terr == Terrain.PEDESTAL || terr == Terrain.UNLOCKED_EXIT
-					|| terr == Terrain.SECRET_TRAP || terr == Terrain.INACTIVE_TRAP
-					|| terr == Terrain.DOOR || terr == Terrain.OPEN_DOOR)) {
-
-				return true;
-			}
-		}
-		return false;
-	}
 
 	public static class WaterOfMiniHealth extends WellWater {
-
-		private int shield = 0;
-		private int time   = 0;
+		private int turnLeft = 0;
 		public int terrian = -1;
 
 		@Override
 		protected void evolve() {
 			super.evolve();
-			Notes.remove(record());
+
+			int cell;
+			for (int i=area.top-1; i <= area.bottom; i++) {
+				for (int j = area.left-1; j <= area.right; j++) {
+					cell = j + i* Dungeon.level.width();
+					if (Dungeon.level.insideMap(cell)) {
+						if (Dungeon.level.map[cell] != Terrain.WELL)
+							cur[cell] = 0;
+					}
+					Notes.remove(record());
+				}
+			}
 		}
 		@Override
 		protected boolean affectHero( Hero hero ) {
@@ -328,16 +310,12 @@ public class WandOfTransfusion extends DamageWand {
 			if (!hero.isAlive()) return false;
 
 			Sample.INSTANCE.play( Assets.Sounds.DRINK );
-
-			BlockBuff b = Buff.affect(hero, BlockBuff.class);
-			b.setTimeAndShiled(time, shield);
-
-			hero.sprite.emitter().start( Speck.factory( Speck.LIGHT ), 0.4f , 4 );
-			hero.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(shield), FloatingText.SHIELDING);
+			//health
+			Buff.affect(hero, Health.class).boost(turnLeft);
 
 			CellEmitter.get( hero.pos ).start( ShaftParticle.FACTORY, 0.2f , 3 );
-
-			shield = time = 0;
+			hero.sprite.emitter().start( Speck.factory( Speck.HEALING ), 0.4f, 4 );
+			turnLeft = 0;
 
 			Dungeon.hero.interrupt();
 
@@ -346,9 +324,8 @@ public class WandOfTransfusion extends DamageWand {
 			return true;
 		}
 
-		public WaterOfMiniHealth setHealth (int health, int hunger){
-			this.shield += health;
-			this.time = hunger;
+		public WaterOfMiniHealth setHealth (int left){
+			this.turnLeft += left;
 			return this;
 		}
 
@@ -360,12 +337,13 @@ public class WandOfTransfusion extends DamageWand {
 		@Override
 		public void use( BlobEmitter emitter ) {
 			super.use( emitter );
-			emitter.start( Speck.factory( Speck.LIGHT ), Math.max(0.4f, 1 - (shield /100)), 0 );
+			float interval = Dungeon.hero.HT;
+			emitter.start( Speck.factory( Speck.HEALING ), 0.6f - (0.2f * turnLeft/interval), 0 );
 		}
 
 		@Override
 		public String tileDesc() {
-			return Messages.get(this, "desc", shield, time);
+			return Messages.get(this, "desc", turnLeft);
 		}
 
 		@Override
@@ -373,81 +351,118 @@ public class WandOfTransfusion extends DamageWand {
 			return Notes.Landmark.WELL_OF_MINI_HEALTH;
 		}
 
-		private static final String SHIELD  = "shield";
-		private static final String TIME    = "time";
+		private static final String TURNLEFT = "turnleft";
 		private static final String TERRIAN	= "terrian";
 		@Override
 		public void restoreFromBundle(Bundle bundle) {
 			super.restoreFromBundle(bundle);
-			shield = bundle.getInt( SHIELD );
-			time = bundle.getInt( TIME );
+			turnLeft = bundle.getInt( TURNLEFT );
 			terrian = bundle.getInt( TERRIAN );
 		}
 
 		@Override
 		public void storeInBundle(Bundle bundle) {
 			super.storeInBundle(bundle);
-			bundle.put( SHIELD, shield );
-			bundle.put( TIME, time );
+			bundle.put( TURNLEFT, turnLeft);
 			bundle.put( TERRIAN, terrian );
 		}
 	}
 
-	public static class BlockBuff extends ShieldBuff {
+	public static class Health extends Buff {
+		private static final float STEP = 1f;
+		private float duration, left, partialHeal;
+		private int pos;
 
 		{
 			type = buffType.POSITIVE;
+			announced = true;
 		}
 
 		@Override
 		public boolean act() {
-			detach();
+			if (target.pos != pos) {
+				detach();
+			}
+
+			//for the hero, full heal takes ~50/93/111/120 turns at levels 1/10/20/30
+			partialHeal += (40 + target.HT)/150f;
+
+			if (partialHeal > 1){
+				int healThisTurn = (int)partialHeal;
+				partialHeal -= healThisTurn;
+				left -= healThisTurn;
+
+				if (target.HP < target.HT) {
+
+					target.HP += healThisTurn;
+					target.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(healThisTurn), FloatingText.HEALING);
+
+					if (target.HP >= target.HT) {
+						target.HP = target.HT;
+						if (target instanceof Hero) {
+							((Hero) target).resting = false;
+						}
+					}
+				}
+			}
+
+			if (left <= 0) {
+				detach();
+				if (target instanceof Hero){
+					((Hero)target).resting = false;
+				}
+			}
+			spend( STEP );
 			return true;
 		}
 
-		@Override
-		public void setShield(int shield) {
-			super.setShield(shield);
-		}
-
-		public void setTimeAndShiled(int time, int shield) {
-			postpone(time);
-			setShield(shield);
-		}
-
-		@Override
-		public void fx(boolean on) {
-			if (on) {
-				target.sprite.add(CharSprite.State.SHIELDED);
-			} else if (target.buff(Barrier.class) == null) {
-				target.sprite.remove(CharSprite.State.SHIELDED);
+		public void boost( int amount ){
+			if (target != null) {
+				this.duration = left = Math.max(left, amount);
+				pos = target.pos;
 			}
 		}
-
 		@Override
 		public int icon() {
-			return BuffIndicator.ARMOR;
-		}
-
-		@Override
-		public void tintIcon(Image icon) {
-			icon.hardlight(0.5f, 1f, 2f);
+			return BuffIndicator.HERB_HEALING;
 		}
 
 		@Override
 		public float iconFadePercent() {
-			return Math.max(0, (5f - visualcooldown()) / 5f);
+			return Math.max(0, (duration - left) / duration);
 		}
 
 		@Override
 		public String iconTextDisplay() {
-			return Integer.toString((int)visualcooldown());
+			return Integer.toString((int)left);
 		}
 
 		@Override
 		public String desc() {
-			return Messages.get(this, "desc", shielding(), dispTurns(visualcooldown()));
+			return Messages.get(this, "desc", (int)left);
 		}
 
+		private static final String POS	= "pos";
+		private static final String PARTIAL = "partial_heal";
+		private static final String DURATION = "duration";
+		private static final String LEFT = "left";
+
+		@Override
+		public void storeInBundle( Bundle bundle ) {
+			super.storeInBundle( bundle );
+			bundle.put( POS, pos );
+			bundle.put( PARTIAL, partialHeal );
+			bundle.put( DURATION, duration );
+			bundle.put( LEFT, left );
+		}
+
+		@Override
+		public void restoreFromBundle( Bundle bundle ) {
+			super.restoreFromBundle( bundle );
+			pos = bundle.getInt( POS );
+			partialHeal = bundle.getFloat( PARTIAL );
+			duration = bundle.getFloat( DURATION );
+			left = bundle.getFloat( LEFT );
+		}
 	}
 }
