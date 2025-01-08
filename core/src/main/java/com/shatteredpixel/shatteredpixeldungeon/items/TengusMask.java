@@ -103,7 +103,7 @@ public class TengusMask extends Item {
 		if (way == HeroSubClass.ASSASSIN && curUser.invisible > 0){
 			Buff.affect(curUser, Preparation.class);
 		}
-		
+
 		curUser.sprite.operate( curUser.pos );
 		Sample.INSTANCE.play( Assets.Sounds.MASTERY );
 		

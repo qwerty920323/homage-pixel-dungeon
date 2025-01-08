@@ -58,15 +58,11 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Terror;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Vertigo;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Vulnerable;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Weakness;
-import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.ArmoredStatue;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Bee;
-import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.CrystalMimic;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.DwarfKing;
-import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.EbonyMimic;
-import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.GoldenMimic;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mimic;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Piranha;
@@ -90,14 +86,12 @@ import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
-import com.shatteredpixel.shatteredpixeldungeon.tiles.CustomTilemap;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.BArray;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
 import com.watabou.utils.PathFinder;
-import com.watabou.utils.Point;
 import com.watabou.utils.Random;
 import com.watabou.utils.Reflection;
 
@@ -401,12 +395,13 @@ public class WandOfCorruption extends Wand {
 									Buff.prolong( ch, Marked.class, Marked.DURATION );
 								}
 							}
+							// 연구가가 제단 위에서 소환할때
 							if (off[cell] > 0 && off[Dungeon.hero.pos] > 0) {
 								int spawn = 2+Dungeon.hero.pointsInTalent(Talent.WIDE_SUMMON);
 								if (setMob() != null && mobCount() < turn)
 									spawnMob(spawn, setMob());
 							}
-
+							//제단 위에 아이템 밀어내기
 							Heap heap = Dungeon.level.heaps.get(cell);
 							if (heap != null && heap.type == Heap.Type.HEAP) {
 								ArrayList<Integer> candidates = new ArrayList<>();
@@ -419,6 +414,10 @@ public class WandOfCorruption extends Wand {
 								Dungeon.level.drop(item, Random.element(candidates)).sprite.drop(cell);
 							}
 						}
+					}
+
+					if (cur[cell] > 0 && Dungeon.level.map[cell] != Terrain.PEDESTAL) {
+						off[cell] = cur[cell] = 0;
 					}
 				}
 			}
@@ -514,6 +513,7 @@ public class WandOfCorruption extends Wand {
 				m.alignment = Char.Alignment.ENEMY;
 				((Mimic)m).items = null;
 			} else if (mob instanceof Statue){
+				//no spawn
 				Statue statue = new Statue();
 
 				if (mob.getClass() == GuardianTrap.Guardian.class ){
@@ -577,7 +577,7 @@ public class WandOfCorruption extends Wand {
 				if (ch instanceof Mob
 						&& !ch.isImmune(Corruption.class)
 						&& ch.alignment == Char.Alignment.ENEMY
-						//&& !(ch instanceof Piranha)
+						&& !(ch instanceof Statue)
 				    ) {
 
 					Buff.affect(Dungeon.hero, MarkedMob.class).setMobClass((Mob)ch);

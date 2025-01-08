@@ -162,7 +162,7 @@ public class Badges {
 		DEATH_FROM_ALL              ( 105, true ),
 		BOSS_SLAIN_3_GLADIATOR,
 		BOSS_SLAIN_3_BERSERKER,
-		BOSS_SLAIN_3_BRAWLER,     //싸움꾼
+		BOSS_SLAIN_3_VETERAN,     //베테랑
 		BOSS_SLAIN_3_WARLOCK,
 		BOSS_SLAIN_3_BATTLEMAGE,
 		BOSS_SLAIN_3_SCHOLAR,     //연구가
@@ -730,7 +730,7 @@ public class Badges {
 	static {
 		thirdBossSubclassBadges.put(HeroSubClass.BERSERKER, Badge.BOSS_SLAIN_3_BERSERKER);
 		thirdBossSubclassBadges.put(HeroSubClass.GLADIATOR, Badge.BOSS_SLAIN_3_GLADIATOR);
-		thirdBossSubclassBadges.put(HeroSubClass.BRAWLER, Badge.BOSS_SLAIN_3_BRAWLER); //싸움꾼
+		thirdBossSubclassBadges.put(HeroSubClass.VETERAN, Badge.BOSS_SLAIN_3_VETERAN); //베테랑
 		thirdBossSubclassBadges.put(HeroSubClass.BATTLEMAGE, Badge.BOSS_SLAIN_3_BATTLEMAGE);
 		thirdBossSubclassBadges.put(HeroSubClass.WARLOCK, Badge.BOSS_SLAIN_3_WARLOCK);
 		thirdBossSubclassBadges.put(HeroSubClass.SCHOLAR, Badge.BOSS_SLAIN_3_SCHOLAR); //연구가
@@ -739,7 +739,7 @@ public class Badges {
 		thirdBossSubclassBadges.put(HeroSubClass.GRAVEROBBER, Badge.BOSS_SLAIN_3_GRAVEROBBER); //도굴꾼
 		thirdBossSubclassBadges.put(HeroSubClass.SNIPER, Badge.BOSS_SLAIN_3_SNIPER);
 		thirdBossSubclassBadges.put(HeroSubClass.WARDEN, Badge.BOSS_SLAIN_3_WARDEN);
-		thirdBossSubclassBadges.put(HeroSubClass.RANGER, Badge.BOSS_SLAIN_3_CHASER); //순찰자
+		thirdBossSubclassBadges.put(HeroSubClass.RANGER, Badge.BOSS_SLAIN_3_CHASER); //레인저
 		thirdBossSubclassBadges.put(HeroSubClass.CHAMPION, Badge.BOSS_SLAIN_3_CHAMPION);
 		thirdBossSubclassBadges.put(HeroSubClass.MONK, Badge.BOSS_SLAIN_3_MONK);
 		thirdBossSubclassBadges.put(HeroSubClass.BLADEDANCER, Badge.BOSS_SLAIN_3_BLADEDANCER); //무예가

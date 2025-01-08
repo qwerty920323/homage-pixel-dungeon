@@ -27,6 +27,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.keys.CrystalKey;
 import com.shatteredpixel.shatteredpixeldungeon.items.keys.IronKey;
+import com.shatteredpixel.shatteredpixeldungeon.journal.Notes;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.levels.painters.Painter;
@@ -130,6 +131,7 @@ public class CrystalChoiceRoom extends SpecialRoom {
 		chest.autoExplored = true;
 
 		level.addItemToSpawn( new CrystalKey( Dungeon.depth ) );
+		Notes.add( Notes.BonusKey.BONUS_KEY ); //grave
 
 		entrance().set( Door.Type.LOCKED );
 		level.addItemToSpawn( new IronKey( Dungeon.depth ) );

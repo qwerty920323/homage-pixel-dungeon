@@ -264,8 +264,6 @@ public class WandOfFireblast extends DamageWand {
 			miniFire.fullyClear();
 		}
 
-		if (this.cursed) setCursedFire(cell, bonusRange()-1);
-
 		Ballistica ballistica = new Ballistica(curUser.pos, cell, ball | Ballistica.IGNORE_SOLID);
 		int pos = ballistica.collisionPos;
 
@@ -273,6 +271,8 @@ public class WandOfFireblast extends DamageWand {
 		if (dist > 0 && !this.cursed) {
 			pos = ballistica.path.get(ballistica.dist-dist);
 		}
+
+		if (this.cursed) setCursedFire(cell, bonusRange()-1);
 
 		if (Dungeon.level.passable[pos]) {
 
@@ -316,9 +316,11 @@ public class WandOfFireblast extends DamageWand {
 		}
 
 		for (Integer cells : respawnPoints) {
-			MiniEternalFire fire = Blob.seed(cells, scholarTurnCount(), MiniEternalFire.class);
-			GameScene.add(fire);
-			fire.nearbyHero++;
+			if (MiniEternalFire.volumeAt(cells, MiniEternalFire.class) == 0) {
+				MiniEternalFire fire = Blob.seed(cells, scholarTurnCount(), MiniEternalFire.class);
+				GameScene.add(fire);
+				fire.nearbyHero++;
+			}
 		}
 	}
 

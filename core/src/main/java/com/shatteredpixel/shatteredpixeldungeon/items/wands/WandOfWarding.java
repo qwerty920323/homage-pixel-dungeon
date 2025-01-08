@@ -53,7 +53,6 @@ import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.WardSprite;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.shatteredpixel.shatteredpixeldungeon.windows.WndOptions;
-import com.sun.media.sound.WaveFloatFileReader;
 import com.watabou.noosa.Game;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
@@ -351,7 +350,7 @@ public class WandOfWarding extends Wand {
 				//scholar
 				WardingEffect effect = buff(WardingEffect.class);
 				if (effect != null && effect.atkCount > 0) {
-					WardingEffect.setBonusEffect(this, enemy, wandLevel);
+					WardingEffect.setBonusEffect(this, enemy);
 					effect.afterAttack();
 				}
 			}
@@ -453,7 +452,7 @@ public class WandOfWarding extends Wand {
 			WardingEffect effect = buff(WardingEffect.class);
 			if (effect != null && effect.atkCount > 0){
 				result += "\n\n" + Messages.get(WardingEffect.class, "terr", Dungeon.level.tileName(Dungeon.level.map[pos]));
-				result += " " + Messages.get(WardingEffect.class, WardingEffect.setBonusEffect(this, null, wandLevel), name(), 2);
+				result += " " + Messages.get(WardingEffect.class, WardingEffect.setBonusEffect(this, null), name(), 2);
 				result += " " + Messages.get(WardingEffect.class, "range", effect.atkCount, effect.left);
 			}
 			return result;
@@ -493,7 +492,7 @@ public class WandOfWarding extends Wand {
 	public int bonusRange () {return super.bonusRange()+2;}
 	@Override
 	public int scholarTurnCount(){
-		return super.scholarTurnCount() + 10;
+		return super.scholarTurnCount() + 30;
 	}
 	@Override
 	public void scholarAbility(Ballistica bolt, int cell) {
@@ -504,10 +503,9 @@ public class WandOfWarding extends Wand {
 		Char ch = Actor.findChar(pos);
 
 		if (ch != null && ch instanceof Ward) {
-			magicCirculation = false;
 			Buff.affect(ch, WardingEffect.class).setWarding(scholarTurnCount(), bonusRange());
 
-			String terr = WardingEffect.setBonusEffect(((Ward) ch), null, 0);
+			String terr = WardingEffect.setBonusEffect(((Ward) ch), null);
 
             switch (terr) {
                 case "cripple":

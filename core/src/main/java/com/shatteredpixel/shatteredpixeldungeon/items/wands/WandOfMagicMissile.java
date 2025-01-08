@@ -26,10 +26,12 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
-import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Web;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.FlavourBuff;
+import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
+import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.SpellSprite;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ScholarParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
@@ -39,6 +41,7 @@ import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
 import com.watabou.noosa.Image;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
+import com.watabou.utils.PathFinder;
 import com.watabou.utils.Random;
 
 public class WandOfMagicMissile extends DamageWand {
@@ -166,5 +169,79 @@ public class WandOfMagicMissile extends DamageWand {
 		}
 	}
 
+	//scholar
+	@Override
+	public int bonusRange () {return super.bonusRange()+2;}
+	@Override
+	public int scholarTurnCount(){
+		return super.scholarTurnCount() + 5;
+	}
+	@Override
+	public void scholarAbility(Ballistica bolt, int cell) {
+		super.scholarAbility(bolt,cell);
+
+		int count = bonusRange();
+		int dist = Dungeon.level.distance(curUser.pos, bolt.collisionPos);
+
+		for (int pos : bolt.subPath(0, dist)) {
+			if (count >0) {
+				CellEmitter.get(pos).burst(ScholarParticle.WHITE, 8);
+				UpgradeLight light = Blob.seed(pos, scholarTurnCount(), UpgradeLight.class);
+				GameScene.add(light);
+				count--;
+			} else {
+				return;
+			}
+		}
+
+		int chance = 8;
+
+		int p = bolt.collisionPos + PathFinder.NEIGHBOURS8[Random.Int(8)];
+
+		while (count > 0
+				&& chance > 0
+				&& !Dungeon.level.solid[p]
+				&& Blob.volumeAt(p, UpgradeLight.class) == 0) {
+
+			CellEmitter.get(p).burst(ScholarParticle.WHITE, 16);
+			UpgradeLight light = Blob.seed(p, scholarTurnCount(), UpgradeLight.class);
+			GameScene.add(light);
+			chance--;
+			count--;
+		}
+	}
+
+	public static class UpgradeLight extends Blob {
+		@Override
+		protected void evolve() {
+			int cell;
+			for (int i = area.left; i < area.right; i++) {
+				for (int j = area.top; j < area.bottom; j++) {
+					cell = i + j*Dungeon.level.width();
+
+					if (cur[cell] > 0) {
+
+						off[cell] = cur[cell] - 1;
+						volume += off[cell];
+
+					} else {
+						off[cell] = 0;
+					}
+				}
+			}
+		}
+
+		@Override
+		public void use( BlobEmitter emitter ) {
+			super.use( emitter );
+			emitter.start(ScholarParticle.WHITE, 0.05f, 0);
+		}
+
+		@Override
+		public String tileDesc() {
+			return Messages.get(this, "desc");
+		}
+	}
+	// scholar
 
 }

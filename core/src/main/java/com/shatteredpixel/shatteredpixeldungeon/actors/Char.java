@@ -45,6 +45,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Corrosion;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Corruption;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Cripple;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Daze;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.DelayAct;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Doom;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Dread;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.FireImbue;
@@ -89,6 +90,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.MirrorImage;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.PrismaticImage;
 import com.shatteredpixel.shatteredpixeldungeon.effects.FloatingText;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ShadowParticle;
+import com.shatteredpixel.shatteredpixeldungeon.items.Gold;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.glyphs.AntiMagic;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.glyphs.Potential;
@@ -279,6 +281,9 @@ public abstract class Char extends Actor {
 			if (Dungeon.hero.subClass == HeroSubClass.FREERUNNER){
 				Buff.affect(Dungeon.hero, Momentum.class).gainStack();
 			}
+			if (Dungeon.hero.buff(DelayAct.class) != null){
+				Dungeon.hero.buff(DelayAct.class).delaySpend();
+			}
 
 			Dungeon.hero.busy();
 		}
@@ -377,6 +382,17 @@ public abstract class Char extends Actor {
 					//3 turns with standard attack delay
 					Buff.prolong(h, MonkEnergy.MonkAbility.JustHitTracker.class, 4f);
 				}
+
+				//grave
+				if (h.buff(Talent.MiningGoldTracker.class) != null
+						&& !(h.belongings.attackingWeapon() instanceof MissileWeapon)){
+					h.buff(Talent.MiningGoldTracker.class).detach();
+
+					Gold g = new Gold(Math.round(1.5f * dr * h.pointsInTalent(Talent.MINING_GOLD)));
+					g.doPickUp(h, pos);
+					h.spendAndNext( -1 );
+					//dr = 0;
+				}
 			}
 
 			//we use a float here briefly so that we don't have to constantly round while
@@ -392,6 +408,9 @@ public abstract class Char extends Actor {
 				dmg = damageRoll();
 			}
 
+			if (buff(Talent.RushAttackTracker.class) != null){
+				dmg += 0.1f * dmg * ((Hero)this).pointsInTalent(Talent.RUSH_ATTACK);
+			}
 			dmg = dmg*dmgMulti;
 
 			//flat damage bonus is affected by multipliers
@@ -787,6 +806,10 @@ public abstract class Char extends Actor {
 		shielded -= dmg;
 		HP -= dmg;
 
+		if (HP > 0 && dmg > 0 && buff(Talent.RushAttackTracker.class) != null){
+			buff(Talent.RushAttackTracker.class).detach();
+		}
+
 		if (HP > 0 && shielded > 0 && shielding() == 0){
 			if (this instanceof Hero && ((Hero) this).hasTalent(Talent.PROVOKED_ANGER)){
 				Buff.affect(this, Talent.ProvokedAngerTracker.class, 5f);
@@ -898,6 +921,14 @@ public abstract class Char extends Actor {
 			}
 			if (ch.buff(SnipersMark.class) != null && ch.buff(SnipersMark.class).object == id()){
 				ch.buff(SnipersMark.class).detach();
+			}
+			//veteran
+			if (ch.buff(DelayAct.class) != null && ch.buff(DelayAct.class).object == id()){
+				ch.buff(DelayAct.class).object = 0;
+			}
+			//scholar
+			if (ch.buff(WandOfPrismaticLight.FireFly.class) != null){
+				ch.buff(WandOfPrismaticLight.FireFly.class).detach();
 			}
 			if (ch.buff(Talent.FollowupStrikeTracker.class) != null
 					&& ch.buff(Talent.FollowupStrikeTracker.class).object == id()){

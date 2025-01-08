@@ -27,6 +27,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.CloakOfShadows;
 import com.shatteredpixel.shatteredpixeldungeon.items.bags.MagicalHolster;
+import com.shatteredpixel.shatteredpixeldungeon.items.rings.Ring;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.Wand;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
@@ -65,6 +66,8 @@ public class LostBackpack extends Item {
 					}
 				} else if (i instanceof MagesStaff){
 					((MagesStaff) i).applyWandChargeBuff(hero);
+				} else if (i instanceof Ring){
+					((Ring) i).unequipedRing(hero);
 				}
 			}
 		}

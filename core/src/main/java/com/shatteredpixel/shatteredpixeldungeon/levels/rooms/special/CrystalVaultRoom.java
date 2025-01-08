@@ -32,6 +32,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.keys.CrystalKey;
 import com.shatteredpixel.shatteredpixeldungeon.items.keys.IronKey;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.MimicTooth;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.RatSkull;
+import com.shatteredpixel.shatteredpixeldungeon.journal.Notes;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.levels.painters.Painter;
@@ -79,6 +80,7 @@ public class CrystalVaultRoom extends SpecialRoom {
 			level.mobs.add(Mimic.spawnAt(i2Pos, CrystalMimic.class, i2));
 		} else {
 			level.drop(i2, i2Pos).type = Heap.Type.CRYSTAL_CHEST;
+			Notes.add( Notes.BonusKey.BONUS_KEY ); //grave
 		}
 		Painter.set(level, i1Pos, Terrain.PEDESTAL);
 		Painter.set(level, i2Pos, Terrain.PEDESTAL);

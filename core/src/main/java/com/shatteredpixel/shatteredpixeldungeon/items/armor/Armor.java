@@ -672,7 +672,9 @@ public class Armor extends EquipableItem {
 		}
 
 		public static float genericProcChanceMultiplier( Char defender ){
-			return RingOfArcana.enchantPowerMultiplier(defender);
+			float multi = RingOfArcana.enchantPowerMultiplier(defender);
+
+			return multi;
 		}
 		
 		public String name() {

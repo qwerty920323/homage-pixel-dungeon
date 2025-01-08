@@ -119,13 +119,12 @@ public class BuffIndicator extends Component {
 	public static final int MONK_ENERGY = 68;
 	public static final int DUEL_COMBO  = 69;
 	public static final int DAZE        = 70;
-	public static final int KEENSENSE   = 71; //예리한 감각
-	public static final int SCHOLAR_BUFF= 72; //연구가 버프
-	public static final int PINNED_ARROW= 73; //꽂힌 마법 화살
-	public static final int WIDE_ARROW  = 74; //확산 화살
-	public static final int PIERCE_ARROW= 75; //관통 화살
-	public static final int DANCER_ABIL = 76; //검무 능력
-	public static final int DANCER_SHOT = 77; //검무 능력
+	public static final int SCHOLAR_BUFF= 71; //연구가 버프
+	public static final int PINNED_ARROW= 72; //꽂힌 마법 화살
+	public static final int WIDE_ARROW  = 73; //확산 화살
+	public static final int PIERCE_ARROW= 74; //관통 화살
+	public static final int DANCER_ABIL = 75; //검무 능력
+	public static final int DANCER_SHOT = 76; //검무 능력
 
 
 	public static final int SIZE_SMALL  = 7;

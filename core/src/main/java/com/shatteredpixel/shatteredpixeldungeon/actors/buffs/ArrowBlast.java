@@ -16,7 +16,6 @@ import com.shatteredpixel.shatteredpixeldungeon.ui.ActionIndicator;
 import com.shatteredpixel.shatteredpixeldungeon.ui.HeroIcon;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
-import com.watabou.utils.Random;
 
 import java.util.ArrayList;
 
@@ -70,36 +69,34 @@ public class ArrowBlast extends FlavourBuff implements ActionIndicator.Action {
 
     @Override
     public String actionName() {
-        SpiritBow bow = Dungeon.hero.belongings.getItem(SpiritBow.class);
-
-        if (bow == null) return null;
-
-        return null;
+        return Messages.get(this, "action_name");
     }
 
+
     public float damage (Char mob, float bonus){
-        float endDamage=0;
+        // bonus == bow().augment
+        float endDamage = 0;
 
         PinCushion pinCushion = mob.buff(PinCushion.class);
 
-        int arrowCounter = 0;  // 부착된 마법 화살
+        int arrowCounter = 0;
 
-        if (mob.buff(ArrowMark.class) != null) {
+        if (mob.buff(PinArrow.class) != null) {
 
             if (pinCushion != null && hero.hasTalent(Talent.PROJECTILES_SHARE)){
-                int pinCount = pinCushion.pinCount();  // 부착된 투척 무기
+                // 부착된 투척 무기
+                int pinCount = Math.round(0.334f * pinCushion.pinCount() * hero.pointsInTalent(Talent.PROJECTILES_SHARE));
 
-                if (pinCount >= hero.pointsInTalent(Talent.PROJECTILES_SHARE)){
-                    pinCount = hero.pointsInTalent(Talent.PROJECTILES_SHARE);
-                }
-                arrowCounter += pinCount;  // 투척 무기 개수 추가
+                arrowCounter += pinCount;  // 투척 무기 개수
             }
 
-            arrowCounter += mob.buff(ArrowMark.class).count;  // 화살 개수 체크
+            arrowCounter += mob.buff(PinArrow.class).count;  // 화살 개수
 
             for (int i = arrowCounter; i >0; i--){
-                // (활레벨*증강)/2 ~ (활레벨 *증강)
-                endDamage += bonus * (Char.combatRoll( Math.round(bow().level()/2f) , Math.round(bow().level())));
+
+                int level = bow().buffedLvl();
+
+                endDamage += bonus * (Char.combatRoll( Math.round(level/2f) , level));
                 arrowCounter--;
             }
         }
@@ -109,9 +106,9 @@ public class ArrowBlast extends FlavourBuff implements ActionIndicator.Action {
     }
 
 
-    public void doAttack (float weaponlvl , Char mob){
+    public void doAttack(float dmgPercent, Char mob){
 
-        if (mob.buff(ArrowMark.class) != null) {
+        if (mob.buff(PinArrow.class) != null) {
 
             float bonus;
 
@@ -119,7 +116,6 @@ public class ArrowBlast extends FlavourBuff implements ActionIndicator.Action {
             CellEmitter.get(mob.pos).burst(SacrificialParticle.FACTORY, 20);
             Sample.INSTANCE.play(Assets.Sounds.BURNING);
 
-            // 증강상태 * (0~활 레벨 * 화살 개수) // * 무기 레벨
             switch (bow().augment) {
                 case NONE:
                 default:
@@ -133,16 +129,16 @@ public class ArrowBlast extends FlavourBuff implements ActionIndicator.Action {
                     break;
             }
 
-            // (활레벨*증강)/2 ~ (활레벨+1 *증강) * 화살 개수 // * 무기 레벨
-            mob.damage((int) Math.ceil(weaponlvl * damage(mob,bonus)) , this);
+            mob.damage(Math.round(dmgPercent * damage(mob,bonus)) , this);
 
             if (!mob.isAlive()) {
-                //순찰자 화살 버프
-                Buff.affect(hero, RangerArrow.class).duration = 6 + bow().level();
+                //레인저 화살 버프
+                Buff.affect(hero, RangerArrow.class).setDuration(6 + bow().buffedLvl());
                 Sample.INSTANCE.play( Assets.Sounds.CHARGEUP );
             }
-            else if(mob.buff(ArrowMark.class) != null) {
-                mob.buff(ArrowMark.class).detach();
+
+            else if (mob.buff(PinArrow.class) != null) {
+                mob.buff(PinArrow.class).detach();
             }
         }
     }
@@ -152,13 +148,13 @@ public class ArrowBlast extends FlavourBuff implements ActionIndicator.Action {
         Hero hero = Dungeon.hero;
         if (hero == null) return;
 
-        Dungeon.hero.busy();
+        hero.busy();
         hero.sprite.operate(hero.pos);
         ArrayList<Char> mobs = new ArrayList<>();
 
-        for (Mob mob : Dungeon.level.mobs.toArray(new Mob[0])) {
+        for (Mob mob : Dungeon.level.mobs.toArray( new Mob[0] )) {
             if (mob.alignment != Char.Alignment.ALLY
-                    && mob.buff(ArrowMark.class) != null
+                    && mob.buff(PinArrow.class) != null
                     && Dungeon.level.heroFOV[mob.pos]) {
 
                 mobs.add(mob);

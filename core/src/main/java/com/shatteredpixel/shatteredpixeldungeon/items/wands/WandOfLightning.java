@@ -28,29 +28,36 @@ import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Paralysis;
-import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Electricity;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
+import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.DM300;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.DwarfKing;
+import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
+import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Pylon;
 import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Lightning;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SparkParticle;
+import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
+import com.shatteredpixel.shatteredpixeldungeon.items.Item;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.Artifact;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Shocking;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
-import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
-import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
-import com.shatteredpixel.shatteredpixeldungeon.levels.traps.Trap;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.PixelScene;
+import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.tiles.DungeonTilemap;
+import com.watabou.noosa.particles.Emitter;
 import com.watabou.utils.BArray;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
+import com.watabou.utils.GameMath;
 import com.watabou.utils.PathFinder;
 import com.watabou.utils.Random;
 
@@ -102,13 +109,6 @@ public class WandOfLightning extends DamageWand {
 				ch.damage(Math.round(damageRoll() * multiplier), this);
 			}
 		}
-
-		//scholar
-		for (int i = 0; i < affected.size()-1; i++){
-			Char ch = affected.get(i);
-			Char hit = affected.get(i+1);
-			resetTrap(ch, hit);
-		}
 	}
 
 	@Override
@@ -145,6 +145,7 @@ public class WandOfLightning extends DamageWand {
 		affected.addAll(hitThisArc);
 		for (Char hit : hitThisArc){
 			arcs.add(new Lightning.Arc(ch.sprite.center(), hit.sprite.center()));
+			spawnCell(ch.pos, hit.pos);
 			arc(hit);
 		}
 	}
@@ -194,133 +195,150 @@ public class WandOfLightning extends DamageWand {
 
 	//scholar
 	@Override
-	public int bonusRange () {return super.bonusRange()+2;} // 실제로는 0
+	public int bonusRange () {return 3 * super.bonusRange() +6;}
 	@Override
 	public int scholarTurnCount(){
-		return super.scholarTurnCount() + 1;
+		return super.scholarTurnCount() + 6;
 	}
 	@Override
 	public void scholarAbility(Ballistica bolt, int cell){
 		super.scholarAbility(bolt,cell);
-		for (int pos : bolt.path){
-			Trap t = Dungeon.level.traps.get(pos);
 
-			if (t != null && t.visible && !t.active) {
-				CellEmitter.get(pos).burst(SparkParticle.FACTORY, 8);
-				Sample.INSTANCE.play(Assets.Sounds.LIGHTNING);
-				t.active = true;
-				Level.set(pos, Terrain.TRAP);
-				GameScene.updateMap(pos);
-				GameScene.updateFog();
-			}
-		}
+		spawnCell(curUser.pos, bolt.collisionPos);
 
-		ShockerBlob s = (ShockerBlob) Dungeon.level.blobs.get(ShockerBlob.class);
-		if (s != null) s.fullyClear();
+	}
 
-		ShockerBlob shockerBlob = Blob.seed(bolt.collisionPos, 1, ShockerBlob.class);
+	public void spawnShocker (int pos) {
+		ShockerBlob shockerBlob = Blob.seed(pos, scholarTurnCount(), ShockerBlob.class);
 		GameScene.add(shockerBlob);
-		shockerBlob.left = scholarTurnCount();
+		shockerBlob.range = bonusRange();
 	}
 
-	public void resetTrap(Char ch, Char hit){
-		Ballistica bolt = new Ballistica(ch.pos, hit.pos, Ballistica.MAGIC_BOLT);
-		for (int pos : bolt.path){
-			Trap t = Dungeon.level.traps.get(pos);
+	public void spawnCell (int start, int end){
+		if (((Hero)curUser).subClass != HeroSubClass.SCHOLAR) return;
 
-			if (t != null && t.visible && !t.active) {
-				CellEmitter.get(pos).burst(SparkParticle.FACTORY, 8);
-				Sample.INSTANCE.play(Assets.Sounds.LIGHTNING);
-				t.active = true;
-				Level.set(pos, Terrain.TRAP);
-				GameScene.updateMap(pos);
-				GameScene.updateFog();
-			}
+		Ballistica bolt = new Ballistica( start, end, Ballistica.MAGIC_BOLT);
+		int dist = Dungeon.level.distance( start, end );
+
+		for (int pos : bolt.subPath(0, dist)) {
+			spawnShocker(pos);
 		}
 	}
-
 
 	public static class ShockerBlob extends Blob {
 
 		{
 			alwaysVisible = true;
 		}
+
 		private int targetNeighbor = Random.Int(8);
-		int left;
+		int range;
 		@Override
 		protected void evolve() {
 			int cell;
+			boolean on = false;
+			
 			for (int i = area.left; i < area.right; i++){
 				for (int j = area.top; j < area.bottom; j++){
 					cell = i + j* Dungeon.level.width();
-					off[cell] = cur[cell];
-					volume += off[cell];
 
-					if (off[cell] > 0) {
-						shockAround(cell, left);
+					if (cur[cell] > 0) {
+						off[cell] = cur[cell] - 1;
+						volume += off[cell];
+
+						if (Dungeon.level.distance(Dungeon.hero.pos, cell) > range) {
+							off[cell] = 0;
+						}
+
+						on = true;
+
+					} else {
+						off[cell] = 0;
 					}
+				}
+			}
+
+			if (on) {
+				energySourceSprite = null;
+				targetNeighbor = (targetNeighbor+1)%8;
+			}
+		}
+
+		private void shockCells(int pos){
+			ArrayList<Integer> shockCells = new ArrayList<>();
+
+			shockCells.add(pos);
+			shockCells.add(pos + PathFinder.CIRCLE8[targetNeighbor]);
+			shockCells.add(pos + PathFinder.CIRCLE8[(targetNeighbor+2)%8]);
+			shockCells.add(pos + PathFinder.CIRCLE8[(targetNeighbor+4)%8]);
+			shockCells.add(pos + PathFinder.CIRCLE8[(targetNeighbor+6)%8]);
+
+			float charge = (Random.Int(range) +1)/10f;
+
+			for (int cell : shockCells) {
+				int p = new Ballistica(pos, cell, Ballistica.STOP_SOLID | Ballistica.STOP_TARGET).collisionPos;
+
+				if (p != cell) continue;
+
+				if (Dungeon.hero.fieldOfView[cell] && !Dungeon.level.solid[cell]) {
+					Dungeon.hero.sprite.parent.add(new Lightning(DungeonTilemap.raisedTileCenterToWorld(pos),
+							DungeonTilemap.raisedTileCenterToWorld(cell), null));
+					CellEmitter.get(cell).burst(SparkParticle.FACTORY, 3);
 				}
 			}
 		}
 
-		private void shockAround(int pos, int left){
-			int bonusRange = Dungeon.hero.pointsInTalent(Talent.WIDE_SUMMON);
+		private static CharSprite energySourceSprite = null;
 
-			ArrayList<Integer> shockCells = new ArrayList<>();
+		private static Emitter.Factory DIRECTED_SPARKS = new Emitter.Factory() {
+			@Override
+			public void emit(Emitter emitter, int index, float x, float y) {
+				if (energySourceSprite == null){
+					Char ch = null;
+					for (Char c : Actor.chars()){
+						if (c instanceof Hero) continue;
 
-			//shockCells.add(pos);
-			shockCells.add(pos + PathFinder.CIRCLE8[targetNeighbor]);       //shockCells.get(0)
-			shockCells.add(pos + PathFinder.CIRCLE8[(targetNeighbor+4)%8]); //get(1)
+						if (ch == null) ch = c;
 
-			if (bonusRange>0) {
-				shockCells.add(shockCells.get(0) + PathFinder.CIRCLE8[targetNeighbor]); //get(2)
+						else if (Dungeon.level.distance(Dungeon.hero.pos, c.pos)
+								< Dungeon.level.distance(Dungeon.hero.pos, ch.pos)){
+							ch = c;
+						}
+					}
 
-				if (bonusRange>=2) {
-					shockCells.add(shockCells.get(1) + PathFinder.CIRCLE8[(targetNeighbor+4)%8]);
-				}
-				if (bonusRange>=3) {
-					shockCells.add(shockCells.get(2) + PathFinder.CIRCLE8[targetNeighbor]);
-				}
-			}
+					if (ch != null) energySourceSprite = ch.sprite;
 
-			for (int cell : shockCells) {
-				if (Dungeon.hero.fieldOfView[cell]) {
-					Dungeon.hero.sprite.parent.add(new Lightning(DungeonTilemap.raisedTileCenterToWorld(pos),
-							DungeonTilemap.raisedTileCenterToWorld(cell), null));
-					CellEmitter.get(cell).burst(SparkParticle.FACTORY, 3);
+					else energySourceSprite = Dungeon.hero.sprite;
 
 				}
 
-				Char ch = Actor.findChar(cell);
+				float dist = (float)Math.max( Math.abs(energySourceSprite.x - x), Math.abs(energySourceSprite.y - y) );
+				dist = GameMath.gate(0, dist-40, 320);
+				//more sparks closer up
+				if (Random.Float(360) > dist) {
 
-				if (ch != null && ch.buff(Paralysis.class) == null) {
-					//Buff.affect(ch, Paralysis.class, left);
-					ch.sprite.flash();
-
-					if (Dungeon.hero.fieldOfView[ch.pos])
-						Sample.INSTANCE.play(Assets.Sounds.LIGHTNING);
-				}
-
-				Trap t = Dungeon.level.traps.get(cell);
-
-				if (t != null && t.visible && !t.active) {
-					CellEmitter.get(cell).burst(SparkParticle.FACTORY, 8);
-					Sample.INSTANCE.play(Assets.Sounds.LIGHTNING);
-					t.active = true;
-					Level.set(cell, Terrain.TRAP);
-					GameScene.updateMap(cell);
-					GameScene.updateFog();
+					SparkParticle s = ((SparkParticle) emitter.recycle(SparkParticle.class));
+					s.resetAttracting(x, y, energySourceSprite);
 				}
 			}
 
-			targetNeighbor = (targetNeighbor+1)%8;
+			@Override
+			public boolean lightMode() {
+				return true;
+			}
+		};
 
+		@Override
+		public void fullyClear() {
+			super.fullyClear();
+			energySourceSprite = null;
 		}
 
 		@Override
 		public void use(BlobEmitter emitter) {
 			super.use(emitter);
-			emitter.pour( SparkParticle.STATIC, 0.10f );
+			energySourceSprite = null;
+			emitter.pour(DIRECTED_SPARKS, 0.15f);
 		}
 
 		@Override
@@ -329,20 +347,20 @@ public class WandOfLightning extends DamageWand {
 		}
 
 		private static final String NEIGHBER = "neighber";
-		private static final String LEFT = "left";
+		private static final String RANGE = "range";
 
 		@Override
 		public void storeInBundle(Bundle bundle) {
 			super.storeInBundle(bundle);
 			bundle.put(NEIGHBER, targetNeighbor);
-			bundle.put(LEFT, left);
+			bundle.put(RANGE, range);
 		}
 
 		@Override
 		public void restoreFromBundle(Bundle bundle) {
 			super.restoreFromBundle(bundle);
 			targetNeighbor = bundle.getInt(NEIGHBER);
-			left = bundle.getInt(LEFT);
+			range = bundle.getInt(RANGE);
 		}
 	}
 	// scholar

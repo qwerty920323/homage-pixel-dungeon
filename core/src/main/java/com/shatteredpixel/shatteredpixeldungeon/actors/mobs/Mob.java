@@ -32,10 +32,12 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Adrenaline;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AllyBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Amok;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AscensionChallenge;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.BladeDance;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.ChampionEnemy;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Charm;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Corruption;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.CrazyDance;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Dread;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Haste;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Hunger;
@@ -61,17 +63,21 @@ import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.MasterThievesArmband;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TimekeepersHourglass;
+import com.shatteredpixel.shatteredpixeldungeon.items.keys.CrystalKey;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.exotic.ExoticPotion;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.Ring;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfWealth;
+import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfRecharging;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.exotic.ExoticScroll;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfAggression;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.ExoticCrystals;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.SpiritBow;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Lucky;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.MissileWeapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.darts.Dart;
+import com.shatteredpixel.shatteredpixeldungeon.journal.Notes;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.features.Chasm;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
@@ -829,6 +835,15 @@ public abstract class Mob extends Char {
 					Buff.affect(Dungeon.hero, Talent.LethalHasteCooldown.class, 100f);
 					Buff.affect(Dungeon.hero, Haste.class, 1.67f + Dungeon.hero.pointsInTalent(Talent.LETHAL_HASTE));
 				}
+
+				BladeDance bd = Dungeon.hero.buff(BladeDance.class);
+				if (bd != null && bd.weaponChargeCheck()){
+                    int bonus = bd.getRankCount() > 4 ? 1 : 0;
+
+					ScrollOfRecharging.charge(Dungeon.hero);
+					Buff.affect( Dungeon.hero, MeleeWeapon.Charger.class )
+							.gainCharge(0.12f + (0.22f * (Dungeon.hero.pointsInTalent(Talent.COMBINED_AGILITY) + bonus)));
+				}
 			}
 
 		}
@@ -910,9 +925,8 @@ public abstract class Mob extends Char {
 				Random.Int(10) < Dungeon.hero.pointsInTalent(Talent.SOUL_EATER)){
 			Talent.onFoodEaten(Dungeon.hero, 0, null);
 		}
-
 	}
-	
+
 	protected Object loot = null;
 	protected float lootChance = 0;
 	

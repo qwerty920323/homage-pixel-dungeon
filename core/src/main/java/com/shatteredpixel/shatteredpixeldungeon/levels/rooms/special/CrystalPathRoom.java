@@ -32,6 +32,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTransmutat
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.exotic.ExoticScroll;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.exotic.ScrollOfMetamorphosis;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.ExoticCrystals;
+import com.shatteredpixel.shatteredpixeldungeon.journal.Notes;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.levels.painters.Painter;
@@ -246,6 +247,10 @@ public class CrystalPathRoom extends SpecialRoom {
 		level.addItemToSpawn( new CrystalKey( Dungeon.depth ) );
 		level.addItemToSpawn( new CrystalKey( Dungeon.depth ) );
 		level.addItemToSpawn( new CrystalKey( Dungeon.depth ) );
+
+		Notes.add( Notes.BonusKey.BONUS_KEY ); //grave
+		Notes.add( Notes.BonusKey.BONUS_KEY ); //grave
+		Notes.add( Notes.BonusKey.BONUS_KEY ); //grave
 
 		entrance().set( Door.Type.UNLOCKED );
 

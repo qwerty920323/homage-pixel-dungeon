@@ -165,7 +165,12 @@ public class TalismanOfForesight extends Artifact {
 				int earnedExp = 0;
 				boolean noticed = false;
 				for (int cell : cone.cells){
-					GameScene.effectOverFog(new CheckedCell( cell, curUser.pos ));
+					//grave
+					if (curUser.findHeapCell((int) dist, cell, false))
+						GameScene.effectOverFog(new CheckedCell(cell, curUser.pos, 0xFFFF3A3A));
+					else
+						GameScene.effectOverFog(new CheckedCell(cell, curUser.pos, 0xFF55AAFF));
+					//GameScene.effectOverFog(new CheckedCell( cell, curUser.pos , 0xFF55AAFF));
 					if (Dungeon.level.discoverable[cell] && !(Dungeon.level.mapped[cell] || Dungeon.level.visited[cell])){
 						Dungeon.level.mapped[cell] = true;
 						earnedExp++;

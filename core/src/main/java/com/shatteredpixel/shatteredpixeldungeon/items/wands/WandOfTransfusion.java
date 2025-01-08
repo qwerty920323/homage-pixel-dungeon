@@ -43,25 +43,22 @@ import com.shatteredpixel.shatteredpixeldungeon.effects.particles.BloodParticle;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ShadowParticle;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ShaftParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.elixirs.ElixirOfAquaticRejuvenation;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Notes;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
-import com.shatteredpixel.shatteredpixeldungeon.plants.Sungrass;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
-import com.shatteredpixel.shatteredpixeldungeon.tiles.CustomTilemap;
 import com.shatteredpixel.shatteredpixeldungeon.tiles.DungeonTilemap;
 import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
-import com.watabou.noosa.Image;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
-import com.watabou.utils.Point;
 import com.watabou.utils.PointF;
 import com.watabou.utils.Random;
 
@@ -231,7 +228,8 @@ public class WandOfTransfusion extends DamageWand {
 	}
 	@Override
 	public int scholarTurnCount(){
-		int result = Math.round((20 + 5*(Dungeon.hero.lvl-1))* 0.05f);
+		//hero.HT 3%
+		int result = Math.round((20 + 5*(Dungeon.hero.lvl-1))* 0.03f);
 		return result + super.scholarTurnCount();
 	}
 	@Override
@@ -282,8 +280,6 @@ public class WandOfTransfusion extends DamageWand {
 		GameScene.updateMap(pos);
 	}
 
-
-
 	public static class WaterOfMiniHealth extends WellWater {
 		private int turnLeft = 0;
 		public int terrian = -1;
@@ -296,9 +292,9 @@ public class WandOfTransfusion extends DamageWand {
 			for (int i=area.top-1; i <= area.bottom; i++) {
 				for (int j = area.left-1; j <= area.right; j++) {
 					cell = j + i* Dungeon.level.width();
-					if (Dungeon.level.insideMap(cell)) {
+					if (cur[cell] > 0) {
 						if (Dungeon.level.map[cell] != Terrain.WELL)
-							cur[cell] = 0;
+							off[cell] = cur[cell] = 0;
 					}
 					Notes.remove(record());
 				}
@@ -310,8 +306,8 @@ public class WandOfTransfusion extends DamageWand {
 			if (!hero.isAlive()) return false;
 
 			Sample.INSTANCE.play( Assets.Sounds.DRINK );
-			//health
-			Buff.affect(hero, Health.class).boost(turnLeft);
+			//Auqa healing
+			Buff.affect(hero, ElixirOfAquaticRejuvenation.AquaHealing.class).set(turnLeft);
 
 			CellEmitter.get( hero.pos ).start( ShaftParticle.FACTORY, 0.2f , 3 );
 			hero.sprite.emitter().start( Speck.factory( Speck.HEALING ), 0.4f, 4 );
@@ -365,104 +361,6 @@ public class WandOfTransfusion extends DamageWand {
 			super.storeInBundle(bundle);
 			bundle.put( TURNLEFT, turnLeft);
 			bundle.put( TERRIAN, terrian );
-		}
-	}
-
-	public static class Health extends Buff {
-		private static final float STEP = 1f;
-		private float duration, left, partialHeal;
-		private int pos;
-
-		{
-			type = buffType.POSITIVE;
-			announced = true;
-		}
-
-		@Override
-		public boolean act() {
-			if (target.pos != pos) {
-				detach();
-			}
-
-			//for the hero, full heal takes ~50/93/111/120 turns at levels 1/10/20/30
-			partialHeal += (40 + target.HT)/150f;
-
-			if (partialHeal > 1){
-				int healThisTurn = (int)partialHeal;
-				partialHeal -= healThisTurn;
-				left -= healThisTurn;
-
-				if (target.HP < target.HT) {
-
-					target.HP += healThisTurn;
-					target.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(healThisTurn), FloatingText.HEALING);
-
-					if (target.HP >= target.HT) {
-						target.HP = target.HT;
-						if (target instanceof Hero) {
-							((Hero) target).resting = false;
-						}
-					}
-				}
-			}
-
-			if (left <= 0) {
-				detach();
-				if (target instanceof Hero){
-					((Hero)target).resting = false;
-				}
-			}
-			spend( STEP );
-			return true;
-		}
-
-		public void boost( int amount ){
-			if (target != null) {
-				this.duration = left = Math.max(left, amount);
-				pos = target.pos;
-			}
-		}
-		@Override
-		public int icon() {
-			return BuffIndicator.HERB_HEALING;
-		}
-
-		@Override
-		public float iconFadePercent() {
-			return Math.max(0, (duration - left) / duration);
-		}
-
-		@Override
-		public String iconTextDisplay() {
-			return Integer.toString((int)left);
-		}
-
-		@Override
-		public String desc() {
-			return Messages.get(this, "desc", (int)left);
-		}
-
-		private static final String POS	= "pos";
-		private static final String PARTIAL = "partial_heal";
-		private static final String DURATION = "duration";
-		private static final String LEFT = "left";
-
-		@Override
-		public void storeInBundle( Bundle bundle ) {
-			super.storeInBundle( bundle );
-			bundle.put( POS, pos );
-			bundle.put( PARTIAL, partialHeal );
-			bundle.put( DURATION, duration );
-			bundle.put( LEFT, left );
-		}
-
-		@Override
-		public void restoreFromBundle( Bundle bundle ) {
-			super.restoreFromBundle( bundle );
-			pos = bundle.getInt( POS );
-			partialHeal = bundle.getFloat( PARTIAL );
-			duration = bundle.getFloat( DURATION );
-			left = bundle.getFloat( LEFT );
 		}
 	}
 }

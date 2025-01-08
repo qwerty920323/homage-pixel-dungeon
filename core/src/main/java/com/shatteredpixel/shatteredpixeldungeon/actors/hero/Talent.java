@@ -94,8 +94,8 @@ public enum Talent {
 	ENDLESS_RAGE(11, 3), DEATHLESS_FURY(12, 3), ENRAGED_CATALYST(13, 3),
 	//Gladiator T3
 	CLEAVE(14, 3), LETHAL_DEFENSE(15, 3), ENHANCED_COMBO(16, 3),
-	//Brawler T3 싸움꾼
-	BRAWLER1(27, 3), BRAWLER2(28, 3), BRAWLER3(29, 3),
+	//Veteran T3 베테랑
+	RUSH_ATTACK(27, 3), HARD_SHELL(28, 3), ENHANCED_DELAY(29, 3),
 	//Heroic Leap T4
 	BODY_SLAM(17, 4), IMPACT_WAVE(18, 4), DOUBLE_JUMP(19, 4),
 	//Shockwave T4
@@ -133,7 +133,7 @@ public enum Talent {
 	//Freerunner T3
 	EVASIVE_ARMOR(78, 3), PROJECTILE_MOMENTUM(79, 3), SPEEDY_STEALTH(80, 3),
 	//Graverobber T3  도굴꾼
-	COLLECT_MISC(91, 3), TREASURE_HUNTER(92, 3), SYNESTHESIA(93, 3),
+	TREASURE_HUNTER(91, 3), MINING_GOLD(92, 3), METAL_DETECTOR(93, 3),
 	//Smoke Bomb T4
 	HASTY_RETREAT(81, 4), BODY_REPLACEMENT(82, 4), SHADOW_STEP(83, 4),
 	//Death Mark T4
@@ -151,7 +151,7 @@ public enum Talent {
 	FARSIGHT(107, 3), SHARED_ENCHANTMENT(108, 3), SHARED_UPGRADES(109, 3),
 	//Warden T3
 	DURABLE_TIPS(110, 3), BARKSKIN(111, 3), SHIELDING_DEW(112, 3),
-	//Ranger T3 // 순찰자
+	//Ranger T3 // 레인저
 	EXPLOSIVE_ATACK(123, 3), PROJECTILES_SHARE(124, 3), GROWING_ARROW(125, 3),
 	//Spectral Blades T4
 	FAN_OF_BLADES(113, 4), PROJECTING_BLADES(114, 4), SPIRIT_BLADES(115, 4),
@@ -183,12 +183,18 @@ public enum Talent {
 	HEROIC_ENERGY(26, 4), //See icon() and title() for special logic for this one
 	//Ratmogrify T4
 	RATSISTANCE(215, 4), RATLOMACY(216, 4), RATFORCEMENTS(217, 4);
-
 	public static class ImprovisedProjectileCooldown extends FlavourBuff{
 		public int icon() { return BuffIndicator.TIME; }
 		public void tintIcon(Image icon) { icon.hardlight(0.15f, 0.2f, 0.5f); }
 		public float iconFadePercent() { return Math.max(0, visualcooldown() / 50); }
 	};
+	//grave
+	public static class MiningGoldTracker extends FlavourBuff{
+		public int icon() { return BuffIndicator.UPGRADE; }
+		public void tintIcon(Image icon) { icon.hardlight(0.5f, 0.66f, 0.82f); }
+	};
+	//veteran
+	public static class RushAttackTracker extends FlavourBuff{}
 	public static class LethalMomentumTracker extends FlavourBuff{};
 	public static class StrikingWaveTracker extends FlavourBuff{};
 	public static class WandPreservationCounter extends CounterBuff{{revivePersists = true;}};
@@ -360,7 +366,6 @@ public enum Talent {
 		public int energySpent = -1;
 		public boolean wepAbilUsed = false;
 	}
-	public static class CombinedIncreaseAbilityTracker extends FlavourBuff{}
 	public static class CounterAbilityTacker extends FlavourBuff{};
 
 	int icon;
@@ -482,6 +487,12 @@ public enum Talent {
 			toGive = new Gloves().identify();
 			if (!toGive.collect()){
 				Dungeon.level.drop(toGive, hero.pos).sprite.drop();
+			}
+		}
+		//grave
+		if (talent == TREASURE_HUNTER){
+			for (Ring r : hero.belongings.getAllItems(Ring.class)) {
+				r.unequipedRingAll(hero, r);
 			}
 		}
 	}
@@ -662,6 +673,10 @@ public enum Talent {
 		if (hero.hasTalent(ENHANCED_RINGS)){
 			Buff.prolong(hero, EnhancedRings.class, 3f*hero.pointsInTalent(ENHANCED_RINGS));
 		}
+
+		if (hero.hasTalent(MINING_GOLD)){
+			Buff.affect(hero, MiningGoldTracker.class, 10f);
+		}
 	}
 
 	public static void onItemEquipped( Hero hero, Item item ){
@@ -689,6 +704,10 @@ public enum Talent {
 	//note that IDing can happen in alchemy scene, so be careful with VFX here
 	public static void onItemIdentified( Hero hero, Item item ){
 		//currently no talents that trigger here, it wasn't a very popular trigger =(
+		if (item instanceof Ring){
+			((Ring) item).unequipedRing(hero);
+			hero.updateHT(false);
+		}
 	}
 
 	public static int onAttackProc( Hero hero, Char enemy, int dmg ){
@@ -903,8 +922,8 @@ public enum Talent {
 			case GLADIATOR:
 				Collections.addAll(tierTalents, CLEAVE, LETHAL_DEFENSE, ENHANCED_COMBO);
 				break;
-			case BRAWLER:      //싸움꾼
-				Collections.addAll(tierTalents, BRAWLER1, BRAWLER2, BRAWLER3);
+			case VETERAN:      //베테랑
+				Collections.addAll(tierTalents, RUSH_ATTACK, HARD_SHELL, ENHANCED_DELAY);
 				break;
 			case BATTLEMAGE:
 				Collections.addAll(tierTalents, EMPOWERED_STRIKE, MYSTICAL_CHARGE, EXCESS_CHARGE);
@@ -922,7 +941,7 @@ public enum Talent {
 				Collections.addAll(tierTalents, EVASIVE_ARMOR, PROJECTILE_MOMENTUM, SPEEDY_STEALTH);
 				break;
 			case GRAVEROBBER:  //도굴꾼
-				Collections.addAll(tierTalents, COLLECT_MISC, TREASURE_HUNTER, SYNESTHESIA);
+				Collections.addAll(tierTalents, TREASURE_HUNTER, MINING_GOLD, METAL_DETECTOR);
 				break;
 			case SNIPER:
 				Collections.addAll(tierTalents, FARSIGHT, SHARED_ENCHANTMENT, SHARED_UPGRADES);
@@ -930,7 +949,7 @@ public enum Talent {
 			case WARDEN:
 				Collections.addAll(tierTalents, DURABLE_TIPS, BARKSKIN, SHIELDING_DEW);
 				break;
-			case RANGER:       //순찰자
+			case RANGER:       //레인저
 				Collections.addAll(tierTalents, EXPLOSIVE_ATACK, PROJECTILES_SHARE, GROWING_ARROW);
 				break;
 			case CHAMPION:

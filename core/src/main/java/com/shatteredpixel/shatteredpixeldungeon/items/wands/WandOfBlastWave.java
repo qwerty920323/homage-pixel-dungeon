@@ -28,48 +28,28 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Regrowth;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Blindness;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.BlobImmunity;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Burning;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Chill;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Corrosion;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.FlavourBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Paralysis;
-import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
-import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Tengu;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Effects;
 import com.shatteredpixel.shatteredpixeldungeon.effects.MagicMissile;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Pushing;
-import com.shatteredpixel.shatteredpixeldungeon.items.Dewdrop;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
-import com.shatteredpixel.shatteredpixeldungeon.items.Item;
-import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.DriedRose;
-import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TimekeepersHourglass;
-import com.shatteredpixel.shatteredpixeldungeon.items.journal.Guidebook;
-import com.shatteredpixel.shatteredpixeldungeon.items.keys.Key;
-import com.shatteredpixel.shatteredpixeldungeon.items.potions.Potion;
-import com.shatteredpixel.shatteredpixeldungeon.items.quest.DarkGold;
-import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.Scroll;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Elastic;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
-import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.MissileWeapon;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.levels.features.Door;
 import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.special.MagicalFireRoom;
 import com.shatteredpixel.shatteredpixeldungeon.levels.traps.TenguDartTrap;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
-import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
-import com.shatteredpixel.shatteredpixeldungeon.sprites.MissileSprite;
 import com.shatteredpixel.shatteredpixeldungeon.tiles.DungeonTilemap;
-import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.Game;
 import com.watabou.noosa.Group;
 import com.watabou.noosa.Image;
 import com.watabou.noosa.audio.Sample;
+import com.watabou.utils.BArray;
 import com.watabou.utils.Callback;
 import com.watabou.utils.PathFinder;
 import com.watabou.utils.PointF;
@@ -309,9 +289,8 @@ public class WandOfBlastWave extends DamageWand {
 	}
 
 	//scholar
-
 	@Override
-	public int bonusRange () {return  super.bonusRange()+2;}
+	public int bonusRange () {return super.bonusRange()+2;}
 	@Override
 	public int scholarTurnCount(){
 		return super.scholarTurnCount() + 6;
@@ -323,20 +302,25 @@ public class WandOfBlastWave extends DamageWand {
 
 		eraseBlobs(pos);
 
-		Buff.affect(curUser, WhirlWindTracker.class,0f);
-		//callback 새로 만들지 않기 위해
-		((MagicMissile) curUser.sprite.parent.recycle(MagicMissile.class)).reset(
-				MagicMissile.FORCE_CONE, pos, pos,
-				new Callback() {
-					@Override
-					public void call() {
-						whirlwind(pos);
-						curUser.spendAndNext(1f);
-					}
-				});
+		int openCount = bonusRange();
+		//open the heap!
+		for (int p : PathFinder.NEIGHBOURS8) {
+			Heap heap = Dungeon.level.heaps.get(pos + p);
+
+			if (openCount > 0 && heap != null
+					&& (heap.type == Heap.Type.CHEST || heap.type == Heap.Type.TOMB
+					|| heap.type == Heap.Type.SKELETON || heap.type == Heap.Type.REMAINS)) {
+
+				WandOfBlastWave.BlastWave.blast(heap.pos);
+				openCount--;
+
+				heap.type = Heap.Type.HEAP;
+				heap.sprite.link();
+				heap.sprite.drop();
+			}
+		}
 	}
 
-	public static class WhirlWindTracker extends FlavourBuff {} //heap 던질때 턴 소모 계산을 위함
 
 	private void eraseBlobs(int pos){
 		ArrayList<Class> affectedBlobs = new ArrayList<>(new BlobImmunity().immunities());
@@ -369,146 +353,6 @@ public class WandOfBlastWave extends DamageWand {
 					blob.cur[pos] -= scholarTurnCount();
 				}
 				blobs.clear();
-			}
-
-			Char ch = Actor.findChar(pathCell);
-			if (ch != null && ch == curUser) {
-				if (ch.buff(Burning.class) != null) ch.buff(Burning.class).detach();
-
-				if (ch.buff(Chill.class) != null) ch.buff(Chill.class).detach();
-
-				if (ch.buff(Corrosion.class) != null) ch.buff(Corrosion.class).detach();
-
-				if (ch.buff(WandOfPrismaticLight.FireFly.class) != null)
-					ch.buff(WandOfPrismaticLight.FireFly.class).detach();
-			}
-
-		}
-	}
-
-	private void whirlwind(int pos){
-		WandOfBlastWave.BlastWave.blast(pos);
-
-		int dist = bonusRange();
-
-		for (int p : PathFinder.NEIGHBOURS8) {
-			int pathCell = pos + p;
-			//Heap 밀어내기 로직
-			Ballistica ballistica = new Ballistica(pos, pathCell, Ballistica.MAGIC_BOLT);
-			Heap heap = Dungeon.level.heaps.get(pathCell);
-
-			int cell = ballistica.collisionPos;
-
-			int end = ballistica.dist;
-			if (Dungeon.level.solid[pathCell]){
-				continue;
-			}
-
-			while ((Dungeon.level.avoid[cell] && cell != pos) || end > dist){
-				end--;
-				cell = ballistica.path.get(end);
-			}
-
-			Char enemy = Actor.findChar(cell);
-
-			if (heap != null && heap.type == Heap.Type.HEAP) {
-				Item item = heap.peek();
-
-				if (item instanceof Tengu.BombAbility.BombItem
-						|| item instanceof Tengu.ShockerAbility.ShockerItem){
-					continue;
-				}
-
-				if (item.quantity() <= 1){
-					heap.pickUp();
-				}
-
-				int finalCell = cell;
-				((MissileSprite) curUser.sprite.parent.recycle(MissileSprite.class)).
-						reset(pathCell,
-								cell,
-								item,
-								new Callback() {
-									@Override
-									public void call() {
-										Item i = item.detach(curUser.belongings.backpack);
-
-										if (i != null) {
-											if (enemy != null && enemy instanceof Hero) {
-												if (i.doPickUp((Hero) enemy)) {
-													((Hero) enemy).spend(-TIME_TO_PICK_UP);
-													whatDoPick(i);
-												} else {
-													Dungeon.level.drop(i, finalCell).sprite.drop();
-												}
-											} else {
-												throwToEnemy(enemy,finalCell,i);
-											}
-										}
-
-										if (curUser.hasTalent(Talent.IMPROVISED_PROJECTILES)
-												&& !(item instanceof MissileWeapon)
-												&& curUser.buff(Talent.ImprovisedProjectileCooldown.class) == null){
-											if (enemy != null && enemy.alignment != curUser.alignment){
-												Sample.INSTANCE.play(Assets.Sounds.HIT);
-												Buff.affect(enemy, Blindness.class, 1f + curUser.pointsInTalent(Talent.IMPROVISED_PROJECTILES));
-												Buff.affect(curUser, Talent.ImprovisedProjectileCooldown.class, 50f);
-											}
-										}
-									}
-								});
-			}
-		}
-	}
-
-	public void throwToEnemy(Char enemy, int finalCell, Item i){
-		if (enemy != null && enemy.properties().contains(Char.Property.IMMOVABLE)) {
-			ArrayList<Integer> candidates = new ArrayList<>();
-			for (int n : PathFinder.NEIGHBOURS8){
-				if (Dungeon.level.passable[finalCell+n]){
-					candidates.add(finalCell+n);
-				}
-			}
-			Dungeon.level.drop( i, Random.element(candidates) ).sprite.drop( finalCell );
-		} else {
-			if (i instanceof Potion) {
-				Dungeon.level.drop(i, finalCell).sprite.drop();
-
-			} else if (enemy != null
-					&& enemy.alignment != curUser.alignment
-					&& i instanceof MissileWeapon) {
-				MissileWeapon m = (MissileWeapon) i;
-				m.toThrowWeapon(enemy.pos);
-
-			} else {
-				i.toThrow(finalCell);
-			}
-		}
-	}
-
-	public void whatDoPick (Item item){
-		if (item instanceof Dewdrop
-				|| item instanceof TimekeepersHourglass.sandBag
-				|| item instanceof DriedRose.Petal
-				|| item instanceof Key
-				|| item instanceof Guidebook) {
-			//Do Nothing
-		} else if (item instanceof DarkGold) {
-			DarkGold existing = curUser.belongings.getItem(DarkGold.class);
-			if (existing != null){
-				if (existing.quantity() >= 40) {
-					GLog.p(Messages.get(DarkGold.class, "you_now_have", existing.quantity()));
-				} else {
-					GLog.i(Messages.get(DarkGold.class, "you_now_have", existing.quantity()));
-				}
-			}
-		} else {
-			boolean important = item.unique && item.isIdentified() &&
-					(item instanceof Scroll || item instanceof Potion);
-			if (important) {
-				GLog.p( Messages.capitalize(Messages.get(Hero.class, "you_now_have", item.name())) );
-			} else {
-				GLog.i( Messages.capitalize(Messages.get(Hero.class, "you_now_have", item.name())) );
 			}
 		}
 	}

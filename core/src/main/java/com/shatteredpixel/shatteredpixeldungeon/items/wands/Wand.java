@@ -29,7 +29,6 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Barrier;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Degrade;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.FlavourBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Invisibility;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MagicImmune;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Recharging;
@@ -77,7 +76,7 @@ public abstract class Wand extends Item {
 	public static final String AC_ZAP	= "ZAP";
 
 	private static final float TIME_TO_ZAP	= 1f;
-	
+
 	public int maxCharges = initialCharges();
 	public int curCharges = maxCharges;
 	public float partialCharge = 0f;
@@ -88,7 +87,6 @@ public abstract class Wand extends Item {
 	
 	public boolean curseInfusionBonus = false;
 	public int resinBonus = 0;
-
 	private static final int USES_TO_ID = 10;
 	private float usesLeftToID = USES_TO_ID;
 	private float availableUsesToID = USES_TO_ID/2f;
@@ -214,8 +212,6 @@ public abstract class Wand extends Item {
 				Random.Float() > (Math.pow(0.92f, (wandLevel*chargesUsed)+1) - 0.07f)){
 			SoulMark.prolong(target, SoulMark.class, SoulMark.DURATION + wandLevel);
 		}
-
-		magicCirculation = false;
 	}
 
 	@Override
@@ -389,9 +385,7 @@ public abstract class Wand extends Item {
 		curCharges = Math.min( curCharges, maxCharges );
 	}
 	
-	protected int initialCharges() {
-		return 2;
-	}
+	protected int initialCharges() {return 2;}
 
 	protected int chargesPerCast() {
 		return 1;
@@ -469,14 +463,13 @@ public abstract class Wand extends Item {
 		Invisibility.dispel();
 		updateQuickslot();
 
-		if (magicCirculation && Dungeon.hero.hasTalent(Talent.MAGIC_CIRCULATION)){
-			float charge = 0.12f * Dungeon.hero.pointsInTalent(Talent.MAGIC_CIRCULATION);
-			noCharCharge(charge);
+		//scholar
+		if (Dungeon.hero.hasTalent(Talent.MAGIC_CIRCULATION)){
+			float talent = 0.12f * Dungeon.hero.pointsInTalent(Talent.MAGIC_CIRCULATION);
+			recycling(talent);
 		}
 
-		// heap 날리기 순서를 위해 scholar
-		if (curUser.buff(WandOfBlastWave.WhirlWindTracker.class) == null)
-			curUser.spendAndNext( TIME_TO_ZAP );
+		curUser.spendAndNext( TIME_TO_ZAP );
 	}
 	
 	@Override
@@ -535,7 +528,6 @@ public abstract class Wand extends Item {
 	private static final String PARTIALCHARGE       = "partialCharge";
 	private static final String CURSE_INFUSION_BONUS= "curse_infusion_bonus";
 	private static final String RESIN_BONUS         = "resin_bonus";
-
 	@Override
 	public void storeInBundle( Bundle bundle ) {
 		super.storeInBundle( bundle );
@@ -824,9 +816,6 @@ public abstract class Wand extends Item {
 
 
 	//scholar
-
-	public static boolean magicCirculation;
-
 	public int scholarTurnCount(){
 		int bonusTurn = Dungeon.hero.pointsInTalent(Talent.STEP_GROWTH);
 		int turn = buffedLvl() > 0 ? 1 : 0;
@@ -850,11 +839,26 @@ public abstract class Wand extends Item {
 			return 0;
 	}
 
-	public int bonusRange () {return Dungeon.hero.pointsInTalent(Talent.WIDE_SUMMON);}
+	public boolean inBlobs (){
+		WandOfMagicMissile.UpgradeLight light
+				= (WandOfMagicMissile.UpgradeLight) Dungeon.level.blobs.get(WandOfMagicMissile.UpgradeLight.class);
+
+		if (light != null && light.volume > 0 && light.cur[Dungeon.hero.pos] > 0) {
+			return true;
+		}
+
+		return false;
+	}
+
+	public int bonusRange () {
+		if (inBlobs())
+			return 1 + Dungeon.hero.pointsInTalent(Talent.WIDE_SUMMON);
+
+		return Dungeon.hero.pointsInTalent(Talent.WIDE_SUMMON);
+	}
 
 	public void scholarAbility(Ballistica bolt, int cell){
-		if (Dungeon.hero.hasTalent(Talent.MAGIC_CIRCULATION))
-			magicCirculation = true;
+
 	}
 
 	public boolean terrCheck (int pos, int bonusTerrian){
@@ -883,25 +887,12 @@ public abstract class Wand extends Item {
 		return false;
 	}
 
-	public void noCharCharge (float charge){
+	public void recycling(float charge){
 		if (curCharges < maxCharges) {
 			int quantity = Math.round(Math.max(10, 20 * charge * chargesPerCast()));
 			curUser.sprite.centerEmitter().burst(EnergyParticle.FACTORY,  quantity);
 
 			gainCharge(charge * chargesPerCast());
-			/*
-			partialCharge += charge * chargesPerCast();
-			while (partialCharge >= 1f) {
-				curCharges++;
-				partialCharge--;
-			}
-			if (curCharges >= maxCharges){
-				partialCharge = 0;
-				curCharges = maxCharges;
-			}
-			updateQuickslot();
-
-			 */
 		}
 	}
 }

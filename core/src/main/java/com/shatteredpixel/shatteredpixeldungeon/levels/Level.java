@@ -42,7 +42,6 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MindVision;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.PinCushion;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Regeneration;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.RevealedArea;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.RevealedCell;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Shadows;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
@@ -66,6 +65,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.Torch;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TalismanOfForesight;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TimekeepersHourglass;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfStrength;
+import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfWealth;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfUpgrade;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfEnchantment;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfIntuition;
@@ -78,6 +78,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.TrinketCatalyst;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfPrismaticLight;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfRegrowth;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfWarding;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Lucky;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.HeavyBoomerang;
 import com.shatteredpixel.shatteredpixeldungeon.levels.features.Chasm;
 import com.shatteredpixel.shatteredpixeldungeon.levels.features.Door;
@@ -1441,14 +1442,6 @@ public abstract class Level implements Bundlable {
 				}
 			}
 
-			//scholar
-			for (RevealedCell a : c.buffs(RevealedCell.class)){
-				if (Dungeon.depth != a.depth || Dungeon.branch != a.branch) continue;
-				for (int i : a.cells) {
-					heroMindFov[i] = true;
-				}
-			}
-
 			//set mind vision chars
 			for (Mob mob : mobs) {
 				if (heroMindFov[mob.pos] && !fieldOfView[mob.pos]){
@@ -1568,8 +1561,6 @@ public abstract class Level implements Bundlable {
 				return Messages.get(Level.class, "bookshelf_name");
 			case Terrain.ALCHEMY:
 				return Messages.get(Level.class, "alchemy_name");
-			case Terrain.LAST_ICE: //scholar
-				return Messages.get(Level.class, "ice_name");
 			case Terrain.ICE: //scholar
 				return Messages.get(Level.class, "ice_grass_name");
 			default:
@@ -1612,8 +1603,6 @@ public abstract class Level implements Bundlable {
 				return Messages.get(Level.class, "alchemy_desc");
 			case Terrain.EMPTY_WELL:
 				return Messages.get(Level.class, "empty_well_desc");
-			case Terrain.LAST_ICE: //scholar
-				return Messages.get(Level.class, "ice_desc");
 			case Terrain.ICE: //scholar
 				return Messages.get(Level.class, "ice_grass_desc");
 			default:

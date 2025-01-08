@@ -11,13 +11,9 @@ import com.watabou.utils.Bundle;
 
 public class WardingEffect extends Buff {
 
-    {
-        revivePersists = true;
-    }
+    public int left, atkCount;
 
-    public int left, maxLeft, atkCount;
-
-    public static String setBonusEffect(NPC npc, Char ch, int wandlvl){
+    public static String setBonusEffect(NPC npc, Char ch){
         String result = "cripple";
 
         int left = 2;
@@ -80,7 +76,7 @@ public class WardingEffect extends Buff {
                 if (fov)
                     CellEmitter.get(ch.pos).burst(LeafParticle.GENERAL, 8);
                 break;
-
+/*
             case Terrain.PEDESTAL:
                 //power up?
                 if (nonChar) {
@@ -89,30 +85,29 @@ public class WardingEffect extends Buff {
                 }
 
                 break;
+
+ */
         }
         return result;
     }
 
     public void setWarding(int left, int count){
-        this.left = maxLeft = left;  // 턴마다 줄어드는 left, 초기화 할때 필요한 maxLeft
-        this.atkCount = count;       // 공격마다 줄어드는 atkCount
+        this.left = left;  // buff time
+        this.atkCount = count;       // attack Count
     }
 
     private static final String LEFT = "left";
-    private static final String MAX_LEFT = "max_left";
     private static final String ATK_COUNT = "atk_count";
     @Override
     public void storeInBundle(Bundle bundle) {
         super.storeInBundle(bundle);
         bundle.put(LEFT, left);
-        bundle.put(MAX_LEFT, maxLeft);
         bundle.put(ATK_COUNT, atkCount);
     }
     @Override
     public void restoreFromBundle(Bundle bundle) {
         super.restoreFromBundle(bundle);
         left = bundle.getInt(LEFT);
-        maxLeft = bundle.getInt(MAX_LEFT);
         atkCount = bundle.getInt(ATK_COUNT);
     }
 
@@ -124,15 +119,13 @@ public class WardingEffect extends Buff {
 
     @Override
     public boolean act() {
+        spend(TICK);
+
         if (left > 0)
             left--;
+        else
+            detach();
 
-        if (left <= 0) {
-            left = maxLeft;
-            afterAttack();
-        }
-
-        spend(TICK);
         return true;
     }
 

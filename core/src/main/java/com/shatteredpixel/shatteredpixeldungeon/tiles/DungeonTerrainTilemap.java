@@ -50,15 +50,6 @@ public class DungeonTerrainTilemap extends DungeonTilemap {
 					map[pos + PathFinder.CIRCLE4[2]],
 					map[pos + PathFinder.CIRCLE4[3]]
 			);
-
-		} else if (tile == Terrain.LAST_ICE) { //scholar
-			return DungeonTileSheet.stitchIceTile(
-					map[pos + PathFinder.CIRCLE4[0]],
-					map[pos + PathFinder.CIRCLE4[1]],
-					map[pos + PathFinder.CIRCLE4[2]],
-					map[pos + PathFinder.CIRCLE4[3]]
-			);
-
 		} else if (tile == Terrain.CHASM) {
 			return DungeonTileSheet.stitchChasmTile( pos > mapWidth ? map[pos - mapWidth] : -1);
 		}

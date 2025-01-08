@@ -3,8 +3,13 @@ package com.shatteredpixel.shatteredpixeldungeon.actors.buffs;
 import static com.shatteredpixel.shatteredpixeldungeon.Dungeon.hero;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
+import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
+import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
+import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.NPC;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.PixelScene;
@@ -22,12 +27,14 @@ import com.watabou.utils.Callback;
 
 import java.util.ArrayList;
 
+import javax.naming.NameParser;
+
 public class BladeDance extends Buff implements ActionIndicator.Action {
     private static final float DURATION = 30f;
 
     {
 
-        actPriority = BUFF_PRIO - 1;
+        actPriority = BUFF_PRIO + 1;
         type = buffType.POSITIVE;
         revivePersists = true;
 
@@ -46,9 +53,10 @@ public class BladeDance extends Buff implements ActionIndicator.Action {
 
     @Override
     public boolean act() {
+
         if (!crazyDance) {
             ActionIndicator.refresh();
-            left -= turnDown();
+            left -= TICK;
         }
 
         if (left <= 0) {
@@ -80,36 +88,35 @@ public class BladeDance extends Buff implements ActionIndicator.Action {
 
     public void announce(){
         if (!rank.isEmpty()) {
-            GLog.p(Messages.get(this, "rank", rank(getRankCount())));
             target.sprite.showStatus(CharSprite.WARNING, rank(getRankCount()));
             ActionIndicator.setAction(this);
         }
     }
 
-    public float turnDown() {
-        float rankCount = getRankCount() - 1;
+    public void setShiled() {
+        Buff.affect(target, InfiniteEvasionDance.class, 10f);
 
-        return (float) ((Math.floor(10f * Math.pow(1.125f, rankCount))) / 10f);
-        // SSS에서 턴 당 2 감소
+        Barrier barrier = Buff.affect(target, Barrier.class);
+        barrier.incShield(getRankCount() * ((Hero)target).pointsInTalent(Talent.QUICKSTEP));
     }
 
 
     public void rankSet(String s) {
-        if (rank.isEmpty()) {
-            rankAdd(s);
-            this.left = 31f;
-        } else if (!s.equals(lastAct()) && getRankCount() < 7) {
-            rankAdd(s);
-        }
-        ActionIndicator.refresh();
-    }
+        if (crazyDance) return;
 
-    public void rankAdd(String s) {
-        if (!crazyDance) {
+        if (rank.isEmpty()) {
             rank.add(s);
-            left += turnDown();
+            this.left = 30f;
+            announce();
+
+        } else if (!s.equals(lastAct()) && getRankCount() < 7) {
+            rank.add(s);
+            this.left = 30f;
+            left += TICK;
             announce();
         }
+
+        ActionIndicator.refresh();
     }
 
     public String lastAct() {
@@ -119,7 +126,7 @@ public class BladeDance extends Buff implements ActionIndicator.Action {
 
     public int getRankCount() {
         if (!rank.isEmpty()) return rank.size();
-        else return 0;
+        return 0;
     }
 
     public String rank(int rank) {
@@ -153,15 +160,19 @@ public class BladeDance extends Buff implements ActionIndicator.Action {
     }
 
     public float bonus (float input){
-        //delay (공속) = 1.345f // evasion(회피) = 1.17f
-        boolean check = hero.buff(Talent.CombinedIncreaseAbilityTracker.class) != null;
-
+        //delay (공속) = 1.345f // evasion(회피) = 1.22f
         float output = Math.round(10f * (Math.pow(input, getRankCount())));
 
-        float rankcheck = getRankCount() > 4 ? 0.2f : 0.1f;
-        float result = check ? output * (1 + rankcheck * hero.pointsInTalent(Talent.COMBINED_AGILITY)) : output;
+        return output;
+    }
 
-        return Math.round(result);
+    public boolean weaponChargeCheck (){
+        if (crazyDance
+                && lastAct() == ability
+                && Dungeon.hero.hasTalent(Talent.COMBINED_AGILITY)){
+            return true;
+        }
+        return false;
     }
 
 
@@ -177,9 +188,8 @@ public class BladeDance extends Buff implements ActionIndicator.Action {
     public String desc() {
         String desc = Messages.get(this, "desc");
         if (!rank.isEmpty()) {
-            desc += " " + Messages.get(this, "dance", bonus(1.345f), bonus(1.17f)/10f);
-            desc += "\n" + Messages.get(this, "rank_and_left",
-                    turnDown(), Math.ceil(10 * left / turnDown()) / 10, Math.ceil(10 * left) / 10);
+            desc += " " + Messages.get(this, "dance", bonus(1.345f), bonus(1.22f)/10f);
+            desc += "\n" + Messages.get(this, "rank_and_left", left);
             desc += "\n\n" + Messages.get(this, "acts", Messages.get(this, lastAct()));
         }
         return desc;
@@ -268,21 +278,30 @@ public class BladeDance extends Buff implements ActionIndicator.Action {
 
     @Override
     public int indicatorColor() {
-     //   if (hero.buff(Talent.CombinedIncreaseAbilityTracker.class) != null) return 0x33CC00;
-
         return 0xff6633;
     }
 
     @Override
     public void doAction() {
+        boolean canAttack = false;
+        for (Mob mob : Dungeon.level.mobs.toArray( new Mob[0] )) {
+            if (Dungeon.level.heroFOV[mob.pos] && !(mob instanceof NPC)){
+                canAttack = true;
+                break;
+            }
+        }
+
+        if (!canAttack) {
+            GLog.w(Messages.get(Preparation.class, "no_target"));
+            return;
+        }
+
         target.sprite.showStatus(CharSprite.WARNING, Messages.get(this, "action_name"));
-        target.sprite.emitter().burst(Speck.factory(Speck.RED_LIGHT), 2);
+        target.sprite.emitter().burst(Speck.factory(Speck.JET), getRankCount());
 
         Sample.INSTANCE.play(Assets.Sounds.MISS, 2f, 0.8f);
         BuffIndicator.refreshHero();
         ActionIndicator.clearAction(this);
-
-   //     boolean bonus = hero.buff(Talent.CombinedIncreaseAbilityTracker.class) != null;
 
         hero.busy();
         crazyDance = true;
@@ -290,7 +309,7 @@ public class BladeDance extends Buff implements ActionIndicator.Action {
         hero.sprite.operate(target.pos, new Callback() {
             @Override
             public void call() {
-                Buff.affect(target, CrazyDance.class).set(10f, bonus(1.345f), bonus(1.17f));
+                Buff.affect(target, CrazyDance.class).set(bonus(1.345f), bonus(1.22f));
                 hero.next();
             }
         });
@@ -301,4 +320,6 @@ public class BladeDance extends Buff implements ActionIndicator.Action {
         ActionIndicator.clearAction(this);
         super.detach();
     }
+
+    public static class InfiniteEvasionDance extends FlavourBuff {}
 }

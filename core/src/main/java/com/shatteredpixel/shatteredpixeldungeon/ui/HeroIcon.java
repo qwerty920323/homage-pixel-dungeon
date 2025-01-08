@@ -39,7 +39,7 @@ public class HeroIcon extends Image {
 	//subclasses
 	public static final int BERSERKER   = 0;
 	public static final int GLADIATOR   = 1;
-	public static final int BRAWLER     = 10; //싸움꾼
+	public static final int VETERAN     = 10; //베테랑
 	public static final int BATTLEMAGE  = 2;
 	public static final int WARLOCK     = 3;
 	public static final int SCHOLAR     = 11; //연구가
@@ -78,8 +78,8 @@ public class HeroIcon extends Image {
 	public static final int SNIPERS_MARK    = 36;
 	public static final int WEAPON_SWAP     = 37;
 	public static final int MONK_ABILITIES  = 38;
-	public static final int SCHOLAR_ABILITIE= 39; //연구가
-	public static final int ARROW_BLAST     = 40; //순찰자
+	public static final int DELAY_ACT = 39; //베테랑
+	public static final int ARROW_BLAST     = 40; //레인저
 	public static final int BLADE_DANCE     = 41; //무예가
 
 	public HeroIcon(HeroSubClass subCls){

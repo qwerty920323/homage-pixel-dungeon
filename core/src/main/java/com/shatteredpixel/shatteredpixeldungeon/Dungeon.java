@@ -31,7 +31,6 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Light;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MagicalSight;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MindVision;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.RevealedArea;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.RevealedCell;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Terror;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
@@ -1000,18 +999,6 @@ public class Dungeon {
 			BArray.or( level.visited, level.heroFOV, a.pos - 1 + level.width(), 3, level.visited );
 			GameScene.updateFog(a.pos, 2);
 		}
-
-		//scholar
-		for (RevealedCell a : hero.buffs(RevealedCell.class)){
-			if (Dungeon.depth != a.depth || Dungeon.branch != a.branch) continue;
-			for (int i : a.cells) {
-				BArray.or(level.visited, level.heroFOV, i - 1 - level.width(), 3, level.visited);
-				BArray.or(level.visited, level.heroFOV, i - 1, 3, level.visited);
-				BArray.or(level.visited, level.heroFOV, i - 1 + level.width(), 3, level.visited);
-				GameScene.updateFog(i, 2);
-			}
-		}
-
 
 		for (Char ch : Actor.chars()){
 			if (ch instanceof WandOfWarding.Ward

@@ -42,6 +42,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfCorrosion;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfCorruption;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfDisintegration;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfLivingEarth;
+import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfMagicMissile;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfRegrowth;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
@@ -149,7 +150,6 @@ public class MagesStaff extends MeleeWeapon {
 				return;
 			}
 
-			wand.magicCirculation = true; //scholar
 			if (cursed || hasCurseEnchant()) wand.cursed = true;
 			else                             wand.cursed = false;
 			wand.execute(hero, AC_ZAP);
@@ -361,7 +361,6 @@ public class MagesStaff extends MeleeWeapon {
 
 			if (Dungeon.hero.subClass == HeroSubClass.SCHOLAR){
 				info += "\n\n" + Messages.get(wand, "scholar_desc", wand.scholarTurnCount(), wand.bonusRange());
-
 			}
 		}
 

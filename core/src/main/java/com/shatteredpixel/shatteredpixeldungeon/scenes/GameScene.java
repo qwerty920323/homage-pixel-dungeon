@@ -38,6 +38,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AscensionChallenge;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.ChampionEnemy;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.DemonSpawner;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Ghoul;
@@ -57,12 +58,14 @@ import com.shatteredpixel.shatteredpixeldungeon.items.Honeypot;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.DriedRose;
 import com.shatteredpixel.shatteredpixeldungeon.items.journal.Guidebook;
+import com.shatteredpixel.shatteredpixeldungeon.items.keys.CrystalKey;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.Potion;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTeleportation;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.DimensionalSundial;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.MimicTooth;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Document;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Journal;
+import com.shatteredpixel.shatteredpixeldungeon.journal.Notes;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.RegularLevel;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
@@ -527,6 +530,29 @@ public class GameScene extends PixelScene {
 						GLog.p(Messages.get(this, "secret_hint"));
 					}
 				Random.popGenerator();
+			}
+
+			//grave
+			int keyCount = Notes.BonusKeyCount(Notes.BonusKey.BONUS_KEY, Dungeon.depth);
+			if (Dungeon.hero.subClass == HeroSubClass.GRAVEROBBER && keyCount > 0){
+				ArrayList <Integer> cells = new ArrayList<>();
+
+				for (int i = 0; i < Dungeon.level.length(); i++){
+					if (Dungeon.level.passable[i] && Dungeon.level.heaps.get(i) == null){
+						cells.add(i);
+					}
+				}
+
+				for (int i = 0; i < keyCount; i++) {
+					Heap h = Dungeon.level.drop(new CrystalKey(Dungeon.depth), cells.get(Random.index(cells)));
+					h.type = Heap.Type.SKELETON;
+					h.sprite.link();
+					h.sprite.drop();
+
+					Notes.remove(Notes.BonusKey.BONUS_KEY);
+				}
+
+				GLog.p(Messages.get(this, "secret_skeleton"));
 			}
 
 			boolean unspentTalents = false;

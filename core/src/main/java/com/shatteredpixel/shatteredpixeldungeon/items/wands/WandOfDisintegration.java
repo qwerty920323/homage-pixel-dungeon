@@ -35,7 +35,6 @@ import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.PurpleParticle;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ScholarParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
-import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
@@ -248,7 +247,7 @@ public class WandOfDisintegration extends DamageWand {
 		@Override
 		public void use(BlobEmitter emitter) {
 			super.use(emitter);
-			emitter.start(ScholarParticle.WHITE, 0.05f, 0);
+			emitter.start(ScholarParticle.YELLOW, 0.05f, 0);
 		}
 
 		@Override

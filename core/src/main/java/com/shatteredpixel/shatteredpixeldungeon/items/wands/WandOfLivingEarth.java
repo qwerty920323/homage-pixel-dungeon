@@ -26,6 +26,7 @@ import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AllyBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Amok;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
@@ -33,13 +34,18 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mimic;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.NPC;
+import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.FloatingText;
 import com.shatteredpixel.shatteredpixeldungeon.effects.MagicMissile;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.EarthParticle;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.PitfallParticle;
+import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
+import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
+import com.shatteredpixel.shatteredpixeldungeon.levels.features.Chasm;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
@@ -47,6 +53,7 @@ import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.EarthGuardianSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
+import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.Image;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
@@ -351,7 +358,15 @@ public class WandOfLivingEarth extends DamageWand {
 
 		@Override
 		public int attackProc(Char enemy, int damage) {
-			if (enemy instanceof Mob) ((Mob)enemy).aggro(this);
+			if (enemy instanceof Mob) {
+				((Mob)enemy).aggro(this);
+				//scholar ~
+				SpawnedGround ground = (SpawnedGround) Dungeon.level.blobs.get(SpawnedGround.class);
+				if (ground != null && ground.volume > 0 && ground.cur[enemy.pos] > 0){
+					ground.fallCells(enemy.pos);
+				}
+			}
+
 			return super.attackProc(enemy, damage);
 		}
 
@@ -421,27 +436,164 @@ public class WandOfLivingEarth extends DamageWand {
 	}
 
 	@Override
-	public int bonusRange(){
-		return super.bonusRange();
-	}
+	public int bonusRange(){return (super.bonusRange()) + 2;}
 	@Override
 	public int scholarTurnCount(){
-		return super.scholarTurnCount() + 8;
+		return super.scholarTurnCount() + 10;
 	}
 	@Override
 	public void scholarAbility(Ballistica bolt, int cell) {
-		for (int pos : bolt.path) {
-			setGround(pos);
+		int dist = Dungeon.level.distance(curUser.pos, bolt.collisionPos);
+		int spawnCheck = 0;
+
+		for (int pos : bolt.subPath(0, dist)) {
+			if (setGround(pos, scholarTurnCount()))
+				spawnCheck++;
 		}
 
+		if (spawnCheck <= 0){
+			EarthGuardian guardian = null;
+			for (Mob m : Dungeon.level.mobs){
+				if (m instanceof EarthGuardian){
+					guardian = (EarthGuardian) m;
+					break;
+				}
+			}
+
+			if (guardian != null) {
+				guardian.sprite.centerEmitter().burst(MagicMissile.EarthParticle.ATTRACT, 8 + buffedLvl() / 2);
+				guardian.setInfo(curUser, buffedLvl(), bonusRange());
+			} else {
+				curUser.sprite.centerEmitter().burst(MagicMissile.EarthParticle.ATTRACT, 8 + buffedLvl() / 2);
+				Buff.affect(curUser, RockArmor.class).addArmor( buffedLvl(), bonusRange());
+			}
+		}
 	}
-	public void setGround(int pos){
+	public boolean setGround(int pos, int turn){
 		int terr = Dungeon.level.map[pos];
-		if (terr == Terrain.CHASM){
+		SpawnedGround g = (SpawnedGround) Dungeon.level.blobs.get(SpawnedGround.class);
+		boolean spawnedGround = g != null && g.volume > 0 && g.cur[pos] > 0;
+
+		if (terr == Terrain.CHASM || spawnedGround){
+			int amount = spawnedGround ? turn - g.cur[pos] : turn;
+			SpawnedGround ground = Blob.seed(pos, amount, SpawnedGround.class);
+			GameScene.add(ground);
 
 			CellEmitter.bottom(pos).start(EarthParticle.FACTORY, 0.05f, 16);
 			Level.set(pos, Terrain.EMPTY );
 			GameScene.updateMap(pos);
+			return true;
 		}
+
+		return false;
 	}
+
+	public static class SpawnedGround extends Blob {
+
+		{
+			actPriority = BUFF_PRIO -1;
+			//blob 이후 - buff 보다 우선
+		}
+		@Override
+		protected void evolve() {
+			int cell;
+			boolean fall = false;
+			for (int i = area.left; i < area.right; i++){
+				for (int j = area.top; j < area.bottom; j++){
+					cell = i + j* Dungeon.level.width();
+
+					if (cur[cell] > 0) {
+						off[cell] = cur[cell] - 1;
+						volume += off[cell];
+
+						if (off[cell] == 1 && Dungeon.hero.fieldOfView[cell]){
+							CellEmitter.floor(cell).burst(PitfallParticle.FACTORY4, 8);
+							fall = true;
+						}
+
+						if (off[cell] <= 0) {
+							fallCells(cell);
+						}
+					} else {
+						off[cell] = 0;
+					}
+
+				}
+			}
+
+			if (fall){
+				GLog.w( Messages.get(this, "fall") );
+				Dungeon.hero.interrupt();
+			}
+		}
+
+		public void fallCells(int pos){
+			EarthGuardian g = null;
+			for (Mob m : Dungeon.level.mobs){
+				if (m instanceof EarthGuardian){
+					g = (EarthGuardian) m;
+					break;
+				}
+			}
+
+			Char ch = Actor.findChar(pos);
+			//don't trigger on flying chars, or immovable neutral chars
+			if (ch != null && !ch.flying
+					&& !(ch.alignment == Char.Alignment.NEUTRAL && Char.hasProp(ch, Char.Property.IMMOVABLE))) {
+				if (ch == Dungeon.hero) {
+					Chasm.heroFall(pos);
+				} else if (ch == g){
+					Buff.affect(Dungeon.hero, RockArmor.class).addArmor(g.wandLevel, ch.HP);
+					Dungeon.hero.sprite.centerEmitter().burst(MagicMissile.EarthParticle.ATTRACT, 8 + g.wandLevel/2);
+					ch.destroy();
+					ch.sprite.die();
+				} else {
+					Chasm.mobFall((Mob) ch);
+				}
+			}
+
+			Heap heap = Dungeon.level.heaps.get(pos);
+
+			if (heap != null && heap.type == Heap.Type.HEAP) {
+				for (Item item : heap.items) {
+					Dungeon.dropToChasm(item);
+				}
+				heap.sprite.kill();
+				GameScene.discard(heap);
+				heap.sprite.drop();
+				Dungeon.level.heaps.remove(pos);
+			}
+
+			WandOfTransfusion.WaterOfMiniHealth water = (WandOfTransfusion.WaterOfMiniHealth)  Dungeon.level.blobs.get(WandOfTransfusion.WaterOfMiniHealth.class);
+			WandOfCorruption.MiniSacrificialFire fire = (WandOfCorruption.MiniSacrificialFire) Dungeon.level.blobs.get(WandOfCorruption.MiniSacrificialFire.class);
+			WandOfCorrosion.GasVentSeed gas           = (WandOfCorrosion.GasVentSeed)          Dungeon.level.blobs.get(WandOfCorrosion.GasVentSeed.class);
+
+			if (water != null && water.cur[pos] > 0){
+				water.clear(pos);
+			}
+			if (fire != null && fire.cur[pos] > 0){
+				fire.clear(pos);
+			}
+			if (gas != null && gas.cur[pos] > 0){
+				gas.setTerr(pos);
+			}
+
+			CellEmitter.floor(pos).burst(PitfallParticle.FACTORY8, 12);
+			CellEmitter.bottom(pos).start(EarthParticle.FACTORY, 0.05f, 16);
+			Level.set(pos, Terrain.CHASM );
+			GameScene.updateMap(pos);
+			clear(pos);
+
+		}
+
+		@Override
+		public void use(BlobEmitter emitter) {
+			super.use(emitter);
+			emitter.pour( EarthParticle.SMALL, 0.10f );
+		}
+
+		@Override
+		public String tileDesc() {return Messages.get(this, "desc");}
+	}
+	// scholar
 }

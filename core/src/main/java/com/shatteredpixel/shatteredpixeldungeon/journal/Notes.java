@@ -176,7 +176,53 @@ public class Notes {
 			bundle.put( KEY, key );
 		}
 	}
-	
+
+	//grave
+	public enum BonusKey {
+		BONUS_KEY;
+		public String desc() {
+			return Messages.get(this, name());
+		}
+	}
+
+	//grave
+	public static class BonusKeyRecord extends Record {
+
+		protected BonusKey bonusKey;
+
+		public BonusKeyRecord() {}
+
+		public BonusKeyRecord(BonusKey bonusKey, int depth ) {
+			this.bonusKey = bonusKey;
+			this.depth = depth;
+		}
+
+		@Override
+		public String desc() {
+			return bonusKey.desc();
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			return (obj instanceof BonusKeyRecord)
+					&& bonusKey == ((BonusKeyRecord) obj).bonusKey
+					&& depth() == ((BonusKeyRecord) obj).depth();
+		}
+
+		private static final String BONUS_KEY	= "bonus_key";
+
+		@Override
+		public void restoreFromBundle(Bundle bundle) {
+			super.restoreFromBundle(bundle);
+			bonusKey = BonusKey.valueOf(bundle.getString(BONUS_KEY));
+		}
+
+		@Override
+		public void storeInBundle(Bundle bundle) {
+			super.storeInBundle(bundle);
+			bundle.put( BONUS_KEY, bonusKey.name() );
+		}
+	}
 	private static ArrayList<Record> records;
 	
 	public static void reset() {
@@ -195,7 +241,25 @@ public class Notes {
 			records.add( (Record) rec );
 		}
 	}
-	
+
+	public static boolean add( BonusKey bonuskey ) {
+		return records.add(new BonusKeyRecord(bonuskey, Dungeon.depth));
+	}
+
+	public static boolean remove( BonusKey bonuskey ) {
+		return records.remove( new BonusKeyRecord(bonuskey, Dungeon.depth) );
+	}
+
+	public static int BonusKeyCount( BonusKey bonuskey, int depth){
+		BonusKeyRecord k = new BonusKeyRecord( bonuskey , depth );
+		if (records.contains(k)){
+			int count = Collections.frequency(records, k);
+			return count;
+		} else {
+			return 0;
+		}
+	}
+	//
 	public static boolean add( Landmark landmark ) {
 		LandmarkRecord l = new LandmarkRecord( landmark, Dungeon.depth );
 		if (!records.contains(l)) {

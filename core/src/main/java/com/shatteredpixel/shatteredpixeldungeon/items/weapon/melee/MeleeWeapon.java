@@ -84,7 +84,7 @@ public class MeleeWeapon extends Weapon {
 	@Override
 	public ArrayList<String> actions(Hero hero) {
 		ArrayList<String> actions = super.actions(hero);
-		if (isEquipped(hero) && hero.heroClass == HeroClass.DUELIST){
+		if (isEquipped(hero) && (hero.heroClass == HeroClass.DUELIST)){
 			actions.add(AC_ABILITY);
 		}
 		return actions;
@@ -117,7 +117,7 @@ public class MeleeWeapon extends Weapon {
 					GLog.w(Messages.get(this, "ability_need_equip"));
 				}
 			} else if (hero.heroClass != HeroClass.DUELIST){
-				//do nothing
+
 			} else if (STRReq() > hero.STR()){
 				GLog.w(Messages.get(this, "ability_low_str"));
 			} else if ((Buff.affect(hero, Charger.class).charges + Buff.affect(hero, Charger.class).partialCharge) < abilityChargeUse(hero, null)) {
@@ -261,10 +261,6 @@ public class MeleeWeapon extends Weapon {
 		}
 		if (Dungeon.hero.subClass == HeroSubClass.BLADEDANCER){ //무예가
 			Buff.affect(Dungeon.hero, BladeDance.class).rankSet(BladeDance.ability);
-
-			if (hero.hasTalent(Talent.COMBINED_AGILITY)){
-				Buff.prolong(hero, Talent.CombinedIncreaseAbilityTracker.class, hero.cooldown());
-			}
 		}
 	}
 
@@ -622,5 +618,4 @@ public class MeleeWeapon extends Weapon {
 			AttackIndicator.updateState();
 		}
 	}
-
 }

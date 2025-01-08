@@ -26,8 +26,11 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MagicImmune;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.KindofMisc;
+import com.shatteredpixel.shatteredpixeldungeon.items.armor.ClassArmor;
+import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfEnergy;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.utils.Bundle;
@@ -144,8 +147,15 @@ public class Artifact extends KindofMisc {
 			return desc()+ "\n\n" + Messages.get(Artifact.class, "not_cursed");
 			
 		} else {
+
+			if (Dungeon.hero.subClass == HeroSubClass.GRAVEROBBER) {
+				int bonus = Math.round((RingOfEnergy.artifactChargeBonus(Dungeon.hero) -1) * 100f);
+				String desc = "\n\n" + Messages.get(Artifact.class, "bonus_charge", bonus);
+
+				return desc() + desc;
+			}
+
 			return desc();
-			
 		}
 	}
 
@@ -241,7 +251,8 @@ public class Artifact extends KindofMisc {
 		}
 
 	}
-	
+
+
 	private static final String EXP = "exp";
 	private static final String CHARGE = "charge";
 	private static final String PARTIALCHARGE = "partialcharge";

@@ -34,9 +34,10 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Cripple;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.FlashDots;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.FlavourBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Light;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.RevealedCell;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Shopkeeper;
+import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TalismanOfForesight;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Beam;
 import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
@@ -234,6 +235,10 @@ public class WandOfPrismaticLight extends DamageWand {
 	}
 
 	public static class FireFlyBlobs extends Blob {
+
+		{
+			alwaysVisible = true;
+		}
 		private static float turnLeft = 0;
 		@Override
 		protected void evolve() {
@@ -269,9 +274,10 @@ public class WandOfPrismaticLight extends DamageWand {
 				Buff.affect( ch, FireFly.class ).set(turnLeft);
 			}
 
-			RevealedCell r = Buff.prolong(Dungeon.hero, RevealedCell.class, 1);
-			r.set(cell, Dungeon.depth, Dungeon.branch);
-			r.blobsCheck();
+			Heap h = Dungeon.level.heaps.get(cell);
+			if (h != null){
+				Buff.append(Dungeon.hero, TalismanOfForesight.HeapAwareness.class, turnLeft).pos = h.pos;
+			}
 		}
 
 		public FireFlyBlobs turn(int left){
@@ -290,7 +296,7 @@ public class WandOfPrismaticLight extends DamageWand {
 			return Messages.get(this, "desc");
 		}
 
-		private static final String LEFT	= "left";
+		private static final String LEFT = "left";
 		@Override
 		public void storeInBundle( Bundle bundle ) {
 			super.storeInBundle( bundle );
@@ -310,7 +316,6 @@ public class WandOfPrismaticLight extends DamageWand {
 
 		{
 			type = buffType.NEGATIVE;
-			//actPriority = BLOB_PRIO +1;
 			announced = true;
 		}
 
@@ -346,8 +351,7 @@ public class WandOfPrismaticLight extends DamageWand {
 				if (target.fieldOfView != null) {
 					Dungeon.level.updateFieldOfView(target, target.fieldOfView);
 				}
-				GameScene.updateFog(target.pos, target.viewDistance);
-				Buff.affect(target, UpdateFog.class, 0f);
+				GameScene.updateFog(target.pos, target.viewDistance+(int)Math.ceil(target.speed()));
 
 				if ((target.properties().contains(Char.Property.UNDEAD)
 						|| target.properties().contains(Char.Property.DEMONIC))) {
@@ -356,8 +360,6 @@ public class WandOfPrismaticLight extends DamageWand {
 					target.sprite.emitter().start( ShadowParticle.UP, 0.05f, 8 + damage );
 				}
 			}
-
-			GameScene.updateFog();
 
 			spend( TICK );
 			left -= TICK;
@@ -370,8 +372,15 @@ public class WandOfPrismaticLight extends DamageWand {
 		}
 		@Override
 		public void detach() {
-			Dungeon.observe();
-			GameScene.updateFog();
+			Actor.add(new Actor() {
+				@Override
+				protected boolean act() {
+					Dungeon.observe();
+					GameScene.updateFog();
+					Actor.remove(this);
+					return true;
+				}
+			});
 			super.detach();
 		}
 
@@ -404,20 +413,8 @@ public class WandOfPrismaticLight extends DamageWand {
 		@Override
 		public void onDeath() {
 			Badges.validateDeathFromFriendlyMagic();
-			Dungeon.fail( this );
+			Dungeon.fail(this);
 			GLog.n(Messages.get(this, "ondeath"));
 		}
-
-		public static class UpdateFog extends FlavourBuff {
-			@Override
-			public void detach() {
-				Dungeon.observe();
-				GameScene.updateFog();
-				super.detach();
-			}
-		}
-
 	}
-
-
 }

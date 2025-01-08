@@ -157,10 +157,8 @@ public class Statue extends Mob {
 	
 	@Override
 	public void die( Object cause ) {
-		if (buff(WandOfCorruption.Spawned.class) == null) { //scholar
-			weapon.identify(false);
-			Dungeon.level.drop(weapon, pos).sprite.drop();
-		}
+		weapon.identify(false);
+		Dungeon.level.drop(weapon, pos).sprite.drop();
 		super.die( cause );
 	}
 	

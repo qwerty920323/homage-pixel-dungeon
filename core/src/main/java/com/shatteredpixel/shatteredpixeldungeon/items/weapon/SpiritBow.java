@@ -25,6 +25,8 @@ import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.ArrowBlast;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.PinArrow;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.RangerArrow;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.RevealedArea;
@@ -131,6 +133,14 @@ public class SpiritBow extends Weapon {
 				}
 			});
 
+		}
+
+		if (((Hero)attacker).subClass == HeroSubClass.RANGER){
+			Buff.prolong(((Hero)attacker), ArrowBlast.class, ArrowBlast.DURATION);
+			//레인저의 화살부착 효과
+			if (defender.isAlive()) {
+				PinArrow.prolong(defender, PinArrow.class, PinArrow.DURATION).count++;
+			}
 		}
 
 		return super.proc(attacker, defender, damage);
@@ -481,8 +491,9 @@ public class SpiritBow extends Weapon {
 
 				Char enemy = Actor.findChar( cell );
 
-				if (rangerAttack(user,enemy,cell,false)) {   // 순찰자의 방사 화살
-					RangerArrow.rangerArrow(user,cell,enemy,0);
+				RangerArrow rangerArrow = user.buff(RangerArrow.class);
+				if (rangerAttack(user,enemy,cell,false)) {   // 레인저의 방사 화살
+					rangerArrow.rangerArrow(user,cell,enemy,0);
 					super.cast(user, dst);
 
 				} else if (rangerAttack(user,enemy,cell,true) && enemy != null){
@@ -492,7 +503,7 @@ public class SpiritBow extends Weapon {
 					throwSound();
 					QuickSlotButton.target(enemy);
 
-					RangerArrow.rangerArrow(user,cell,enemy,castDelay(user, dst));
+					rangerArrow.rangerArrow(user,cell,enemy,castDelay(user, dst));
 
 				} else {
 					super.cast(user, dst);
@@ -503,7 +514,7 @@ public class SpiritBow extends Weapon {
 		}
 	}
 
-	public boolean rangerAttack( final Hero user, Char enemy, int cell, boolean Check ) { //순찰자 특수 화살
+	public boolean rangerAttack( final Hero user, Char enemy, int cell, boolean Check ) { //레인저 특수 화살
 		int maxdistanc = 8;
 		RangerArrow rangerArrow = user.buff(RangerArrow.class);
 		if (enemy != user

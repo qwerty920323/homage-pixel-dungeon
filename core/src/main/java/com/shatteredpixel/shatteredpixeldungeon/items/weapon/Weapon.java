@@ -420,7 +420,6 @@ abstract public class Weapon extends KindOfWeapon {
 					&& ((Hero)attacker).pointsInTalent(Talent.STRIKING_WAVE) == 4){
 				multi += 0.2f;
 			}
-
 			return multi;
 		}
 

@@ -61,7 +61,14 @@ public class HeroSprite extends CharSprite {
 		else
 			die();
 	}
-	
+	public void updateSprite (HeroClass heroClass) {
+		if (ch.isAlive()) {
+			texture(heroClass.spritesheet());
+			updateArmor();
+			idle();
+		} else
+			die();
+	}
 	public void updateArmor() {
 
 		TextureFilm film = new TextureFilm( tiers(), Dungeon.hero.tier(), FRAME_WIDTH, FRAME_HEIGHT );

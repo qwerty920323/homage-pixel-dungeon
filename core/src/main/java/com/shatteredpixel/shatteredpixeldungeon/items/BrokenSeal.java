@@ -225,7 +225,8 @@ public class BrokenSeal extends Item {
 			}
 		}
 
-		public synchronized void setArmor(Armor arm){
+		public synchronized void setArmor(Armor arm)
+		{
 			armor = arm;
 		}
 

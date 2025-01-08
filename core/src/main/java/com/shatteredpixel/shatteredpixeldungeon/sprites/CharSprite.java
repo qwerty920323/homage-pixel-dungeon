@@ -84,7 +84,7 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 
 	public enum State {
 		BURNING, LEVITATING, INVISIBLE, PARALYSED, FROZEN, ILLUMINATED, CHILLED, DARKENED, MARKED, HEALING, SHIELDED, HEARTS,
-		ARROW, FIREFLY //꽂힌 화살 , 반딧불
+		ARROW, FIREFLY //pinArrow , FireFly
 	}
 	private int stunStates = 0;
 	
@@ -112,8 +112,8 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 	protected ShieldHalo shield;
 	protected AlphaTweener invisible;
 	protected Flare aura;
-	protected Emitter arrows; //순찰자의 꽂힌 화살
-	protected Emitter flrefly; //연구가
+	protected Emitter arrows;  //ranger
+	protected Emitter flrefly; //scholer
 
 
 	protected EmoIcon emo;
@@ -135,7 +135,7 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 		super();
 		listener = this;
 	}
-	
+
 	@Override
 	public void play(Animation anim) {
 		//Shouldn't interrupt the dieing animation
@@ -418,11 +418,11 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 				hearts = emitter();
 				hearts.pour(Speck.factory(Speck.HEART), 0.5f);
 				break;
-			case ARROW:  // 꽂힌화살
+			case ARROW:
 				arrows = emitter();
 				arrows.pour( FlashDots.SKYBLUE, 0.1f );
 				break;
-			case FIREFLY: // 반딧불
+			case FIREFLY:
 				flrefly = emitter();
 				flrefly.pour( FlashDots.GREEN, 0.5f );
 				break;
@@ -499,13 +499,13 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 					hearts = null;
 				}
 				break;
-			case ARROW: // 꽂힌 화살 스프라이트
+			case ARROW:
 				if (arrows != null) {
 					arrows.on = false;
 					arrows = null;
 				}
 				break;
-			case FIREFLY: // 반딧불
+			case FIREFLY:
 				if (flrefly != null) {
 					flrefly.on = false;
 					flrefly = null;

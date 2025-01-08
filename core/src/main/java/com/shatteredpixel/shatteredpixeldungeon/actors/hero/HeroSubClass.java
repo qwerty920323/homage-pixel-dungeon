@@ -34,7 +34,7 @@ public enum HeroSubClass {
 
 	BERSERKER(HeroIcon.BERSERKER),
 	GLADIATOR(HeroIcon.GLADIATOR),
-	BRAWLER(HeroIcon.BRAWLER),  //싸움꾼
+	VETERAN(HeroIcon.VETERAN),  //베테랑
 
 	BATTLEMAGE(HeroIcon.BATTLEMAGE),
 	WARLOCK(HeroIcon.WARLOCK),
@@ -46,7 +46,7 @@ public enum HeroSubClass {
 
 	SNIPER(HeroIcon.SNIPER),
 	WARDEN(HeroIcon.WARDEN),
-	RANGER(HeroIcon.RANGER), //순찰자
+	RANGER(HeroIcon.RANGER), //레인저
 
 	CHAMPION(HeroIcon.CHAMPION),
 	MONK(HeroIcon.MONK),

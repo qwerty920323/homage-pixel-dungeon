@@ -30,6 +30,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Blindness;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Degrade;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.items.bags.Bag;
@@ -42,6 +43,7 @@ import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.CellSelector;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite;
+import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.MissileSprite;
 import com.shatteredpixel.shatteredpixeldungeon.ui.QuickSlotButton;
 import com.watabou.noosa.audio.Sample;
@@ -181,7 +183,7 @@ public class Item implements Bundlable {
 			execute(hero, defaultAction());
 		}
 	}
-	public void toThrow (int cell) {onThrow(cell);} //scholar
+	public void toThrow (int cell) {onThrow(cell);} //ranger
 	protected void onThrow( int cell ) {
 		Heap heap = Dungeon.level.drop( this, cell );
 		if (!heap.isEmpty()) {
@@ -499,7 +501,9 @@ public class Item implements Bundlable {
 		return null;
 	}
 
-	public Emitter emitter() { return null; }
+	public Emitter emitter() {
+		return null;
+	}
 	
 	public String info() {
 		return desc();

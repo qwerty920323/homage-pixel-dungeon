@@ -45,17 +45,19 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.warrior.He
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.warrior.Shockwave;
 import com.shatteredpixel.shatteredpixeldungeon.items.BrokenSeal;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
-import com.shatteredpixel.shatteredpixeldungeon.items.KingsCrown;
 import com.shatteredpixel.shatteredpixeldungeon.items.TengusMask;
 import com.shatteredpixel.shatteredpixeldungeon.items.Waterskin;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.ClothArmor;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.CloakOfShadows;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.DriedRose;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TalismanOfForesight;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TimekeepersHourglass;
 import com.shatteredpixel.shatteredpixeldungeon.items.bags.VelvetPouch;
 import com.shatteredpixel.shatteredpixeldungeon.items.food.Food;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfExperience;
-import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfFrost;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfHealing;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfInvisibility;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfLevitation;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfLiquidFlame;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfMindVision;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfStrength;
@@ -66,9 +68,11 @@ import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfMagicMappi
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfMirrorImage;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfRage;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfUpgrade;
-import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.exotic.ScrollOfPrismaticImage;
-import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfAggression;
+import com.shatteredpixel.shatteredpixeldungeon.items.spells.CurseInfusion;
+import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfAugmentation;
+import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfClairvoyance;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfEnchantment;
+import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfFlock;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfBlastWave;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfCorrosion;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfCorruption;
@@ -96,10 +100,10 @@ import com.watabou.utils.DeviceCompat;
 
 public enum HeroClass {
 
-	WARRIOR( HeroSubClass.BERSERKER, HeroSubClass.GLADIATOR, HeroSubClass.BRAWLER ),  // 싸움꾼 추가
+	WARRIOR( HeroSubClass.BERSERKER, HeroSubClass.GLADIATOR, HeroSubClass.VETERAN),   // 베테랑 추가
 	MAGE( HeroSubClass.BATTLEMAGE, HeroSubClass.WARLOCK,  HeroSubClass.SCHOLAR),      // 연구가 추가
 	ROGUE( HeroSubClass.ASSASSIN, HeroSubClass.FREERUNNER, HeroSubClass.GRAVEROBBER), // 도굴꾼 추가
-	HUNTRESS( HeroSubClass.SNIPER, HeroSubClass.WARDEN, HeroSubClass.RANGER),         // 순찰자 추가
+	HUNTRESS( HeroSubClass.SNIPER, HeroSubClass.WARDEN, HeroSubClass.RANGER),         // 레인저 추가
 	DUELIST( HeroSubClass.CHAMPION, HeroSubClass.MONK, HeroSubClass.BLADEDANCER );    // 무예가 추가
 
 	private HeroSubClass[] subClasses;
@@ -194,8 +198,29 @@ public enum HeroClass {
 		tm.quantity(1).collect();
 		PotionOfExperience pe = new PotionOfExperience();
 		pe.quantity(30).collect();
-		WandOfTransfusion rrs = new WandOfTransfusion();
-		rrs.quantity(1).collect();
+		PotionOfLevitation wwdd = new PotionOfLevitation();
+		wwdd.quantity(30).collect();
+		StoneOfAugmentation rrs = new StoneOfAugmentation();
+		rrs.quantity(100).collect();
+		PotionOfMindVision xcc = new PotionOfMindVision();
+		xcc.quantity(100).collect();
+		StoneOfEnchantment sss = new StoneOfEnchantment();
+		sss.quantity(100).collect();
+		StoneOfFlock gg = new StoneOfFlock();
+		gg.quantity(100).collect();
+		ScrollOfMirrorImage we = new ScrollOfMirrorImage();
+		we.quantity(100).collect();
+
+		CurseInfusion cee = new CurseInfusion();
+		cee.quantity(100).collect();
+		ScrollOfUpgrade su = new ScrollOfUpgrade();
+		su.quantity(30).collect();
+
+		DriedRose w = new DriedRose();
+		w.quantity(1).collect();
+		w.cursed = true;
+		TimekeepersHourglass dff = new TimekeepersHourglass();
+		dff.quantity(1).collect();
 	}
 
 	private static void initMage( Hero hero ) {
@@ -217,8 +242,8 @@ public enum HeroClass {
 
 		PotionOfExperience pe = new PotionOfExperience();
 		pe.quantity(30).collect();
-		ScrollOfMirrorImage ss = new ScrollOfMirrorImage();
-		ss.quantity(130).collect();
+		TalismanOfForesight ss = new TalismanOfForesight();
+		ss.quantity(1).collect();
 		AquaBrew ds = new AquaBrew();
 		ds.quantity(130).collect();
 
@@ -292,9 +317,6 @@ public enum HeroClass {
 		TengusMask tm = new TengusMask();
 		tm.quantity(1).collect();
 
-		StoneOfEnchantment st = new StoneOfEnchantment();
-		st.quantity(100).collect();
-		//
 	}
 
 	private static void initDuelist( Hero hero ) {
@@ -314,6 +336,7 @@ public enum HeroClass {
 		//테스트용 아이템
 		TengusMask tm = new TengusMask();
 		tm.quantity(1).collect();
+
 	}
 
 	public String title() {

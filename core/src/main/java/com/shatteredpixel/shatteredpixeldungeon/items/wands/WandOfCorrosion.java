@@ -30,7 +30,6 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.CorrosiveGas;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Ooze;
-import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.DwarfKing;
 import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
@@ -47,6 +46,7 @@ import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
+import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
@@ -144,32 +144,40 @@ public class WandOfCorrosion extends Wand {
 	public void scholarAbility(Ballistica bolt, int cell){
 		super.scholarAbility(bolt,cell);
 		int pos = bolt.collisionPos;
-		setVent(pos);
+		setVent(pos, scholarTurnCount());
 	}
 
-	public void setVent (int pos) {
+	public void setVent (int pos, int t) {
 		if (terrCheck(pos, Terrain.EMPTY_SP)) {
-			if (Dungeon.level.heroFOV[pos]) {
-				CellEmitter.get( pos ).burst( Speck.factory( Speck.WOOL ), 15);
-			}
-			//trap
-			Dungeon.level.setTrap(new GasVent().reveal(), pos);
-			Painter.set(Dungeon.level, pos, Terrain.INACTIVE_TRAP);
-			GameScene.updateMap(pos);
-			GameScene.updateFog();
-
 			//vent
-			int t = scholarTurnCount();
+			int countVent = 0;
+
 			GasVentSeed g = (GasVentSeed) Dungeon.level.blobs.get(GasVentSeed.class);
 			for (int i = 0; i < Dungeon.level.length(); i++){
 				if (g != null && g.volume > 0 && g.cur[i] > 0){
 					g.cur[i] = turnCount(t,200) - (g.getCount(i) * t);
 				}
+
+				if (Dungeon.level.traps.get(i) instanceof GasVent) {
+					countVent++;
+				}
 			}
 
+			if (countVent >= bonusRange()) return;
+
 			GasVentSeed c = (GasVentSeed)Blob.seed(pos, turnCount(t,200), GasVentSeed.class, Dungeon.level);
-			c.setCorrosionSeed(bonusRange(), t, buffedLvl());
+			c.setCorrosionSeed(3, t, buffedLvl());
 			GameScene.add(c);
+
+			if (Dungeon.level.heroFOV[pos]) {
+				CellEmitter.get( pos ).burst( Speck.factory( Speck.WOOL ), 15);
+			}
+
+			//trap
+			Dungeon.level.setTrap(new GasVent().reveal(), pos);
+			Painter.set(Dungeon.level, pos, Terrain.INACTIVE_TRAP);
+			GameScene.updateMap(pos);
+			GameScene.updateFog();
 		}
 	}
 
@@ -188,6 +196,7 @@ public class WandOfCorrosion extends Wand {
 		@Override
 		protected void evolve() {
 			int cell;
+			boolean onEmit = false;
 
 			CorrosiveGas gas = (CorrosiveGas) Dungeon.level.blobs.get(CorrosiveGas.class);
 			for (int i=area.top-1; i <= area.bottom; i++) {
@@ -209,6 +218,7 @@ public class WandOfCorrosion extends Wand {
 						boolean emit = off[cell] % turn == 0;
 
 						if (emit) {
+
 							// 부식 막대의 2/5
 							int amountGas = 20 + 10 * buffedLvl;
 
@@ -221,8 +231,8 @@ public class WandOfCorrosion extends Wand {
 							}
 
 							if (Dungeon.hero.fieldOfView[cell]) {
-								Sample.INSTANCE.play(Assets.Sounds.GAS);
 								CellEmitter.get( cell ).burst( ScholarParticle.YELLOW, 15);
+								onEmit = true;
 							}
 
 							CorrosiveTerrGas c = Blob.seed(cell, amountGas, CorrosiveTerrGas.class);
@@ -231,6 +241,12 @@ public class WandOfCorrosion extends Wand {
 						}
 					}
 				}
+			}
+			
+			if (onEmit) {
+				GLog.w( Messages.get(this, "vent_gas") );
+				Sample.INSTANCE.play(Assets.Sounds.GAS);
+				Dungeon.hero.interrupt();
 			}
 		}
 
@@ -326,8 +342,10 @@ public class WandOfCorrosion extends Wand {
 
 		@Override
 		public void activate() {
-			int turn = Math.max(scalingDepth()/2, 8);
-			int turnCount = 200 - (200 % turn);
+			/*
+			int turn = Math.max(scalingDepth()/2, 8); //방출 턴
+			int turnCount = 200 - (200 % turn);       //방출을 계산하기 위한 최대량
+
 			GasVentSeed g = (GasVentSeed) Dungeon.level.blobs.get(GasVentSeed.class);
 			for (int i = 0; i < Dungeon.level.length(); i++){
 				if (g != null && g.volume > 0 && g.cur[i] > 0){
@@ -335,10 +353,28 @@ public class WandOfCorrosion extends Wand {
 				}
 			}
 
-			int bonusRange = Dungeon.hero.pointsInTalent(Talent.WIDE_SUMMON);
 			GasVentSeed c = (GasVentSeed)Blob.seed(pos, turnCount, GasVentSeed.class, Dungeon.level);
-			c.setCorrosionSeed(bonusRange + 2, turn, 1+scalingDepth()/4);
+			c.setCorrosionSeed(3, turn, 1+scalingDepth()/4);
+			*/
 			Sample.INSTANCE.play(Assets.Sounds.GAS);
+			CorrosiveTerrGas c = Blob.seed(pos, 20 + (2 * scalingDepth()), CorrosiveTerrGas.class, Dungeon.level);
+			c.setStrength(1+scalingDepth()/4);
+			GameScene.add(c);
+		}
+
+		public String desc() {
+			String desc = Messages.get(this, "desc");
+
+			GasVentSeed g = (GasVentSeed) Dungeon.level.blobs.get(GasVentSeed.class);
+
+			int startAmount = 200 - (200 % g.turn);
+			int emitTurn = (startAmount - g.cur[pos]) % g.turn;  //방출까지 남은 턴
+			int emitCount = (int) Math.floor((startAmount - g.cur[pos]) / g.turn); //방출 횟수
+
+			if (g != null && g.volume > 0 && g.cur[pos] > 0)
+				desc += "\n" + Messages.get(this, "vent_count", g.turn - emitTurn, g.count - emitCount);
+
+			return desc;
 		}
 	}
 }

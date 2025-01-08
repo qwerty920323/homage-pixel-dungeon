@@ -26,6 +26,7 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.EnhancedRings;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.LostInventory;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MagicImmune;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
@@ -33,6 +34,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.ItemStatusHandler;
 import com.shatteredpixel.shatteredpixeldungeon.items.KindofMisc;
+import com.shatteredpixel.shatteredpixeldungeon.items.bags.Bag;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
@@ -131,6 +133,11 @@ public class Ring extends KindofMisc {
 				buff = null;
 			}
 
+			if (hero.hasTalent(Talent.TREASURE_HUNTER)) {
+				unequipedRing(hero);
+				hero.updateHT(false);
+			}
+
 			return true;
 
 		} else {
@@ -139,7 +146,8 @@ public class Ring extends KindofMisc {
 
 		}
 	}
-	
+
+
 	public boolean isKnown() {
 		return anonymous || (handler != null && handler.isKnown( this ));
 	}
@@ -179,6 +187,9 @@ public class Ring extends KindofMisc {
 		
 		if (isKnown()) {
 			desc += "\n\n" + statsInfo();
+
+			if (!isEquipped(Dungeon.hero) && buff != null)
+				desc += "\n\n" + Messages.get(Ring.class, "unequiped", level() - buffedLvl());
 		}
 		
 		return desc;
@@ -208,6 +219,7 @@ public class Ring extends KindofMisc {
 	public Item identify( boolean byHero ) {
 		setKnown();
 		levelsToID = 0;
+
 		return super.identify(byHero);
 	}
 	
@@ -269,7 +281,6 @@ public class Ring extends KindofMisc {
 	}
 
 	private static final String LEVELS_TO_ID    = "levels_to_ID";
-
 	@Override
 	public void storeInBundle( Bundle bundle ) {
 		super.storeInBundle( bundle );
@@ -300,6 +311,15 @@ public class Ring extends KindofMisc {
 		if (Dungeon.hero.buff(EnhancedRings.class) != null){
 			lvl++;
 		}
+		//grave
+		if (isIdentified()
+				&& Dungeon.hero.belongings.contains(this)
+				&& !isEquipped(Dungeon.hero)
+				&& Dungeon.hero.hasTalent(Talent.TREASURE_HUNTER)){
+
+			int talent = Dungeon.hero.pointsInTalent(Talent.TREASURE_HUNTER);
+			lvl = Math.round(lvl / (6f - talent));
+		}
 		return lvl;
 	}
 
@@ -309,6 +329,7 @@ public class Ring extends KindofMisc {
 		for (RingBuff buff : target.buffs(type)) {
 			bonus += buff.level();
 		}
+
 		return bonus;
 	}
 
@@ -318,6 +339,7 @@ public class Ring extends KindofMisc {
 		for (RingBuff buff : target.buffs(type)) {
 			bonus += buff.buffedLvl();
 		}
+
 		return bonus;
 	}
 
@@ -363,6 +385,48 @@ public class Ring extends KindofMisc {
 		return bonus;
 	}
 
+	//grave
+	public void unequipedRing (Hero hero){
+		if (!hero.hasTalent(Talent.TREASURE_HUNTER)) return;
+
+		if (isIdentified() && !isEquipped(hero) && hero.belongings.contains(this)) {
+			activate(hero);
+			updateQuickslot();
+		}
+	}
+	public void unequipedRingAll(Hero hero, Ring ring){
+		if (hero.buff(LostInventory.class) != null && !ring.keptThroughLostInventory()) return;
+
+		ring.unequipedRing(hero);
+
+		if (Dungeon.hero != null
+				&& Dungeon.hero.isAlive()) {
+			Dungeon.hero.updateHT(false);
+		}
+	}
+	//~
+	@Override
+	public boolean collect( Bag container ) {
+		if (super.collect(container)){
+			if (container.owner instanceof Hero
+					&& ((Hero) container.owner).hasTalent(Talent.TREASURE_HUNTER)){
+				unequipedRing((Hero) container.owner);
+			}
+			return true;
+		} else{
+			return false;
+		}
+	}
+	//~
+	@Override
+	protected void onDetach() {
+		if (buff != null && !isEquipped(((Hero) curUser))){
+			buff.detach();
+			buff = null;
+			((Hero) curUser).updateHT(false);
+		}
+	}
+	//~~grave
 	public class RingBuff extends Buff {
 
 		@Override
