@@ -96,7 +96,7 @@ public class ArrowBlast extends FlavourBuff implements ActionIndicator.Action {
 
                 int level = bow().buffedLvl();
 
-                endDamage += bonus * (Char.combatRoll( Math.round(level/2f) , level));
+                endDamage += bonus * (Hero.heroDamageIntRange( Math.round(level/2f) , level));
                 arrowCounter--;
             }
         }

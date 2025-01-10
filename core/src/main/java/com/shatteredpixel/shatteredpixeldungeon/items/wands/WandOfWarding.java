@@ -45,6 +45,7 @@ import com.shatteredpixel.shatteredpixeldungeon.effects.particles.LeafParticle;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SnowParticle;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SparkParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
+import com.shatteredpixel.shatteredpixeldungeon.journal.Bestiary;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
@@ -87,7 +88,7 @@ public class WandOfWarding extends Wand {
 		
 		int maxWardEnergy = 0;
 		for (Buff buff : curUser.buffs()){
-			if (buff instanceof Charger){
+			if (buff instanceof Wand.Charger){
 				if (((Charger) buff).wand() instanceof WandOfWarding){
 					maxWardEnergy += 2 + ((Charger) buff).wand().level();
 				}
@@ -128,11 +129,7 @@ public class WandOfWarding extends Wand {
 			}
 		}
 
-		if (!Dungeon.level.passable[target]){
-			GLog.w( Messages.get(this, "bad_location"));
-			Dungeon.level.pressCell(target);
-			
-		} else if (ch != null){
+		if (ch != null){
 			if (ch instanceof Ward){
 				if (wardAvailable) {
 					((Ward) ch).upgrade( buffedLvl() );
@@ -145,6 +142,10 @@ public class WandOfWarding extends Wand {
 				Dungeon.level.pressCell(target);
 			}
 			
+		} else if (!Dungeon.level.passable[target]){
+			GLog.w( Messages.get(this, "bad_location"));
+			Dungeon.level.pressCell(target);
+
 		} else {
 			Ward ward = new Ward();
 			ward.pos = target;
@@ -213,6 +214,16 @@ public class WandOfWarding extends Wand {
 			return Messages.get(this, "stats_desc", 2);
 	}
 
+	@Override
+	public String upgradeStat1(int level) {
+		return 2+level + "-" + (8+4*level);
+	}
+
+	@Override
+	public String upgradeStat2(int level) {
+		return Integer.toString(level+2);
+	}
+
 	public static class Ward extends NPC {
 
 		public int tier = 1;
@@ -262,6 +273,10 @@ public class WandOfWarding extends Wand {
 					break;
 			}
 
+			if (Actor.chars().contains(this) && tier >= 3){
+				Bestiary.setSeen(WardSentry.class);
+			}
+
 			if (tier < 6){
 				tier++;
 				viewDistance++;
@@ -273,6 +288,9 @@ public class WandOfWarding extends Wand {
 			}
 
 		}
+
+		//this class is used so that wards and sentries can have two entries in the Bestiary
+		public static class WardSentry extends Ward{};
 
 		public void wandHeal( int wandLevel ){
 			wandHeal( wandLevel, 1f );
@@ -315,7 +333,7 @@ public class WandOfWarding extends Wand {
 		public int drRoll() {
 			int dr = super.drRoll();
 			if (tier > 3){
-				return dr + Math.round(Char.combatRoll(0, 3 + Dungeon.scalingDepth()/2) / (7f - tier));
+				return dr + Math.round(Random.NormalIntRange(0, 3 + Dungeon.scalingDepth()/2) / (7f - tier));
 			} else {
 				return dr;
 			}
@@ -342,7 +360,7 @@ public class WandOfWarding extends Wand {
 			spend( 1f );
 
 			//always hits
-			int dmg = Char.combatRoll( 2 + wandLevel, 8 + 4*wandLevel );
+			int dmg = Hero.heroDamageIntRange( 2 + wandLevel, 8 + 4*wandLevel );
 			Char enemy = this.enemy;
 			enemy.damage( dmg, this );
 			if (enemy.isAlive()){
@@ -448,14 +466,23 @@ public class WandOfWarding extends Wand {
 
 		@Override
 		public String description() {
-			String result = Messages.get(this, "desc_" + tier, 2+wandLevel, 8 + 4*wandLevel, tier );
-			WardingEffect effect = buff(WardingEffect.class);
-			if (effect != null && effect.atkCount > 0){
-				result += "\n\n" + Messages.get(WardingEffect.class, "terr", Dungeon.level.tileName(Dungeon.level.map[pos]));
-				result += " " + Messages.get(WardingEffect.class, WardingEffect.setBonusEffect(this, null), name(), 2);
-				result += " " + Messages.get(WardingEffect.class, "range", effect.atkCount, effect.left);
+			if (!Actor.chars().contains(this)){
+				//for viewing in the journal
+				if (tier < 4){
+					return Messages.get(this, "desc_generic_ward");
+				} else {
+					return Messages.get(this, "desc_generic_sentry");
+				}
+			} else {
+				String result = Messages.get(this, "desc_" + tier, 2 + wandLevel, 8 + 4 * wandLevel, tier);
+				WardingEffect effect = buff(WardingEffect.class);
+				if (effect != null && effect.atkCount > 0){
+					result += "\n\n" + Messages.get(WardingEffect.class, "terr", Dungeon.level.tileName(Dungeon.level.map[pos]));
+					result += " " + Messages.get(WardingEffect.class, WardingEffect.setBonusEffect(this, null), name(), 2);
+					result += " " + Messages.get(WardingEffect.class, "range", effect.atkCount, effect.left);
+				}
+				return result;
 			}
-			return result;
 		}
 		
 		{
@@ -469,6 +496,7 @@ public class WandOfWarding extends Wand {
 		private static final String TIER = "tier";
 		private static final String WAND_LEVEL = "wand_level";
 		private static final String TOTAL_ZAPS = "total_zaps";
+
 		@Override
 		public void storeInBundle(Bundle bundle) {
 			super.storeInBundle(bundle);

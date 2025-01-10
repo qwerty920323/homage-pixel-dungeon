@@ -21,14 +21,11 @@
 
 package com.shatteredpixel.shatteredpixeldungeon.items.remains;
 
-import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroClass;
-import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
-import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
-import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
+import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
 
 import java.util.ArrayList;
 
@@ -56,6 +53,7 @@ public abstract class RemainsItem extends Item {
 		if (action.equals(AC_USE)){
 			hero.sprite.operate(hero.pos);
 
+			Catalog.countUse(getClass());
 			doEffect(hero);
 
 			hero.spendAndNext(Actor.TICK);
@@ -80,15 +78,7 @@ public abstract class RemainsItem extends Item {
 		return 50;
 	}
 
-	@Override
-	public String info() {
-
-		String info = desc();
-
-		return info;
-	}
-
-		public static RemainsItem get(HeroClass cls){
+	public static RemainsItem get(HeroClass cls){
 		switch (cls){
 			case WARRIOR: default:
 				return new SealShard();

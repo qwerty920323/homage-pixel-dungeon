@@ -25,7 +25,6 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Healing;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Ooze;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
@@ -58,8 +57,6 @@ public class Sungrass extends Plant {
 		if (Dungeon.level.heroFOV[pos]) {
 			CellEmitter.get( pos ).start( ShaftParticle.FACTORY, 0.2f, 3 );
 		}
-
-
 	}
 	
 	public static class Seed extends Plant.Seed {

@@ -30,7 +30,6 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Blindness;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Degrade;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
-import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.items.bags.Bag;
@@ -38,12 +37,12 @@ import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.MissileWea
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.darts.Dart;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.darts.TippedDart;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
+import com.shatteredpixel.shatteredpixeldungeon.journal.Notes;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.CellSelector;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite;
-import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.MissileSprite;
 import com.shatteredpixel.shatteredpixeldungeon.ui.QuickSlotButton;
 import com.watabou.noosa.audio.Sample;
@@ -184,6 +183,7 @@ public class Item implements Bundlable {
 		}
 	}
 	public void toThrow (int cell) {onThrow(cell);} //ranger
+
 	protected void onThrow( int cell ) {
 		Heap heap = Dungeon.level.drop( this, cell );
 		if (!heap.isEmpty()) {
@@ -270,7 +270,7 @@ public class Item implements Bundlable {
 
 	}
 	
-	public boolean collect() {
+	public final boolean collect() {
 		return collect( Dungeon.hero.belongings.backpack );
 	}
 	
@@ -375,7 +375,7 @@ public class Item implements Bundlable {
 	//note that not all item properties should care about buffs/debuffs! (e.g. str requirement)
 	public int buffedLvl(){
 		//only the hero can be affected by Degradation
-		if (Dungeon.hero.buff( Degrade.class ) != null
+		if (Dungeon.hero != null && Dungeon.hero.buff( Degrade.class ) != null
 			&& (isEquipped( Dungeon.hero ) || Dungeon.hero.belongings.contains( this ))) {
 			return Degrade.reduceLevel(level());
 		} else {
@@ -501,11 +501,23 @@ public class Item implements Bundlable {
 		return null;
 	}
 
-	public Emitter emitter() {
-		return null;
-	}
+	public Emitter emitter() { return null; }
 	
 	public String info() {
+
+		if (Dungeon.hero != null) {
+			Notes.CustomRecord note;
+			if (this instanceof EquipableItem) {
+				note = Notes.findCustomRecord(((EquipableItem) this).customNoteID);
+			} else {
+				note = Notes.findCustomRecord(getClass());
+			}
+			if (note != null){
+				//we swap underscore(0x5F) with low macron(0x2CD) here to avoid highlighting in the item window
+				return Messages.get(this, "custom_note", note.title().replace('_', 'ˍ')) + "\n\n" + desc();
+			}
+		}
+
 		return desc();
 	}
 	

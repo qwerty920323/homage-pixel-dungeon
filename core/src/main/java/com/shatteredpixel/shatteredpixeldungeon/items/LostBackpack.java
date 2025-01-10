@@ -66,7 +66,7 @@ public class LostBackpack extends Item {
 					}
 				} else if (i instanceof MagesStaff){
 					((MagesStaff) i).applyWandChargeBuff(hero);
-				} else if (i instanceof Ring){
+				} else if (i instanceof Ring){ //graverobber
 					((Ring) i).unequipedRing(hero);
 				}
 			}

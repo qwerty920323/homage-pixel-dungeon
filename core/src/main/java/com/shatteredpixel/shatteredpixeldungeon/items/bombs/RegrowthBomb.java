@@ -51,7 +51,12 @@ public class RegrowthBomb extends Bomb {
 	public boolean explodesDestructively() {
 		return false;
 	}
-	
+
+	@Override
+	protected int explosionRange() {
+		return 3;
+	}
+
 	@Override
 	public void explode(int cell) {
 		super.explode(cell);
@@ -62,7 +67,7 @@ public class RegrowthBomb extends Bomb {
 		
 		ArrayList<Integer> plantCandidates = new ArrayList<>();
 		
-		PathFinder.buildDistanceMap( cell, BArray.not( Dungeon.level.solid, null ), 2 );
+		PathFinder.buildDistanceMap( cell, BArray.not( Dungeon.level.solid, null ), explosionRange() );
 		for (int i = 0; i < PathFinder.distance.length; i++) {
 			if (PathFinder.distance[i] < Integer.MAX_VALUE) {
 				Char ch = Actor.findChar(i);
@@ -73,7 +78,7 @@ public class RegrowthBomb extends Bomb {
 						PotionOfHealing.cure(ch);
 						PotionOfHealing.heal(ch);
 					}
-				} else if ((t == Terrain.EMPTY || t == Terrain.EMPTY_DECO || t == Terrain.EMBERS || t == Terrain.ICE
+				} else if ((t == Terrain.EMPTY || t == Terrain.EMPTY_DECO || t == Terrain.EMBERS
 						|| t == Terrain.GRASS || t == Terrain.FURROWED_GRASS || t == Terrain.HIGH_GRASS)
 						&& Dungeon.level.plants.get(i) == null){
 					plantCandidates.add(i);
@@ -82,7 +87,7 @@ public class RegrowthBomb extends Bomb {
 			}
 		}
 
-		int plants = Random.chances(new float[]{0, 6, 3, 1});
+		int plants = Random.chances(new float[]{0, 0, 2, 1});
 
 		for (int i = 0; i < plants; i++) {
 			Integer plantPos = Random.element(plantCandidates);

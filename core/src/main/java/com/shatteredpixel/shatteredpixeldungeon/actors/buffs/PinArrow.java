@@ -15,7 +15,7 @@ public class PinArrow extends FlavourBuff{
     public static final float DURATION	= 10f;
 
     public int count;
-    //화살이 꽂힌 갯수를 세기 위한 장치
+    //pined arrow count
 
     public int infoDmg (){
         SpiritBow bow = Dungeon.hero.belongings.getItem(SpiritBow.class);

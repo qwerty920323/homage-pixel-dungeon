@@ -154,6 +154,20 @@ public class WandOfPrismaticLight extends DamageWand {
 	}
 
 	@Override
+	public String upgradeStat2(int level) {
+		return Messages.decimalFormat("#", 100*(1-(3/(float)(5+level)))) + "%";
+	}
+
+	@Override
+	public String upgradeStat3(int level) {
+		if (Dungeon.isChallenged(Challenges.DARKNESS)){
+			return Integer.toString(2 + level);
+		} else {
+			return Integer.toString(10 + 5*level);
+		}
+	}
+
+	@Override
 	public void fx(Ballistica beam, Callback callback) {
 		curUser.sprite.parent.add(
 				new Beam.LightRay(curUser.sprite.center(), DungeonTilemap.raisedTileCenterToWorld(beam.collisionPos)));
@@ -355,7 +369,7 @@ public class WandOfPrismaticLight extends DamageWand {
 
 				if ((target.properties().contains(Char.Property.UNDEAD)
 						|| target.properties().contains(Char.Property.DEMONIC))) {
-					int damage = Char.combatRoll( 1, 1+Dungeon.scalingDepth()/6 );
+					int damage = Hero.heroDamageIntRange( 1, 1+Dungeon.scalingDepth()/6 );
 					target.damage( damage, this );
 					target.sprite.emitter().start( ShadowParticle.UP, 0.05f, 8 + damage );
 				}

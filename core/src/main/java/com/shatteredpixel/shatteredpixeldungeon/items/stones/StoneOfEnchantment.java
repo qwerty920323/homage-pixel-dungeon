@@ -28,6 +28,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.Armor;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.exotic.ScrollOfEnchantment;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
+import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
@@ -49,7 +50,8 @@ public class StoneOfEnchantment extends InventoryStone {
 	@Override
 	protected void onItemSelected(Item item) {
 		curItem.detach( curUser.belongings.backpack );
-		
+		Catalog.countUse(getClass());
+
 		if (item instanceof Weapon) {
 			
 			((Weapon)item).enchant();

@@ -23,6 +23,7 @@ package com.shatteredpixel.shatteredpixeldungeon.sprites;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.HeroDisguise;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroClass;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
@@ -61,14 +62,12 @@ public class HeroSprite extends CharSprite {
 		else
 			die();
 	}
-	public void updateSprite (HeroClass heroClass) {
-		if (ch.isAlive()) {
-			texture(heroClass.spritesheet());
-			updateArmor();
-			idle();
-		} else
-			die();
+
+	public void disguise(HeroClass cls){
+		texture( cls.spritesheet() );
+		updateArmor();
 	}
+
 	public void updateArmor() {
 
 		TextureFilm film = new TextureFilm( tiers(), Dungeon.hero.tier(), FRAME_WIDTH, FRAME_HEIGHT );
@@ -174,7 +173,15 @@ public class HeroSprite extends CharSprite {
 		
 		return tiers;
 	}
-	
+
+	public static Image avatar( Hero hero ){
+		if (hero.buff(HeroDisguise.class) != null){
+			return avatar(hero.buff(HeroDisguise.class).getDisguise(), hero.tier());
+		} else {
+			return avatar(hero.heroClass, hero.tier());
+		}
+	}
+
 	public static Image avatar( HeroClass cl, int armorTier ) {
 		
 		RectF patch = tiers().get( armorTier );

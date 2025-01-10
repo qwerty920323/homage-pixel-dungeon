@@ -120,7 +120,7 @@ public class Terrain {
 		flags[MINE_CRYSTAL] = SOLID;
 		flags[MINE_BOULDER] = SOLID;
 
-		flags[ICE] = PASSABLE;
+		flags[ICE] = PASSABLE;  //scholaer
 	}
 
 	public static int discover( int terr ) {

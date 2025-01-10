@@ -25,7 +25,6 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
-import com.shatteredpixel.shatteredpixeldungeon.items.rings.Ring;
 import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
 import com.watabou.noosa.Image;
 
@@ -47,9 +46,7 @@ public class EnhancedRings extends FlavourBuff {
 	@Override
 	public void detach() {
 		super.detach();
-		if (target instanceof Hero) {
-			((Hero) target).updateHT(false);
-		}
+		if (target instanceof Hero) ((Hero) target).updateHT(false);
 	}
 
 	@Override

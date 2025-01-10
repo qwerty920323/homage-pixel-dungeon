@@ -78,9 +78,9 @@ public class HeroIcon extends Image {
 	public static final int SNIPERS_MARK    = 36;
 	public static final int WEAPON_SWAP     = 37;
 	public static final int MONK_ABILITIES  = 38;
-	public static final int DELAY_ACT = 39; //베테랑
-	public static final int ARROW_BLAST     = 40; //레인저
-	public static final int BLADE_DANCE     = 41; //무예가
+	public static final int DELAY_ACT       = 40; //veteran
+	public static final int ARROW_BLAST     = 41; //ranger
+	public static final int BLADE_DANCE     = 42; //bladedancer
 
 	public HeroIcon(HeroSubClass subCls){
 		super( Assets.Interfaces.HERO_ICONS );

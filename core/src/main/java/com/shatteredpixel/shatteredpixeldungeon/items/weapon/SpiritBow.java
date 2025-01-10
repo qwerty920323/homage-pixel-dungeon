@@ -137,7 +137,7 @@ public class SpiritBow extends Weapon {
 
 		if (((Hero)attacker).subClass == HeroSubClass.RANGER){
 			Buff.prolong(((Hero)attacker), ArrowBlast.class, ArrowBlast.DURATION);
-			//레인저의 화살부착 효과
+			//ranger pinArrow
 			if (defender.isAlive()) {
 				PinArrow.prolong(defender, PinArrow.class, PinArrow.DURATION).count++;
 			}
@@ -148,7 +148,7 @@ public class SpiritBow extends Weapon {
 
 	@Override
 	public String info() {
-		String info = desc();
+		String info = super.info();
 		
 		info += "\n\n" + Messages.get( SpiritBow.class, "stats",
 				Math.round(augment.damageFactor(min())),
@@ -227,7 +227,7 @@ public class SpiritBow extends Weapon {
 		if (owner instanceof Hero) {
 			int exStr = ((Hero)owner).STR() - STRReq();
 			if (exStr > 0) {
-				damage += Char.combatRoll( 0, exStr );
+				damage += Hero.heroDamageIntRange( 0, exStr );
 			}
 		}
 
@@ -361,10 +361,10 @@ public class SpiritBow extends Weapon {
 		protected void onThrow( int cell ) {
 			Char enemy = Actor.findChar( cell );
 			if (enemy == null || enemy == curUser) {
-
+				//ranger arrow change
 				RangerArrow rangerArrow = curUser.buff(RangerArrow.class);
 
-				if (rangerArrow != null && enemy == curUser){ //ranger
+				if (rangerArrow != null && enemy == curUser){
 					curUser.sprite.operate(cell);
 					if (RangerArrow.piercingCheck) {
 						RangerArrow.piercingCheck = false;
@@ -492,7 +492,7 @@ public class SpiritBow extends Weapon {
 				Char enemy = Actor.findChar( cell );
 
 				RangerArrow rangerArrow = user.buff(RangerArrow.class);
-				if (rangerAttack(user,enemy,cell,false)) {   // 레인저의 방사 화살
+				if (rangerAttack(user,enemy,cell,false)) {   // ranger wide arrow
 					rangerArrow.rangerArrow(user,cell,enemy,0);
 					super.cast(user, dst);
 
@@ -514,7 +514,7 @@ public class SpiritBow extends Weapon {
 		}
 	}
 
-	public boolean rangerAttack( final Hero user, Char enemy, int cell, boolean Check ) { //레인저 특수 화살
+	public boolean rangerAttack( final Hero user, Char enemy, int cell, boolean Check ) { //range arrow
 		int maxdistanc = 8;
 		RangerArrow rangerArrow = user.buff(RangerArrow.class);
 		if (enemy != user

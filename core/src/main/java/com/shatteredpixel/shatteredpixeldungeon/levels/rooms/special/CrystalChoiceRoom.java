@@ -131,10 +131,9 @@ public class CrystalChoiceRoom extends SpecialRoom {
 		chest.autoExplored = true;
 
 		level.addItemToSpawn( new CrystalKey( Dungeon.depth ) );
-		Notes.add( Notes.BonusKey.BONUS_KEY ); //grave
 
 		entrance().set( Door.Type.LOCKED );
 		level.addItemToSpawn( new IronKey( Dungeon.depth ) );
-
+		Notes.add( Notes.BonusKey.BONUS_KEY ); //grave
 	}
 }

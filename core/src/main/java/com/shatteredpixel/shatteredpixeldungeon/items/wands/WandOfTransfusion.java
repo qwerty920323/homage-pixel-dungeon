@@ -54,7 +54,6 @@ import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.tiles.DungeonTilemap;
-import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
@@ -84,6 +83,7 @@ public class WandOfTransfusion extends DamageWand {
 
 	@Override
 	public void onZap(Ballistica beam) {
+
 		for (int c : beam.subPath(0, beam.dist))
 			CellEmitter.center(c).burst( BloodParticle.BURST, 1 );
 
@@ -200,11 +200,27 @@ public class WandOfTransfusion extends DamageWand {
 
 	@Override
 	public String statsDesc() {
-		int selfDMG = Math.round(Dungeon.hero.HT*0.05f);
+		int selfDMG = Dungeon.hero != null ? Math.round(Dungeon.hero.HT*0.05f): 1;
 		if (levelKnown)
 			return Messages.get(this, "stats_desc", selfDMG, selfDMG + 3*buffedLvl(), 5+buffedLvl(), min(), max());
 		else
 			return Messages.get(this, "stats_desc", selfDMG, selfDMG, 5, min(0), max(0));
+	}
+
+	@Override
+	public String upgradeStat1(int level) {
+		int selfDMG = Dungeon.hero != null ? Math.round(Dungeon.hero.HT*0.05f): 1;
+		return Integer.toString(selfDMG + 3*level);
+	}
+
+	@Override
+	public String upgradeStat2(int level) {
+		return Integer.toString(5 + level);
+	}
+
+	@Override
+	public String upgradeStat3(int level) {
+		return super.upgradeStat1(level); //damage
 	}
 
 	private static final String FREECHARGE = "freecharge";
@@ -296,7 +312,6 @@ public class WandOfTransfusion extends DamageWand {
 						if (Dungeon.level.map[cell] != Terrain.WELL)
 							off[cell] = cur[cell] = 0;
 					}
-					Notes.remove(record());
 				}
 			}
 		}
@@ -342,10 +357,6 @@ public class WandOfTransfusion extends DamageWand {
 			return Messages.get(this, "desc", turnLeft);
 		}
 
-		@Override
-		protected Notes.Landmark record() {
-			return Notes.Landmark.WELL_OF_MINI_HEALTH;
-		}
 
 		private static final String TURNLEFT = "turnleft";
 		private static final String TERRIAN	= "terrian";

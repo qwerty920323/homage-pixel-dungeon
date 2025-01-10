@@ -1,10 +1,5 @@
 package com.shatteredpixel.shatteredpixeldungeon.actors.buffs;
 
-import com.shatteredpixel.shatteredpixeldungeon.effects.particles.FlowParticle;
-import com.shatteredpixel.shatteredpixeldungeon.levels.PrisonLevel;
-import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
-import com.watabou.noosa.Group;
-import com.watabou.noosa.Halo;
 import com.watabou.noosa.particles.Emitter;
 import com.watabou.noosa.particles.PixelParticle;
 import com.watabou.utils.ColorMath;

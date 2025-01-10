@@ -4,7 +4,6 @@ import static com.shatteredpixel.shatteredpixeldungeon.Dungeon.hero;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
-import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
@@ -27,7 +26,6 @@ import com.watabou.utils.Callback;
 
 import java.util.ArrayList;
 
-import javax.naming.NameParser;
 
 public class BladeDance extends Buff implements ActionIndicator.Action {
     private static final float DURATION = 30f;

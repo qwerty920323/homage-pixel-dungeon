@@ -49,7 +49,6 @@ import com.watabou.noosa.Game;
 import com.watabou.noosa.Group;
 import com.watabou.noosa.Image;
 import com.watabou.noosa.audio.Sample;
-import com.watabou.utils.BArray;
 import com.watabou.utils.Callback;
 import com.watabou.utils.PathFinder;
 import com.watabou.utils.PointF;
@@ -167,7 +166,7 @@ public class WandOfBlastWave extends DamageWand {
 				int oldPos = ch.pos;
 				ch.pos = newPos;
 				if (finalCollided && ch.isActive()) {
-					ch.damage(Char.combatRoll(finalDist, 2*finalDist), new Knockback());
+					ch.damage(Random.NormalIntRange(finalDist, 2*finalDist), new Knockback());
 					if (ch.isActive()) {
 						Paralysis.prolong(ch, Paralysis.class, 1 + finalDist/2f);
 					} else if (ch == Dungeon.hero){
@@ -228,6 +227,11 @@ public class WandOfBlastWave extends DamageWand {
 	}
 
 	@Override
+	public String upgradeStat2(int level) {
+		return Integer.toString(3 + level);
+	}
+
+	@Override
 	public void fx(Ballistica bolt, Callback callback) {
 		MagicMissile.boltFromChar( curUser.sprite.parent,
 				MagicMissile.FORCE,
@@ -251,19 +255,21 @@ public class WandOfBlastWave extends DamageWand {
 		private static final float TIME_TO_FADE = 0.2f;
 
 		private float time;
+		private float size;
 
 		public BlastWave(){
 			super(Effects.get(Effects.Type.RIPPLE));
 			origin.set(width / 2, height / 2);
 		}
 
-		public void reset(int pos) {
+		public void reset(int pos, float size) {
 			revive();
 
 			x = (pos % Dungeon.level.width()) * DungeonTilemap.SIZE + (DungeonTilemap.SIZE - width) / 2;
 			y = (pos / Dungeon.level.width()) * DungeonTilemap.SIZE + (DungeonTilemap.SIZE - height) / 2;
 
 			time = TIME_TO_FADE;
+			this.size = size;
 		}
 
 		@Override
@@ -275,15 +281,19 @@ public class WandOfBlastWave extends DamageWand {
 			} else {
 				float p = time / TIME_TO_FADE;
 				alpha(p);
-				scale.y = scale.x = (1-p)*3;
+				scale.y = scale.x = (1-p)*size;
 			}
 		}
 
 		public static void blast(int pos) {
+			blast(pos, 3);
+		}
+
+		public static void blast(int pos, float radius) {
 			Group parent = Dungeon.hero.sprite.parent;
 			BlastWave b = (BlastWave) parent.recycle(BlastWave.class);
 			parent.bringToFront(b);
-			b.reset(pos);
+			b.reset(pos, radius);
 		}
 
 	}
@@ -303,20 +313,19 @@ public class WandOfBlastWave extends DamageWand {
 		eraseBlobs(pos);
 
 		int openCount = bonusRange();
-		//open the heap!
+		//erase cell
 		for (int p : PathFinder.NEIGHBOURS8) {
-			Heap heap = Dungeon.level.heaps.get(pos + p);
 
-			if (openCount > 0 && heap != null
-					&& (heap.type == Heap.Type.CHEST || heap.type == Heap.Type.TOMB
-					|| heap.type == Heap.Type.SKELETON || heap.type == Heap.Type.REMAINS)) {
+			int terr = Dungeon.level.map[pos + p];
+			if (openCount > 0
+					&& (terr == Terrain.EMPTY_DECO || terr == Terrain.EMPTY_SP || terr == Terrain.INACTIVE_TRAP)) {
 
-				WandOfBlastWave.BlastWave.blast(heap.pos);
+				if (terr == Terrain.INACTIVE_TRAP) Dungeon.level.traps.remove(cell);
+
+				Dungeon.level.set(terr, Terrain.EMPTY);
+				GameScene.updateMap(terr);
+				WandOfBlastWave.BlastWave.blast(pos);
 				openCount--;
-
-				heap.type = Heap.Type.HEAP;
-				heap.sprite.link();
-				heap.sprite.drop();
 			}
 		}
 	}

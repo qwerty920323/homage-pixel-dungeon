@@ -250,6 +250,7 @@ public class WandOfCorruption extends Wand {
 		
 		if (!enemy.isImmune(Corruption.class)){
 			Corruption.corruptionHeal(enemy);
+
 			AllyBuff.affectAndLoot(enemy, curUser, Corruption.class);
 		} else {
 			Buff.affect(enemy, Doom.class);
@@ -270,6 +271,16 @@ public class WandOfCorruption extends Wand {
 
 			Buff.prolong( defender, Amok.class, Math.round((4+level*2) * powerMulti));
 		}
+	}
+
+	@Override
+	public String upgradeStat1(int level) {
+		return Messages.decimalFormat("#.##", 3f + level/3f);
+	}
+
+	@Override
+	public String upgradeStat2(int level) {
+		return Integer.toString(6 + 3*level);
 	}
 
 	@Override

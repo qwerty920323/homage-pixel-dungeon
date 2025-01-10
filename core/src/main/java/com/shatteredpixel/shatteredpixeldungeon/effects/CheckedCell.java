@@ -36,11 +36,11 @@ public class CheckedCell extends Image {
 		super( TextureCache.createSolid(color) );
 
 		origin.set( 0.5f );
-		
+
 		point( DungeonTilemap.tileToWorld( pos ).offset(
 			DungeonTilemap.SIZE / 2,
 			DungeonTilemap.SIZE / 2 ) );
-		
+
 		alpha = 0.8f;
 	}
 
@@ -57,14 +57,14 @@ public class CheckedCell extends Image {
 
 /*
 	public CheckedCell( int pos ) {
-		super( TextureCache.createSolid(0xFF55AAFF) );
+		super( TextureCache.createSolid( 0xFF55AAFF ) );
 
 		origin.set( 0.5f );
 
 		point( DungeonTilemap.tileToWorld( pos ).offset(
 			DungeonTilemap.SIZE / 2,
 			DungeonTilemap.SIZE / 2 ) );
-
+		
 		alpha = 0.8f;
 	}
 

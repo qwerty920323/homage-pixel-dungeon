@@ -26,7 +26,6 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.RatSkull;
-import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfCorruption;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon.Enchantment;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Grim;
@@ -84,15 +83,7 @@ public class Statue extends Mob {
 		super.restoreFromBundle( bundle );
 		weapon = (Weapon)bundle.get( WEAPON );
 	}
-	
-	@Override
-	protected boolean act() {
-		if (levelGenStatue && Dungeon.level.visited[pos]) {
-			Notes.add( Notes.Landmark.STATUE );
-		}
-		return super.act();
-	}
-	
+
 	@Override
 	public int damageRoll() {
 		return weapon.damageRoll(this);
@@ -115,7 +106,7 @@ public class Statue extends Mob {
 
 	@Override
 	public int drRoll() {
-		return super.drRoll() + Char.combatRoll(0, Dungeon.depth + weapon.defenseFactor(this));
+		return super.drRoll() + Random.NormalIntRange(0, Dungeon.depth + weapon.defenseFactor(this));
 	}
 	
 	@Override
@@ -158,14 +149,19 @@ public class Statue extends Mob {
 	@Override
 	public void die( Object cause ) {
 		weapon.identify(false);
-		Dungeon.level.drop(weapon, pos).sprite.drop();
+		Dungeon.level.drop( weapon, pos ).sprite.drop();
 		super.die( cause );
 	}
-	
+
+	@Override
+	public Notes.Landmark landmark() {
+		return levelGenStatue ? Notes.Landmark.STATUE : null;
+	}
+
 	@Override
 	public void destroy() {
-		if (levelGenStatue) {
-			Notes.remove( Notes.Landmark.STATUE );
+		if (landmark() != null) {
+			Notes.remove( landmark() );
 		}
 		super.destroy();
 	}
@@ -177,13 +173,16 @@ public class Statue extends Mob {
 
 	@Override
 	public boolean reset() {
-		state = PASSIVE;
 		return true;
 	}
 
 	@Override
 	public String description() {
-		return Messages.get(this, "desc", weapon.name());
+		String desc = Messages.get(this, "desc");
+		if (weapon != null){
+			desc += "\n\n" + Messages.get(this, "desc_weapon", weapon.name());
+		}
+		return desc;
 	}
 	
 	{

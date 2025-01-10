@@ -25,9 +25,7 @@ package com.shatteredpixel.shatteredpixeldungeon.items.rings;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
-import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
-import com.shatteredpixel.shatteredpixeldungeon.items.bags.Bag;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 
@@ -88,6 +86,18 @@ public class RingOfMight extends Ring {
 		} else {
 			return Messages.get(this, "typical_stats", 1, Messages.decimalFormat("#.##", 3.5f));
 		}
+	}
+
+	@Override
+	public String upgradeStat1(int level) {
+		if (cursed && cursedKnown) level = Math.min(-1, level-3);
+		return Integer.toString(level+1);
+	}
+
+	@Override
+	public String upgradeStat2(int level) {
+		if (cursed && cursedKnown) level = Math.min(-1, level-3);
+		return Messages.decimalFormat("#.##", 100f * (Math.pow(1.035, level+1)-1f)) + "%";
 	}
 
 	@Override

@@ -59,7 +59,7 @@ public class HighGrass {
 		Char ch = Actor.findChar(pos);
 
 		if (level.map[pos] == Terrain.FURROWED_GRASS){
-			if (ch instanceof Hero && (((Hero) ch).heroClass == HeroClass.HUNTRESS)){
+			if (ch instanceof Hero && ((Hero) ch).heroClass == HeroClass.HUNTRESS){
 				//Do nothing
 				freezeTrample = true;
 			} else {
@@ -67,7 +67,7 @@ public class HighGrass {
 			}
 			
 		} else {
-			if (ch instanceof Hero && (((Hero) ch).heroClass == HeroClass.HUNTRESS)){
+			if (ch instanceof Hero && ((Hero) ch).heroClass == HeroClass.HUNTRESS){
 				Level.set(pos, Terrain.FURROWED_GRASS);
 				freezeTrample = true;
 			} else {
@@ -138,6 +138,12 @@ public class HighGrass {
 				
 				// Dew, scales from 1/6 to 1/4
 				lootChance = 1/(6f -naturalismLevel/2f);
+
+				//grassy levels spawn half as much dew
+				if (Dungeon.level != null && Dungeon.level.feeling == Level.Feeling.GRASS){
+					lootChance /= 2;
+				}
+
 				if (Random.Float() < lootChance) {
 					level.drop(new Dewdrop(), pos).sprite.drop();
 				}

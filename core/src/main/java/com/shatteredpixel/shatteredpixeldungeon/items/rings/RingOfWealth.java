@@ -75,6 +75,11 @@ public class RingOfWealth extends Ring {
 		}
 	}
 
+	public String upgradeStat1(int level){
+		if (cursed && cursedKnown) level = Math.min(-1, level-3);
+		return Messages.decimalFormat("#.##", 100f * (Math.pow(1.2f, level+1)-1f)) + "%";
+	}
+
 	private static final String TRIES_TO_DROP = "tries_to_drop";
 	private static final String DROPS_TO_RARE = "drops_to_rare";
 
@@ -173,6 +178,7 @@ public class RingOfWealth extends Ring {
 	// 1/2/3 used for low/mid/high tier consumables
 	// 3 used for +0-1 equips, 4 used for +2 or higher equips
 	private static int latestDropTier = 0;
+
 	public static void showFlareForBonusDrop( Visual vis ){
 		if (vis == null || vis.parent == null) return;
 		switch (latestDropTier){

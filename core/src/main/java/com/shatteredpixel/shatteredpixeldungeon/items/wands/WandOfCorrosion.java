@@ -133,6 +133,16 @@ public class WandOfCorrosion extends Wand {
 			return Messages.get(this, "stats_desc", 2);
 	}
 
+	@Override
+	public String upgradeStat1(int level) {
+		return Integer.toString(level+2);
+	}
+
+	@Override
+	public String upgradeStat2(int level) {
+		return Messages.decimalFormat("#.##x", 1+.2f*level);
+	}
+
 	//scholar
 	@Override
 	public int bonusRange () {return (super.bonusRange()) + 2;}
@@ -235,7 +245,7 @@ public class WandOfCorrosion extends Wand {
 								onEmit = true;
 							}
 
-							CorrosiveTerrGas c = Blob.seed(cell, amountGas, CorrosiveTerrGas.class);
+							CorrosiveGas c = Blob.seed(cell, amountGas, CorrosiveGas.class);
 							c.setStrength(buffedLvl + 2);
 							GameScene.add(c);
 						}
@@ -305,31 +315,6 @@ public class WandOfCorrosion extends Wand {
 		}
 	}
 
-	public static class CorrosiveTerrGas extends CorrosiveGas {
-		@Override
-		protected void evolve() {
-			super.evolve();
-
-			int cell;
-
-			for (int i = area.left; i < area.right; i++){
-				for (int j = area.top; j < area.bottom; j++){
-					cell = i + j*Dungeon.level.width();
-					if (cur[cell] > 0) {
-						int terr = Dungeon.level.map[cell];
-						if (Dungeon.level.setCellToWater(false, cell)) {
-							if (Dungeon.level.heroFOV[cell] && terr != Terrain.EMPTY) {
-								CellEmitter.get( cell ).burst( Speck.factory( Speck.WOOL ), 15);
-							}
-							Level.set(cell, Terrain.EMPTY);
-							GameScene.updateMap(cell);
-							GameScene.updateFog();
-						}
-					}
-				}
-			}
-		}
-	}
 	public static class GasVent extends Trap {
 
 		{
@@ -342,22 +327,9 @@ public class WandOfCorrosion extends Wand {
 
 		@Override
 		public void activate() {
-			/*
-			int turn = Math.max(scalingDepth()/2, 8); //방출 턴
-			int turnCount = 200 - (200 % turn);       //방출을 계산하기 위한 최대량
 
-			GasVentSeed g = (GasVentSeed) Dungeon.level.blobs.get(GasVentSeed.class);
-			for (int i = 0; i < Dungeon.level.length(); i++){
-				if (g != null && g.volume > 0 && g.cur[i] > 0){
-					g.cur[i] = turnCount - (g.getCount(i) * turn);
-				}
-			}
-
-			GasVentSeed c = (GasVentSeed)Blob.seed(pos, turnCount, GasVentSeed.class, Dungeon.level);
-			c.setCorrosionSeed(3, turn, 1+scalingDepth()/4);
-			*/
 			Sample.INSTANCE.play(Assets.Sounds.GAS);
-			CorrosiveTerrGas c = Blob.seed(pos, 20 + (2 * scalingDepth()), CorrosiveTerrGas.class, Dungeon.level);
+			CorrosiveGas c = Blob.seed(pos, 20 + (2 * scalingDepth()), CorrosiveGas.class, Dungeon.level);
 			c.setStrength(1+scalingDepth()/4);
 			GameScene.add(c);
 		}
