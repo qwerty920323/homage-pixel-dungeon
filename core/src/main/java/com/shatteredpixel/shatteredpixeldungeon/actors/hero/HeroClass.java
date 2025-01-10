@@ -300,6 +300,7 @@ public enum HeroClass {
 		//테스트용 아이템
 		TengusMask tm = new TengusMask();
 		tm.quantity(1).collect();
+
 	}
 
 	private static void initHuntress( Hero hero ) {
