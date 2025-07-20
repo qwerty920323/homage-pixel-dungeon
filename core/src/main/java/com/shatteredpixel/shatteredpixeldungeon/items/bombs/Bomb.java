@@ -141,9 +141,8 @@ public class Bomb extends Item {
 		Sample.INSTANCE.play( Assets.Sounds.BLAST );
 
 		if (explodesDestructively()) {
-			
+
 			ArrayList<Char> affected = new ArrayList<>();
-			
 			if (Dungeon.level.heroFOV[cell]) {
 				CellEmitter.center(cell).burst(BlastParticle.FACTORY, 30);
 			}
@@ -200,7 +199,7 @@ public class Bomb extends Item {
 					Dungeon.fail(this);
 				}
 			}
-			
+
 			if (terrainAffected) {
 				Dungeon.observe();
 			}

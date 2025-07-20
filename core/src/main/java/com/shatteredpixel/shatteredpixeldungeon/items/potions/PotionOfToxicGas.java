@@ -25,8 +25,14 @@ import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.ToxicGas;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Levitation;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
+import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
+import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
 
 public class PotionOfToxicGas extends Potion {
@@ -46,7 +52,18 @@ public class PotionOfToxicGas extends Potion {
 			Sample.INSTANCE.play( Assets.Sounds.GAS );
 		}
 
-		GameScene.add( Blob.seed( cell, 1000, ToxicGas.class ) );
+		GameScene.add( Blob.seed( cell, (int) bonus(1000), ToxicGas.class ) );
+	}
+
+	@Override
+	public void apply( Hero hero ) {
+		if (hero.subClass != HeroSubClass.ALCHEMIST)
+			super.apply(hero);
+
+		int cell = hero.pos;
+		identify();
+		Sample.INSTANCE.play( Assets.Sounds.GAS );
+		GameScene.add( Blob.seed( cell, (int) bonus(1000), ToxicGas.class ) );
 	}
 	
 	@Override

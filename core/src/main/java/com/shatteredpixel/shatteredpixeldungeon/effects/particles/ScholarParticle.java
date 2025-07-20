@@ -17,10 +17,10 @@ public class ScholarParticle extends PixelParticle.Shrinking {
         }
     };
 
-    public static final Emitter.Factory WHITE = new Emitter.Factory() {
+    public static final Emitter.Factory RAINBOW = new Emitter.Factory() {
         @Override
         public void emit( Emitter emitter, int index, float x, float y ) {
-            ((ScholarParticle)emitter.recycle( ScholarParticle.class )).reset( x, y , 0xFFFFFF);
+            ((ScholarParticle)emitter.recycle( ScholarParticle.class )).reset( x, y , Random.Int(0x1000000) | 0x000080);
         }
         @Override
         public boolean lightMode() {

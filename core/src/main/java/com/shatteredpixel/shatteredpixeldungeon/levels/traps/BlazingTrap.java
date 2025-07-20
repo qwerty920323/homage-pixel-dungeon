@@ -46,7 +46,7 @@ public class BlazingTrap extends Trap {
 		PathFinder.buildDistanceMap( pos, BArray.not( Dungeon.level.solid, null ), 2 );
 		for (int i = 0; i < PathFinder.distance.length; i++) {
 			if (PathFinder.distance[i] < Integer.MAX_VALUE) {
-				if (Dungeon.level.pit[i] || (Dungeon.level.water[i] || Dungeon.level.map[i] == Terrain.ICE))
+				if (Dungeon.level.pit[i] || Dungeon.level.water[i])
 					GameScene.add(Blob.seed(i, 1, Fire.class));
 				else
 					GameScene.add(Blob.seed(i, 5, Fire.class));

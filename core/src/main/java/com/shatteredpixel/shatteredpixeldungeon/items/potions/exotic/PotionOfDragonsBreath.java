@@ -34,6 +34,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Cripple;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.effects.MagicMissile;
+import com.shatteredpixel.shatteredpixeldungeon.items.Vial;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
@@ -59,6 +60,12 @@ public class PotionOfDragonsBreath extends ExoticPotion {
 	}
 
 	protected static boolean identifiedByUse = false;
+
+	@Override
+	public void vialDrink (Hero hero) {
+		identifiedByUse = false;
+		GameScene.selectCell(targeter);
+	}
 
 	@Override
 	//need to override drink so that time isn't spent right away
@@ -119,7 +126,7 @@ public class PotionOfDragonsBreath extends ExoticPotion {
 					}
 				});
 			} else if (cell != null) {
-				if (!identifiedByUse) {
+				if (!identifiedByUse && !(curItem instanceof Vial)) {
 					curItem.detach(curUser.belongings.backpack);
 				}
 				potionAlreadyUsed = true;
@@ -175,14 +182,14 @@ public class PotionOfDragonsBreath extends ExoticPotion {
 											if (Dungeon.level.adjacent(bolt.sourcePos, cell) && !Dungeon.level.flamable[cell]){
 												adjacentCells.add(cell);
 											} else {
-												GameScene.add( Blob.seed( cell, 5, Fire.class ) );
+												GameScene.add( Blob.seed( cell, (int) bonus(5), Fire.class ) );
 											}
 											
 											Char ch = Actor.findChar( cell );
 											if (ch != null) {
 												
 												Buff.affect( ch, Burning.class ).reignite( ch );
-												Buff.affect(ch, Cripple.class, 5f);
+												Buff.affect(ch, Cripple.class, bonus(5f));
 											}
 										}
 
@@ -193,14 +200,20 @@ public class PotionOfDragonsBreath extends ExoticPotion {
 												if (Dungeon.level.trueDistance(cell+i, bolt.sourcePos) > Dungeon.level.trueDistance(cell, bolt.sourcePos)
 														&& Dungeon.level.flamable[cell+i]
 														&& Fire.volumeAt(cell+i, Fire.class) == 0){
-													GameScene.add( Blob.seed( cell+i, 5, Fire.class ) );
+													GameScene.add( Blob.seed( cell+i, (int) bonus(5), Fire.class ) );
 												}
 											}
 										}
 
+										//potionist
+										alchemistBuff(PotionOfDragonsBreath.this, curUser);
+										if (curItem instanceof Vial) {
+											((Vial)curItem).updatePotion();
+										}
+
 										curUser.spendAndNext(1f);
 
-										if (!anonymous) {
+										if (!anonymous && !(curItem instanceof Vial)) {
 											Catalog.countUse(PotionOfDragonsBreath.class);
 											if (Random.Float() < talentChance) {
 												Talent.onPotionUsed(curUser, curUser.pos, talentFactor);

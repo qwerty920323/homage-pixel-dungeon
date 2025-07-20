@@ -25,6 +25,9 @@ import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.StormCloud;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.ToxicGas;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.watabou.noosa.audio.Sample;
@@ -50,12 +53,33 @@ public class PotionOfStormClouds extends ExoticPotion {
 		int centerVolume = 120;
 		for (int i : PathFinder.NEIGHBOURS8){
 			if (!Dungeon.level.solid[cell+i]){
-				GameScene.add( Blob.seed( cell+i, 120, StormCloud.class ) );
+				GameScene.add( Blob.seed( cell+i, (int) bonus(120), StormCloud.class ) );
 			} else {
 				centerVolume += 120;
 			}
 		}
 		
-		GameScene.add( Blob.seed( cell, centerVolume, StormCloud.class ) );
+		GameScene.add( Blob.seed( cell, (int) bonus(centerVolume), StormCloud.class ) );
+	}
+
+	@Override
+	public void apply( Hero hero ) {
+		if (hero.subClass != HeroSubClass.ALCHEMIST)
+			super.apply(hero);
+
+		int cell = hero.pos;
+		identify();
+		Sample.INSTANCE.play( Assets.Sounds.GAS );
+
+		int centerVolume = 120;
+		for (int i : PathFinder.NEIGHBOURS8){
+			if (!Dungeon.level.solid[cell+i]){
+				GameScene.add( Blob.seed( cell+i, (int) bonus(120), StormCloud.class ) );
+			} else {
+				centerVolume += 120;
+			}
+		}
+
+		GameScene.add( Blob.seed( cell, (int) bonus(centerVolume), StormCloud.class ) );
 	}
 }

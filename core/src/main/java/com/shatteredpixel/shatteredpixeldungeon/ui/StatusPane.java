@@ -26,6 +26,7 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.SPDAction;
 import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CircleArc;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
@@ -274,6 +275,16 @@ public class StatusPane extends Component {
 				hpText.text(health + "/" + max);
 			} else {
 				hpText.text(health + "+" + shield + "/" + max);
+			}
+			//potionist
+			if (Dungeon.hero.hasTalent(Talent.AUTOTRANSFUSION)) {
+				if (health > max) {
+					hpText.resetColor();
+					hpText.hardlight(0.2f, 0.8f, 0.2f);
+				} else {
+					hpText.resetColor();
+					hpText.alpha(0.6f);
+				}
 			}
 			oldHP = health;
 			oldShield = shield;

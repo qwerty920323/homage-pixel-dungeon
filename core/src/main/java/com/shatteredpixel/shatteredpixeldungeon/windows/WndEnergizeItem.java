@@ -27,6 +27,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.items.EnergyCrystal;
 import com.shatteredpixel.shatteredpixeldungeon.items.EquipableItem;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
+import com.shatteredpixel.shatteredpixeldungeon.items.Vial;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.AlchemyScene;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
@@ -112,8 +113,13 @@ public class WndEnergizeItem extends WndInfoItem {
 		if (item.isEquipped( Dungeon.hero ) && !((EquipableItem)item).doUnequip( Dungeon.hero, false )) {
 			return;
 		}
+		//potionist
+		int slot = Vial.setQuickslot(item);
+
 		item.detachAll( Dungeon.hero.belongings.backpack );
 		energize(item);
+		//potionist
+		Vial.gainEnergy(item, slot);
 	}
 
 	public static void energizeOne( Item item ) {

@@ -226,10 +226,11 @@ public class MeleeWeapon extends Weapon {
 			charger.gainCharge(hero.pointsInTalent(Talent.COUNTER_ABILITY)*0.375f);
 			hero.buff(Talent.CounterAbilityTacker.class).detach();
 		}
-		if (Dungeon.hero.subClass == HeroSubClass.BLADEDANCER){ //무예가
+		if (Dungeon.hero.subClass == HeroSubClass.BLADEDANCER){ //bladedancer
 			Buff.affect(Dungeon.hero, BladeDance.class).rankSet(BladeDance.ability);
 		}
 	}
+
 
 	public static void onAbilityKill( Hero hero, Char killed ){
 		if (killed.alignment == Char.Alignment.ENEMY && hero.hasTalent(Talent.LETHAL_HASTE)){

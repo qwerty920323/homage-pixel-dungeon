@@ -22,11 +22,14 @@
 package com.shatteredpixel.shatteredpixeldungeon.actors.blobs;
 
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
+import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 
-public class Blizzard extends Blob {
+public class Blizzard extends Gas {
 	
 	@Override
 	protected void evolve() {
@@ -52,10 +55,9 @@ public class Blizzard extends Blob {
 						off[cell] = cur[cell] = 0;
 						continue;
 					}
-					
+
 					Freezing.freeze(cell);
 					Freezing.freeze(cell);
-					
 				}
 			}
 		}

@@ -122,12 +122,14 @@ public class BuffIndicator extends Component {
 	public static final int DAZE        = 70;
 	public static final int DISGUISE    = 71;
 	public static final int WAND        = 72;
-	public static final int SCHOLAR_BUFF= 80; //연구가 버프
-	public static final int PINNED_ARROW= 81; //꽂힌 마법 화살
-	public static final int WIDE_ARROW  = 82; //확산 화살
-	public static final int PIERCE_ARROW= 83; //관통 화살
-	public static final int DANCER_ABIL = 84; //난무 능력
-	public static final int DANCER_SHOT = 85; //난무 투척
+	public static final int SCHOLAR_BUFF= 80; //scholar flylight
+	public static final int PINNED_ARROW= 81; //ranger pinned
+	public static final int WIDE_ARROW  = 82; //ranger arrow w
+	public static final int PIERCE_ARROW= 83; //ranger arrow p
+	public static final int DANCER_ABIL = 84; //bladedancer ab
+	public static final int DANCER_SHOT = 85; //bladedancer st
+	public static final int PLAGUE      = 86; //plague_dr
+	public static final int POTION_UP   = 87; //plague_dr
 
 	public static final int SIZE_SMALL  = 7;
 	public static final int SIZE_LARGE  = 16;

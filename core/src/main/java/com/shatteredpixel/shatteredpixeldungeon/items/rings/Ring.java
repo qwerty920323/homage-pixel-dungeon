@@ -363,6 +363,11 @@ public class Ring extends KindofMisc {
 		if (Dungeon.hero.buff(EnhancedRings.class) != null){
 			lvl++;
 		}
+
+		if (!isEquipped(Dungeon.hero) && buff != null){
+			lvl = Math.round((float) lvl / (6 - Dungeon.hero.pointsInTalent(Talent.TREASURE_HUNTER)));
+		}
+
 		return lvl;
 	}
 

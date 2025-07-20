@@ -29,10 +29,12 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.ArtifactRecharge;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Barrier;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.BlobImmunity;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.CounterBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.EnhancedRings;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.FlavourBuff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.GasRelease;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Haste;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Invisibility;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.PhysicalEmpower;
@@ -49,11 +51,15 @@ import com.shatteredpixel.shatteredpixeldungeon.effects.FloatingText;
 import com.shatteredpixel.shatteredpixeldungeon.effects.SpellSprite;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.LeafParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.BrokenSeal;
+import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
+import com.shatteredpixel.shatteredpixeldungeon.items.Vial;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.Armor;
+import com.shatteredpixel.shatteredpixeldungeon.items.armor.ClassArmor;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.ClothArmor;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.CloakOfShadows;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.HornOfPlenty;
+import com.shatteredpixel.shatteredpixeldungeon.items.keys.CrystalKey;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.Ring;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfRecharging;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.ShardOfOblivion;
@@ -96,7 +102,7 @@ public enum Talent {
 	//Gladiator T3
 	CLEAVE(14, 3), LETHAL_DEFENSE(15, 3), ENHANCED_COMBO(16, 3),
 	//Veteran T3 베테랑
-	RUSH_ATTACK(27, 3), HARD_SHELL(28, 3), ENHANCED_DELAY(29, 3),
+	RUSH_ATTACK(27, 3), LAYERED_ARMOR(28, 3), ENHANCED_DELAY(29, 3),
 	//Heroic Leap T4
 	BODY_SLAM(17, 4), IMPACT_WAVE(18, 4), DOUBLE_JUMP(19, 4),
 	//Shockwave T4
@@ -115,7 +121,7 @@ public enum Talent {
 	//Warlock T3
 	SOUL_EATER(46, 3), SOUL_SIPHON(47, 3), NECROMANCERS_MINIONS(48, 3),
 	//Scholar  연구가
-	WIDE_SUMMON(59, 3), STEP_GROWTH(60, 3), MAGIC_CIRCULATION(61, 3),
+	DOUBLE_FUSION(59, 3), PHYSICAL_MAGIC(60, 3), MAGIC_CIRCULATION(61, 3),
 	//Elemental Blast T4
 	BLAST_RADIUS(49, 4), ELEMENTAL_POWER(50, 4), REACTIVE_BARRIER(51, 4),
 	//Wild Magic T4
@@ -153,7 +159,7 @@ public enum Talent {
 	//Warden T3
 	DURABLE_TIPS(110, 3), BARKSKIN(111, 3), SHIELDING_DEW(112, 3),
 	//Ranger T3 // 레인저
-	EXPLOSIVE_ATACK(123, 3), PROJECTILES_SHARE(124, 3), GROWING_ARROW(125, 3),
+	EXPLOSIVE_ATACK(123, 3), PROJECTILES_SHARE(124, 3), ENCHANT_BLAST(125, 3),
 	//Spectral Blades T4
 	FAN_OF_BLADES(113, 4), PROJECTING_BLADES(114, 4), SPIRIT_BLADES(115, 4),
 	//Natures Power T4
@@ -171,8 +177,8 @@ public enum Talent {
 	VARIED_CHARGE(139, 3), TWIN_UPGRADES(140, 3), COMBINED_LETHALITY(141, 3),
 	//Monk T3
 	UNENCUMBERED_SPIRIT(142, 3), MONASTIC_VIGOR(143, 3), COMBINED_ENERGY(144, 3),
-	//BLADEDANCER T3 무예가
-	GROWING_STAMINA(155, 3), QUICKSTEP(156, 3), COMBINED_AGILITY(157, 3),
+	//BladeDancer T3 무예가
+	DANCE_OF_DEATH(155, 3), QUICKSTEP(156, 3), COMBINED_STAMINA(157, 3),
 	//Challenge T4
 	CLOSE_THE_GAP(145, 4), INVIGORATING_VICTORY(146, 4), ELIMINATION_MATCH(147, 4),
 	//Elemental Strike T4
@@ -180,24 +186,238 @@ public enum Talent {
 	//Duelist A3 T4
 	FEIGNED_RETREAT(151, 4), EXPOSE_WEAKNESS(152, 4), COUNTER_ABILITY(153, 4),
 
+	//Cleric
+
+	//Potionist T1
+	ENERGY_DRINK(192), ALCHEMIST_INTUITION(193), DOPING_STRIKE(194), GAS_BARRIER(195),
+	//Potionist T2
+	PROPHYLACTIC_MEAL(196), LIQUID_CYCLE(197), PURITY_VIAL(198), LETHAL_EXP(199), ENERGIZE_VIAL(200),
+	//Potionist T3
+	ENHANCED_POTION(201, 3), AUTOTRANSFUSION(202, 3),
+	//Plague Doctor T3
+	ASYMPTOMATIC_INFECT(203, 3), HYPOESTHESIA(204, 3), CHRONIC_DISEASE(205, 3),
+	//Alchemist T3
+	CORRECT_USAGE(206, 3), DRUG_INTERACTION(207, 3), SOLVENT_EXTRACTION(208, 3),
+	//Bomber T3
+	HIGH_EFFICIENCY(219, 3), VARIOUS_CATALYSTS(220, 3), VIOLENT_REACT(221, 3),
+	//Homunculus T4
+	PHEROMONE_SPRAY(209, 4), ENERGY_INCREASE(210, 4), ENHANCED_GLAND(211, 4),
+	//Fleeing T4
+	MENTAL_SAFETY(212, 4), GAS_SPRAY(213, 4), DISTANCING(214, 4),
+	//Vial brewing
+	SMART_BREWING(215, 4), HIGH_QUALITY(216, 4), RESIDUAL_HEAT(217, 4),
+
 	//universal T4
 	HEROIC_ENERGY(26, 4), //See icon() and title() for special logic for this one
 	//Ratmogrify T4
-	RATSISTANCE(215, 4), RATLOMACY(216, 4), RATFORCEMENTS(217, 4);
+	RATSISTANCE(247, 4), RATLOMACY(248, 4), RATFORCEMENTS(249, 4);
 
+	//Ratmogrify origin icon : 215, 216, 217
+
+	/** veteran */
+	public static class DelayInteractTracker extends FlavourBuff{}
+	public static class DelayTimeTracker extends FlavourBuff{}
+	public static class RushAttackTracker extends Buff{
+		public int icon() { return BuffIndicator.DUEL_COMBO; }
+		public void tintIcon(Image icon) {icon.hardlight(1f, 0.2f, 0.2f);}
+	}
+	/** scholar */
+	public static class DoubleEchoTracker extends CounterBuff {
+		Wand wand;
+		public void setWand (Wand wand) {this.wand = wand;}
+		public Wand wand () {return wand;}
+		public void countDown(){
+			countDown(1);
+			if (count() <= 0) detach();
+		}
+		@Override
+		public float iconFadePercent() { return Math.max(0, (3 - count()) / 3);}
+		@Override
+		public String iconTextDisplay() { return Integer.toString((int)count());}
+
+		public int icon() { return BuffIndicator.WAND; }
+		public void tintIcon(Image icon) {icon.hardlight(1f, 1f, 1f);}
+		public String desc() { return Messages.get(this, "desc", wand.name(), (int)count()) + " " + Messages.get(wand, "scholar_desc");}
+		private static final String WAND = "wand";
+		@Override
+		public void restoreFromBundle(Bundle bundle) {
+			super.restoreFromBundle(bundle);
+			wand = (Wand) bundle.get(WAND);
+		}
+		@Override
+		public void storeInBundle(Bundle bundle) {
+			super.storeInBundle(bundle);
+			bundle.put(WAND, wand);
+		}
+	}
+	/** grave robber */
+	public static class ArtifactCharge extends Buff {
+		public void resetBonus (){
+			int value = 0;
+
+			for (Item i : ((Hero) target).belongings.getAllItems(Item.class)){
+				if (i.value() > 0)            value += i.value();
+				if (i.unique && !i.stackable) value += 100 * (i.level() + 1);
+			}
+
+			//classArmor value is 0! so..
+			ClassArmor classArmor = ((Hero) target).belongings.getItem(ClassArmor.class);
+			if (((Hero) target).belongings.contains(classArmor)) {
+				int armorValue = (20 * classArmor.tier);
+
+				if (classArmor.hasGoodGlyph()) {
+					armorValue *= 1.5;
+				}
+				if (classArmor.cursedKnown && (classArmor.cursed || classArmor.hasCurseGlyph())) {
+					armorValue /= 2;
+				}
+				if (classArmor.levelKnown && classArmor.level() > 0) {
+					armorValue *= (classArmor.level() + 1);
+				}
+				value += armorValue;
+			}
+
+			value = Math.round( value / 100f );
+
+			bonus = 1f + (0.01f * value);
+		}
+		public float bonus () {return bonus;}
+		private float bonus;
+		private static final String BONUS = "bonus";
+		@Override
+		public void restoreFromBundle(Bundle bundle) {
+			super.restoreFromBundle(bundle);
+			bonus = bundle.getFloat(BONUS);
+		}
+		@Override
+		public void storeInBundle(Bundle bundle) {
+			super.storeInBundle(bundle);
+			bundle.put(BONUS, bonus);
+		}
+	}
+
+	public static void setBonusKey () {
+		Actor.add(new Actor() {
+			{
+				actPriority = VFX_PRIO;
+			}
+			@Override
+			protected boolean act() {
+				if (Dungeon.hero != null && Dungeon.hero.heroClass == HeroClass.ROGUE) {
+					BonusKeyTracker tracker = Buff.append(Dungeon.hero, BonusKeyTracker.class);
+
+					if (Dungeon.hero.subClass == HeroSubClass.GRAVEROBBER) {
+						tracker.setSkeleton();
+					}
+				}
+				Actor.remove(this);
+				return true;
+			}
+		});
+	}
+	public static boolean checkBonusKey () {
+		boolean result = false;
+		if (Dungeon.hero.subClass == HeroSubClass.GRAVEROBBER) {
+			for (BonusKeyTracker b : Dungeon.hero.buffs(BonusKeyTracker.class)) {
+				if (b != null && b.depth == Dungeon.depth && b.branch == Dungeon.branch) {
+					result = true;
+					b.setSkeleton();
+				}
+			}
+		}
+		return result;
+	}
+	public static class BonusKeyTracker extends Buff {
+		public void setSkeleton () {
+			ArrayList <Integer> cells = new ArrayList<>();
+			for (int i = 0; i < Dungeon.level.length(); i++){
+				if (Dungeon.level.passable[i] && Dungeon.level.heaps.get(i) == null){
+					cells.add(i);
+				}
+			}
+
+			Heap h = Dungeon.level.drop(new CrystalKey(depth), cells.get(Random.index(cells)));
+			h.type = Heap.Type.SKELETON;
+			h.sprite.link();
+			h.sprite.drop();
+
+			detach();
+		}
+
+		public int depth = Dungeon.depth;;
+		public int branch = Dungeon.branch;
+		private static final String DEPTH = "depth";
+		private static final String BRANCH = "branch";
+		@Override
+		public void restoreFromBundle(Bundle bundle) {
+			super.restoreFromBundle(bundle);
+			depth = bundle.getInt(DEPTH);
+			branch = bundle.getInt(BRANCH);
+		}
+
+		@Override
+		public void storeInBundle(Bundle bundle) {
+			super.storeInBundle(bundle);
+			bundle.put(DEPTH, depth);
+			bundle.put(BRANCH, branch);
+		}
+	}
+	public static class MiningGoldTracker extends FlavourBuff{
+		public int icon() { return BuffIndicator.LIGHT; }
+		public void tintIcon(Image icon) {icon.hardlight(1f, 0.77f, 0.1f);}
+	};
+	/** ranger */
+	public static class EnchantBlastTracker extends FlavourBuff{public int count;};
+	/** blade dancer */
+	public static class EvasionTracker extends FlavourBuff{};
+	/** potionist */
+	public static class VialDrinkTracker extends FlavourBuff{};
+	public static class DopingStrikeTracker extends FlavourBuff {
+		{ type = Buff.buffType.POSITIVE; }
+		public int icon() { return BuffIndicator.WEAPON; }
+		public void tintIcon(Image icon) { icon.hardlight(0.24f, 1.43f, 0f); }
+		public float iconFadePercent() { return Math.max(0, 1f - (visualcooldown() / 5)); }
+	};
+	public static class EnergyDrinkDropped extends CounterBuff{{revivePersists = true;}};
+	public static class GasBarrierTracker extends Buff {
+		@Override
+		public boolean act() {
+			if (Dungeon.hero.hasTalent(Talent.GAS_BARRIER)) {
+				Barrier barrier = Buff.affect(target, Barrier.class);
+				if (barrier.shielding() < 1 + 2 * ((Hero) target).pointsInTalent(Talent.GAS_BARRIER)) {
+					barrier.incShield(1);
+				} else {
+					barrier.incShield(0); //resets barrier decay
+				}
+			}
+			detach();
+			return true;
+		}
+	}
+	public static void onVialUsed ( Hero hero, float factor ){
+		if (hero.hasTalent(DOPING_STRIKE)){
+			Buff.prolong(hero, DopingStrikeTracker.class, 5f);
+		}
+
+		if (hero.subClass == HeroSubClass.BOMBER) {
+			float amount = 7 + (8 * factor);
+			Buff.affect(hero, GasRelease.class).setAmount(amount);
+		}
+	}
+	/** bonus end */
 	public static class ImprovisedProjectileCooldown extends FlavourBuff{
 		public int icon() { return BuffIndicator.TIME; }
 		public void tintIcon(Image icon) { icon.hardlight(0.15f, 0.2f, 0.5f); }
 		public float iconFadePercent() { return Math.max(0, visualcooldown() / 50); }
 	};
-	//grave
-	public static class MiningGoldTracker extends FlavourBuff{
-		public int icon() { return BuffIndicator.UPGRADE; }
-		public void tintIcon(Image icon) { icon.hardlight(0.5f, 0.66f, 0.82f); }
+	public static class LethalMomentumTracker extends FlavourBuff{
+		//veteran
+		public int icon() {
+			if(((Hero)target).subClass == HeroSubClass.VETERAN)
+				return BuffIndicator.TIME;
+			return BuffIndicator.NONE;
+		}
 	};
-	//veteran
-	public static class RushAttackTracker extends FlavourBuff{}
-	public static class LethalMomentumTracker extends FlavourBuff{};
 	public static class StrikingWaveTracker extends FlavourBuff{};
 	public static class WandPreservationCounter extends CounterBuff{{revivePersists = true;}};
 	public static class EmpoweredStrikeTracker extends FlavourBuff{
@@ -431,6 +651,9 @@ public enum Talent {
 					return 122;
 				case DUELIST:
 					return 154;
+
+				case POTIONIST:
+					return 218;
 			}
 		} else {
 			return icon;
@@ -534,6 +757,14 @@ public enum Talent {
 				r.unequipedRingAll(hero, r);
 			}
 		}
+		//potionist
+		if (talent == ALCHEMIST_INTUITION){
+			Item.updateQuickslot();
+
+			Vial vial = hero.belongings.getItem(Vial.class);
+			if (vial != null) vial.potionIdentify(hero);
+
+		}
 	}
 
 	public static class CachedRationsDropped extends CounterBuff{{revivePersists = true;}};
@@ -591,6 +822,11 @@ public enum Talent {
 				// lvl/3 / lvl/2 bonus dmg on next hit for other classes
 				Buff.affect( hero, PhysicalEmpower.class).set(Math.round(hero.lvl / (4f - hero.pointsInTalent(FOCUSED_MEAL))), 1);
 			}
+		}
+		//potionist
+		if (hero.hasTalent(PROPHYLACTIC_MEAL)){
+			//3/5 turns of blobimmunity
+			Buff.prolong( hero, BlobImmunity.class, 1+2*hero.pointsInTalent(PROPHYLACTIC_MEAL));
 		}
 	}
 
@@ -682,6 +918,27 @@ public enum Talent {
 				Buff.prolong(hero, LiquidAgilACCTracker.class, 5f).uses = Math.round(factor);
 			}
 		}
+		//potionist
+		if (hero.hasTalent(LIQUID_CYCLE)){
+			if (hero.heroClass == HeroClass.POTIONIST) {
+				Vial vial = hero.belongings.getItem(Vial.class);
+				float cycle = hero.pointsInTalent(LIQUID_CYCLE) + factor-1;
+				//cannot charrge vial using vial!
+				if (vial != null) vial.gainCharge(5 + 15*cycle);
+			} else {
+				//4/6 turns of recharging
+				ArtifactRecharge buff = Buff.affect( hero, ArtifactRecharge.class);
+				if (buff.left() < 1+factor + 2*(hero.pointsInTalent(LIQUID_CYCLE))){
+					Buff.affect( hero, ArtifactRecharge.class).set(1+factor + 2*(hero.pointsInTalent(LIQUID_CYCLE)));
+				}
+				Buff.prolong( hero, Recharging.class, 1+factor + 2*(hero.pointsInTalent(LIQUID_CYCLE)) );
+
+				ScrollOfRecharging.charge( hero );
+				SpellSprite.show(hero, SpellSprite.CHARGE);
+				SpellSprite.show(hero, SpellSprite.CHARGE, 0, 1, 1);
+			}
+		}
+		onVialUsed(hero, factor);
 	}
 
 	public static void onScrollUsed( Hero hero, int pos, float factor ){
@@ -813,6 +1070,13 @@ public enum Talent {
 			}
 		}
 
+		//potionist
+		if (hero.hasTalent(Talent.DOPING_STRIKE)
+				&& hero.buff(DopingStrikeTracker.class) != null){
+			dmg += 1+hero.pointsInTalent(Talent.DOPING_STRIKE);
+			hero.buff(DopingStrikeTracker.class).detach();
+		}
+
 		return dmg;
 	}
 
@@ -882,6 +1146,10 @@ public enum Talent {
 			case DUELIST:
 				Collections.addAll(tierTalents, STRENGTHENING_MEAL, ADVENTURERS_INTUITION, PATIENT_STRIKE, AGGRESSIVE_BARRIER);
 				break;
+			//cleric
+			case POTIONIST:
+				Collections.addAll(tierTalents, ENERGY_DRINK, ALCHEMIST_INTUITION, DOPING_STRIKE, GAS_BARRIER);
+				break;
 		}
 		for (Talent talent : tierTalents){
 			if (replacements.containsKey(talent)){
@@ -908,6 +1176,10 @@ public enum Talent {
 			case DUELIST:
 				Collections.addAll(tierTalents, FOCUSED_MEAL, LIQUID_AGILITY, WEAPON_RECHARGING, LETHAL_HASTE, SWIFT_EQUIP);
 				break;
+			//cleric
+			case POTIONIST:
+				Collections.addAll(tierTalents, PROPHYLACTIC_MEAL, LIQUID_CYCLE, PURITY_VIAL, LETHAL_EXP, ENERGIZE_VIAL);
+				break;
 		}
 		for (Talent talent : tierTalents){
 			if (replacements.containsKey(talent)){
@@ -933,6 +1205,10 @@ public enum Talent {
 				break;
 			case DUELIST:
 				Collections.addAll(tierTalents, PRECISE_ASSAULT, DEADLY_FOLLOWUP);
+				break;
+			//cleric
+			case POTIONIST:
+				Collections.addAll(tierTalents, ENHANCED_POTION, AUTOTRANSFUSION);
 				break;
 		}
 		for (Talent talent : tierTalents){
@@ -969,7 +1245,7 @@ public enum Talent {
 				Collections.addAll(tierTalents, CLEAVE, LETHAL_DEFENSE, ENHANCED_COMBO);
 				break;
 			case VETERAN:      //베테랑
-				Collections.addAll(tierTalents, RUSH_ATTACK, HARD_SHELL, ENHANCED_DELAY);
+				Collections.addAll(tierTalents, RUSH_ATTACK, LAYERED_ARMOR, ENHANCED_DELAY);
 				break;
 			case BATTLEMAGE:
 				Collections.addAll(tierTalents, EMPOWERED_STRIKE, MYSTICAL_CHARGE, EXCESS_CHARGE);
@@ -978,7 +1254,7 @@ public enum Talent {
 				Collections.addAll(tierTalents, SOUL_EATER, SOUL_SIPHON, NECROMANCERS_MINIONS);
 				break;
 			case SCHOLAR:      //연구가
-				Collections.addAll(tierTalents, WIDE_SUMMON, STEP_GROWTH, MAGIC_CIRCULATION);
+				Collections.addAll(tierTalents, DOUBLE_FUSION, PHYSICAL_MAGIC, MAGIC_CIRCULATION);
 				break;
 			case ASSASSIN:
 				Collections.addAll(tierTalents, ENHANCED_LETHALITY, ASSASSINS_REACH, BOUNTY_HUNTER);
@@ -996,7 +1272,7 @@ public enum Talent {
 				Collections.addAll(tierTalents, DURABLE_TIPS, BARKSKIN, SHIELDING_DEW);
 				break;
 			case RANGER:       //레인저
-				Collections.addAll(tierTalents, EXPLOSIVE_ATACK, PROJECTILES_SHARE, GROWING_ARROW);
+				Collections.addAll(tierTalents, EXPLOSIVE_ATACK, PROJECTILES_SHARE, ENCHANT_BLAST);
 				break;
 			case CHAMPION:
 				Collections.addAll(tierTalents, VARIED_CHARGE, TWIN_UPGRADES, COMBINED_LETHALITY);
@@ -1005,7 +1281,17 @@ public enum Talent {
 				Collections.addAll(tierTalents, UNENCUMBERED_SPIRIT, MONASTIC_VIGOR, COMBINED_ENERGY);
 				break;
 			case BLADEDANCER:  //무예가
-				Collections.addAll(tierTalents, GROWING_STAMINA, QUICKSTEP, COMBINED_AGILITY);
+				Collections.addAll(tierTalents, DANCE_OF_DEATH, QUICKSTEP, COMBINED_STAMINA);
+				break;
+			//cleric
+			case PLAGUE_DR:
+				Collections.addAll(tierTalents, ASYMPTOMATIC_INFECT, HYPOESTHESIA, CHRONIC_DISEASE);
+				break;
+			case ALCHEMIST:
+				Collections.addAll(tierTalents, CORRECT_USAGE, DRUG_INTERACTION, SOLVENT_EXTRACTION);
+				break;
+			case BOMBER:
+				Collections.addAll(tierTalents, HIGH_EFFICIENCY, VARIOUS_CATALYSTS, VIOLENT_REACT);
 				break;
 		}
 		for (Talent talent : tierTalents){

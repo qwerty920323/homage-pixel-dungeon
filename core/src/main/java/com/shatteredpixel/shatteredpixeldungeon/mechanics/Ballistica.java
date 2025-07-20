@@ -43,7 +43,7 @@ public class Ballistica {
 	public static final int STOP_CHARS = 2;     //ballistica will stop on first char hit
 	public static final int STOP_SOLID = 4;     //ballistica will stop on solid terrain
 	public static final int IGNORE_SOFT_SOLID = 8; //ballistica will ignore soft solid terrain, such as doors and webs
-	public static final int IGNORE_SOLID = 16;  //ballistica will ignore solid terrain, only * scholar * use to wand
+
 
 	public static final int PROJECTILE =  	STOP_TARGET	| STOP_CHARS	| STOP_SOLID;
 
@@ -59,8 +59,7 @@ public class Ballistica {
 				(params & STOP_TARGET) > 0,
 				(params & STOP_CHARS) > 0,
 				(params & STOP_SOLID) > 0,
-				(params & IGNORE_SOFT_SOLID) > 0,
-				(params & IGNORE_SOLID) > 0); //scholar
+				(params & IGNORE_SOFT_SOLID) > 0);
 
 		if (collisionPos != null) {
 			dist = path.indexOf(collisionPos);
@@ -73,7 +72,7 @@ public class Ballistica {
 		}
 	}
 
-	private void build( int from, int to, boolean stopTarget, boolean stopChars, boolean stopTerrain, boolean ignoreSoftSolid, boolean ignoreSolid ) {
+	private void build( int from, int to, boolean stopTarget, boolean stopChars, boolean stopTerrain, boolean ignoreSoftSolid) {
 		int w = Dungeon.level.width();
 
 		int x0 = from % w;
@@ -124,19 +123,14 @@ public class Ballistica {
 					&& !Dungeon.level.passable[cell]
 					&& !Dungeon.level.avoid[cell]
 					&& Actor.findChar(cell) == null) {
-				if (ignoreSolid && Dungeon.level.disinter[cell]){ //scholar
-					//do nothing
-				} else {
-					collide(path.get(path.size() - 1));
-				}
+				collide(path.get(path.size() - 1));
+
 			}
 
 			path.add(cell);
 
 			if (collisionPos == null && stopTerrain && cell != sourcePos && Dungeon.level.solid[cell]) {
 				if (ignoreSoftSolid && (Dungeon.level.passable[cell] || Dungeon.level.avoid[cell])) {
-					//do nothing
-				} else if (ignoreSolid && Dungeon.level.disinter[cell]){ //scholar
 					//do nothing
 				} else {
 					collide(cell);

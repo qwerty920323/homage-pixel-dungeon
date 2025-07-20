@@ -22,6 +22,7 @@
 package com.shatteredpixel.shatteredpixeldungeon.levels.rooms.special;
 
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.keys.CrystalKey;
@@ -248,9 +249,10 @@ public class CrystalPathRoom extends SpecialRoom {
 		level.addItemToSpawn( new CrystalKey( Dungeon.depth ) );
 		level.addItemToSpawn( new CrystalKey( Dungeon.depth ) );
 
-		Notes.add( Notes.BonusKey.BONUS_KEY ); //grave
-		Notes.add( Notes.BonusKey.BONUS_KEY ); //grave
-		Notes.add( Notes.BonusKey.BONUS_KEY ); //grave
+		//grave
+		Talent.setBonusKey();
+		Talent.setBonusKey();
+		Talent.setBonusKey();
 
 		entrance().set( Door.Type.UNLOCKED );
 

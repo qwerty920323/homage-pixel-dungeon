@@ -27,6 +27,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MagicImmune;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.KindofMisc;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfEnergy;
@@ -147,8 +148,8 @@ public class Artifact extends KindofMisc {
 			
 		} else {
 
-			if (Dungeon.hero.subClass == HeroSubClass.GRAVEROBBER) {
-				int bonus = Math.round((RingOfEnergy.artifactChargeBonus(Dungeon.hero) -1) * 100f);
+			if (Dungeon.hero != null && Dungeon.hero.buff(Talent.ArtifactCharge.class) != null) {
+				int bonus = Math.round((Dungeon.hero.buff(Talent.ArtifactCharge.class).bonus() -1) * 100f);
 				String desc = "\n\n" + Messages.get(Artifact.class, "bonus_charge", bonus);
 
 				return desc() + desc;

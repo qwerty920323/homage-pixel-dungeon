@@ -23,14 +23,26 @@ package com.shatteredpixel.shatteredpixeldungeon.ui;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.items.EquipableItem;
 import com.shatteredpixel.shatteredpixeldungeon.items.Gold;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
+import com.shatteredpixel.shatteredpixeldungeon.items.Vial;
 import com.shatteredpixel.shatteredpixeldungeon.items.bags.Bag;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.Potion;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfFrost;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfLevitation;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfLiquidFlame;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfParalyticGas;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfToxicGas;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.exotic.ExoticPotion;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.exotic.PotionOfCorrosiveGas;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.exotic.PotionOfSnapFreeze;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.Wand;
 import com.watabou.gltextures.TextureCache;
 import com.watabou.noosa.ColorBlock;
 import com.watabou.noosa.audio.Sample;
+import com.watabou.utils.Reflection;
 
 public class InventorySlot extends ItemSlot {
 
@@ -90,8 +102,25 @@ public class InventorySlot extends ItemSlot {
 				bg.ra = +0.3f;
 				bg.ga = -0.15f;
 			} else if (!item.isIdentified()) {
-				if ((item instanceof EquipableItem || item instanceof Wand) && item.cursedKnown){
+				if ((item instanceof EquipableItem || item instanceof Wand) && item.cursedKnown) {
 					bg.ba = 0.3f;
+					//potionist
+				} else if (item instanceof Potion
+						&& Dungeon.hero.hasTalent(Talent.ALCHEMIST_INTUITION)) {
+
+					if ((item instanceof PotionOfLiquidFlame
+							|| item instanceof PotionOfFrost
+							|| item instanceof PotionOfToxicGas
+							|| item instanceof PotionOfParalyticGas
+							//exotic
+							|| item instanceof PotionOfSnapFreeze
+							|| item instanceof PotionOfCorrosiveGas)){
+						//it's harmful!
+						bg.ra = +0.3f;
+						bg.ga = -0.15f;
+					} else {
+						bg.ba = 0.3f;
+					}
 				} else {
 					bg.ra = 0.3f;
 					bg.ba = 0.3f;

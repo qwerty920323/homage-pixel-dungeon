@@ -223,6 +223,11 @@ public class WndHero extends WndTabbed {
 			txt.setPos(WIDTH * 0.55f, pos);
 			PixelScene.align(txt);
 			add( txt );
+
+			//potionist
+			if (label == Messages.get(this, "health") && Dungeon.hero.HP > Dungeon.hero.HT) {
+				txt.hardlight(0x33CD33);
+			}
 			
 			pos += GAP + txt.height();
 		}

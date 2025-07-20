@@ -74,47 +74,14 @@ public class RingOfEnergy extends Ring {
 			bonus *= 1f + (0.2f * ((Hero) target).pointsInTalent(Talent.LIGHT_CLOAK)/3f);
 		}
 
-		if (target instanceof Hero && ((Hero) target).subClass == HeroSubClass.GRAVEROBBER ){
-			bonus *= artifactChargeBonus(target);
+		if (target instanceof Hero && target.buff(Talent.ArtifactCharge.class) != null) {
+			bonus *= target.buff(Talent.ArtifactCharge.class).bonus();
 		}
-
 		return bonus;
 	}
 
 	public static float armorChargeMultiplier( Char target ){
 		return (float)Math.pow(1.175, getBuffedBonus(target, Energy.class));
-	}
-	//grave
-	public static float artifactChargeBonus( Char target ){
-		int value = 0;
-
-		for (Item i : ((Hero) target).belongings.getAllItems(Item.class)){
-			if (i.value() > 0) value += i.value();
-
-			if (i.unique && !i.stackable) value += 100 * (i.level() + 1);
-		}
-
-		//classArmor value is 0! so..
-		ClassArmor classArmor = ((Hero) target).belongings.getItem(ClassArmor.class);
-		if (((Hero) target).belongings.contains(classArmor)) {
-			int armorValue = (20 * classArmor.tier);
-
-			if (classArmor.hasGoodGlyph()) {
-				armorValue *= 1.5;
-			}
-			if (classArmor.cursedKnown && (classArmor.cursed || classArmor.hasCurseGlyph())) {
-				armorValue /= 2;
-			}
-			if (classArmor.levelKnown && classArmor.level() > 0) {
-				armorValue *= (classArmor.level() + 1);
-			}
-
-			value += armorValue;
-		}
-
-		value = Math.round( value / 100f );
-
-		return 1f + (0.01f * value);
 	}
 
 	public class Energy extends RingBuff {

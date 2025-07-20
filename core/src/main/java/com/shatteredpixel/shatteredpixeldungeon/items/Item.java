@@ -30,6 +30,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Blindness;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Degrade;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.items.bags.Bag;
@@ -182,8 +183,6 @@ public class Item implements Bundlable {
 			execute(hero, defaultAction());
 		}
 	}
-	public void toThrow (int cell) {onThrow(cell);} //ranger
-
 	protected void onThrow( int cell ) {
 		Heap heap = Dungeon.level.drop( this, cell );
 		if (!heap.isEmpty()) {
@@ -563,6 +562,9 @@ public class Item implements Bundlable {
 
 	public static void updateQuickslot() {
 		GameScene.updateItemDisplays = true;
+		//grave
+		if (Dungeon.hero != null && Dungeon.hero.subClass == HeroSubClass.GRAVEROBBER)
+			Buff.affect(Dungeon.hero, Talent.ArtifactCharge.class).resetBonus();
 	}
 	
 	private static final String QUANTITY		= "quantity";

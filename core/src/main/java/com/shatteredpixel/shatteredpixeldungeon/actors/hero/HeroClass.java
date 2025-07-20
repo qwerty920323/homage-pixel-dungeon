@@ -37,6 +37,9 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.huntress.S
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.mage.ElementalBlast;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.mage.WarpBeacon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.mage.WildMagic;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.potionist.Fleeing;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.potionist.Homunculus;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.potionist.VialBrewing;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.rogue.DeathMark;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.rogue.ShadowClone;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.rogue.SmokeBomb;
@@ -45,7 +48,9 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.warrior.He
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.warrior.Shockwave;
 import com.shatteredpixel.shatteredpixeldungeon.items.BrokenSeal;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
+import com.shatteredpixel.shatteredpixeldungeon.items.KingsCrown;
 import com.shatteredpixel.shatteredpixeldungeon.items.TengusMask;
+import com.shatteredpixel.shatteredpixeldungeon.items.Vial;
 import com.shatteredpixel.shatteredpixeldungeon.items.Waterskin;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.ClothArmor;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.CloakOfShadows;
@@ -53,6 +58,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.DriedRose;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TalismanOfForesight;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TimekeepersHourglass;
 import com.shatteredpixel.shatteredpixeldungeon.items.bags.VelvetPouch;
+import com.shatteredpixel.shatteredpixeldungeon.items.bombs.Bomb;
 import com.shatteredpixel.shatteredpixeldungeon.items.food.Food;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfExperience;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfHealing;
@@ -61,16 +67,23 @@ import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfLevitation
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfLiquidFlame;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfMindVision;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfStrength;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfToxicGas;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.brews.AquaBrew;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.brews.UnstableBrew;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.elixirs.ElixirOfArcaneArmor;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.elixirs.ElixirOfMight;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.exotic.PotionOfDivineInspiration;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.exotic.PotionOfMastery;
+import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfArcana;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfIdentify;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfLullaby;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfMagicMapping;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfMirrorImage;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfRage;
+import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTerror;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfUpgrade;
 import com.shatteredpixel.shatteredpixeldungeon.items.spells.CurseInfusion;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfAugmentation;
-import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfClairvoyance;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfEnchantment;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfFlock;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfBlastWave;
@@ -91,12 +104,15 @@ import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Dagger;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Gloves;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Rapier;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Knife;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.WornShortsword;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.ThrowingKnife;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.ThrowingSpike;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.ThrowingStone;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
+import com.shatteredpixel.shatteredpixeldungeon.plants.Rotberry;
+import com.shatteredpixel.shatteredpixeldungeon.plants.Starflower;
 import com.watabou.utils.DeviceCompat;
 
 public enum HeroClass {
@@ -105,7 +121,9 @@ public enum HeroClass {
 	MAGE( HeroSubClass.BATTLEMAGE, HeroSubClass.WARLOCK,  HeroSubClass.SCHOLAR),      // 연구가 추가
 	ROGUE( HeroSubClass.ASSASSIN, HeroSubClass.FREERUNNER, HeroSubClass.GRAVEROBBER), // 도굴꾼 추가
 	HUNTRESS( HeroSubClass.SNIPER, HeroSubClass.WARDEN, HeroSubClass.RANGER),         // 레인저 추가
-	DUELIST( HeroSubClass.CHAMPION, HeroSubClass.MONK, HeroSubClass.BLADEDANCER );    // 무예가 추가
+	DUELIST( HeroSubClass.CHAMPION, HeroSubClass.MONK, HeroSubClass.BLADEDANCER ),    // 무예가 추가
+	//cleric
+	POTIONIST( HeroSubClass.PLAGUE_DR, HeroSubClass.ALCHEMIST, HeroSubClass.BOMBER );      // 약재사
 
 	private HeroSubClass[] subClasses;
 
@@ -152,6 +170,12 @@ public enum HeroClass {
 			case DUELIST:
 				initDuelist( hero );
 				break;
+
+			//c
+
+			case POTIONIST:
+				initPotionist( hero );
+				break;
 		}
 
 		if (SPDSettings.quickslotWaterskin()) {
@@ -177,6 +201,8 @@ public enum HeroClass {
 				return Badges.Badge.MASTERY_HUNTRESS;
 			case DUELIST:
 				return Badges.Badge.MASTERY_DUELIST;
+			case POTIONIST:
+				return Badges.Badge.MASTERY_POTIONIST;
 		}
 		return null;
 	}
@@ -223,6 +249,8 @@ public enum HeroClass {
 		w.cursed = true;
 		TimekeepersHourglass dff = new TimekeepersHourglass();
 		dff.quantity(1).collect();
+		ClothArmor wer = new ClothArmor();
+		wer.quantity(10).collect();
 	}
 
 	private static void initMage( Hero hero ) {
@@ -279,7 +307,6 @@ public enum HeroClass {
 		WandOfCorruption eewaa = new WandOfCorruption();
 		eewaa.quantity(1).collect();
 
-
 	//
 	}
 
@@ -302,7 +329,14 @@ public enum HeroClass {
 		//테스트용 아이템
 		TengusMask tm = new TengusMask();
 		tm.quantity(1).collect();
-
+		PotionOfExperience pe = new PotionOfExperience();
+		pe.quantity(100).collect();
+		ScrollOfUpgrade waa = new ScrollOfUpgrade();
+		waa.quantity(100).collect();
+		StoneOfEnchantment waaa = new StoneOfEnchantment();
+		waaa.quantity(310).collect();
+		CurseInfusion sa = new CurseInfusion();
+		sa.quantity(310).collect();
 	}
 
 	private static void initHuntress( Hero hero ) {
@@ -319,6 +353,16 @@ public enum HeroClass {
 		//테스트용 아이템
 		TengusMask tm = new TengusMask();
 		tm.quantity(1).collect();
+
+		PotionOfExperience pe = new PotionOfExperience();
+		pe.quantity(30).collect();
+		PotionOfMindVision waa = new PotionOfMindVision();
+		waa.quantity(30).collect();
+		StoneOfEnchantment waaa = new StoneOfEnchantment();
+		waaa.quantity(310).collect();
+		RingOfArcana yy = new RingOfArcana();
+		yy.quantity(1).collect();
+		yy.level(10);
 
 	}
 
@@ -339,7 +383,45 @@ public enum HeroClass {
 		//테스트용 아이템
 		TengusMask tm = new TengusMask();
 		tm.quantity(1).collect();
+	}
 
+	//c
+
+	private static void initPotionist( Hero hero ) {
+
+		(hero.belongings.weapon = new Knife()).identify();
+		Vial vial = new Vial();
+		vial.quantity(1).collect();
+ 
+		Dungeon.quickslot.setSlot(0, vial);
+
+		new PotionOfToxicGas().identify();
+		new ScrollOfTerror().identify();
+
+		//테스트용 아이템
+		TengusMask tm = new TengusMask();
+		tm.quantity(1).collect();
+		KingsCrown ef = new KingsCrown();
+		ef.quantity(1).collect();
+
+		PotionOfExperience ees = new PotionOfExperience();
+		ees.quantity(100).collect();
+		PotionOfDivineInspiration sddw = new PotionOfDivineInspiration();
+		sddw.quantity(100).collect();
+		PotionOfMastery w = new PotionOfMastery();
+		w.quantity(100).collect();
+		UnstableBrew h = new UnstableBrew();
+		h.quantity(100).collect();
+		Bomb yjyj = new Bomb();
+		yjyj.quantity(100).collect();
+		ElixirOfArcaneArmor yy = new ElixirOfArcaneArmor();
+		yy.quantity(100).collect();
+		ElixirOfMight uu = new ElixirOfMight();
+		uu.quantity(100).collect();
+		Rotberry.Seed jj = new Rotberry.Seed();
+		jj.quantity(100).collect();
+		Starflower.Seed ii = new Starflower.Seed();
+		ii.quantity(100).collect();
 	}
 
 	public String title() {
@@ -370,6 +452,9 @@ public enum HeroClass {
 				return new ArmorAbility[]{new SpectralBlades(), new NaturesPower(), new SpiritHawk()};
 			case DUELIST:
 				return new ArmorAbility[]{new Challenge(), new ElementalStrike(), new Feint()};
+
+			case POTIONIST:
+				return new ArmorAbility[]{new Homunculus(), new Fleeing(), new VialBrewing()};
 		}
 	}
 
@@ -385,6 +470,9 @@ public enum HeroClass {
 				return Assets.Sprites.HUNTRESS;
 			case DUELIST:
 				return Assets.Sprites.DUELIST;
+
+			case POTIONIST:
+				return Assets.Sprites.POTIONIST;
 		}
 	}
 
@@ -400,6 +488,9 @@ public enum HeroClass {
 				return Assets.Splashes.HUNTRESS;
 			case DUELIST:
 				return Assets.Splashes.DUELIST;
+
+			case POTIONIST:
+				return Assets.Splashes.POTIONIST;
 		}
 	}
 	
@@ -418,6 +509,9 @@ public enum HeroClass {
 				return Badges.isUnlocked(Badges.Badge.UNLOCK_HUNTRESS);
 			case DUELIST:
 				return Badges.isUnlocked(Badges.Badge.UNLOCK_DUELIST);
+
+			case POTIONIST:
+				return Badges.isUnlocked(Badges.Badge.UNLOCK_POTIONIST);
 		}
 	}
 	

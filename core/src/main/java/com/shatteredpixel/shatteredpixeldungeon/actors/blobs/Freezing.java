@@ -27,6 +27,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Chill;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Frost;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SnowParticle;
@@ -55,7 +56,7 @@ public class Freezing extends Blob {
 						off[cell] = cur[cell] = 0;
 						continue;
 					}
-					
+
 					Freezing.freeze(cell);
 
 					off[cell] = cur[cell] - 1;
@@ -70,12 +71,12 @@ public class Freezing extends Blob {
 	public static void freeze( int cell ){
 		Char ch = Actor.findChar( cell );
 		if (ch != null && !ch.isImmune(Freezing.class)) {
-			if (ch.buff(Frost.class) != null){
+			if (ch.buff(Frost.class) != null) {
 				Buff.affect(ch, Frost.class, 2f);
 			} else {
 				Chill chill = ch.buff(Chill.class);
-				float turnsToAdd = Dungeon.level.water[cell] || Dungeon.level.map[ch.pos] == Terrain.ICE ? 5f : 3f;
-				if (chill != null){
+				float turnsToAdd = Dungeon.level.water[cell] ? 5f : 3f;
+				if (chill != null) {
 					float chillToCap = Chill.DURATION - chill.cooldown();
 					chillToCap /= ch.resist(Chill.class); //account for resistance to chill
 					turnsToAdd = Math.min(turnsToAdd, chillToCap);
@@ -85,7 +86,7 @@ public class Freezing extends Blob {
 				}
 				if (chill != null
 						&& chill.cooldown() >= Chill.DURATION &&
-						!ch.isImmune(Frost.class)){
+						!ch.isImmune(Frost.class)) {
 					Buff.affect(ch, Frost.class, Frost.DURATION);
 				}
 			}
@@ -111,7 +112,7 @@ public class Freezing extends Blob {
 		
 		Char ch = Actor.findChar( cell );
 		if (ch != null) {
-			if (Dungeon.level.water[ch.pos] || Dungeon.level.map[ch.pos] == Terrain.ICE){
+			if (Dungeon.level.water[ch.pos]){
 				Buff.prolong(ch, Frost.class, Frost.DURATION * 3);
 			} else {
 				Buff.prolong(ch, Frost.class, Frost.DURATION);
@@ -126,11 +127,6 @@ public class Freezing extends Blob {
 		MagicalFireRoom.EternalFire eternalFire = (MagicalFireRoom.EternalFire)Dungeon.level.blobs.get(MagicalFireRoom.EternalFire.class);
 		if (eternalFire != null && eternalFire.volume > 0) {
 			eternalFire.clear( cell );
-		}
-
-		WandOfFireblast.MiniEternalFire miniEternalFire = (WandOfFireblast.MiniEternalFire)Dungeon.level.blobs.get(WandOfFireblast.MiniEternalFire.class);
-		if (miniEternalFire != null && miniEternalFire.volume > 0) { //scholar
-			miniEternalFire.clear( cell );
 		}
 		
 		Heap heap = Dungeon.level.heaps.get( cell );

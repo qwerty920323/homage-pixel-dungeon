@@ -25,6 +25,9 @@ import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.ParalyticGas;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.ToxicGas;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.watabou.noosa.audio.Sample;
@@ -46,7 +49,18 @@ public class PotionOfParalyticGas extends Potion {
 			Sample.INSTANCE.play( Assets.Sounds.GAS );
 		}
 
-		GameScene.add( Blob.seed( cell, 1000, ParalyticGas.class ) );
+		GameScene.add( Blob.seed( cell, (int) bonus(1000), ParalyticGas.class ) );
+	}
+
+	@Override
+	public void apply( Hero hero ) {
+		if (hero.subClass != HeroSubClass.ALCHEMIST)
+			super.apply(hero);
+
+		int cell = hero.pos;
+		identify();
+		Sample.INSTANCE.play( Assets.Sounds.GAS );
+		GameScene.add( Blob.seed( cell, (int) bonus(1000), ParalyticGas.class ) );
 	}
 	
 	@Override

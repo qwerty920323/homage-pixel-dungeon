@@ -34,6 +34,7 @@ import com.shatteredpixel.shatteredpixeldungeon.effects.ShieldHalo;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Splash;
 import com.shatteredpixel.shatteredpixeldungeon.effects.TorchHalo;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.DarkGreen;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.FlameParticle;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ShadowParticle;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SnowParticle;
@@ -84,7 +85,7 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 
 	public enum State {
 		BURNING, LEVITATING, INVISIBLE, PARALYSED, FROZEN, ILLUMINATED, CHILLED, DARKENED, MARKED, HEALING, SHIELDED, HEARTS,
-		ARROW, FIREFLY //pinArrow , FireFly
+		ARROW, FIREFLY, PLAGUE //pinArrow , FireFly, plague
 	}
 	private int stunStates = 0;
 	
@@ -113,8 +114,8 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 	protected AlphaTweener invisible;
 	protected Flare aura;
 	protected Emitter arrows;  //ranger
-	protected Emitter flrefly; //scholer
-
+	protected Emitter flrefly; //scholar
+	protected DarkGreen plague; //plague_dr
 
 	protected EmoIcon emo;
 	protected CharHealthIndicator health;
@@ -359,7 +360,7 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 	public void flash() {
 		ra = ba = ga = 1f;
 		flashTime = FLASH_INTERVAL;
-	}
+			}
 	
 	public void add( State state ) {
 		switch (state) {
@@ -425,6 +426,16 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 			case FIREFLY:
 				flrefly = emitter();
 				flrefly.pour( FlashDots.GREEN, 0.5f );
+				break;
+			case PLAGUE:
+				plague = DarkGreen.greenig( this );
+				if (parent != null){
+					parent.add(plague);
+				} else {
+					rm = 0.4f;
+					gm = 0.85f;
+					bm = 0f;
+				}
 				break;
 		}
 	}
@@ -511,6 +522,13 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 					flrefly = null;
 				}
 				break;
+			case PLAGUE:
+				if (plague != null) {
+					plague.lighten();
+					plague = null;
+				}
+				resetColor();
+				break;
 		}
 	}
 
@@ -595,6 +613,12 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 		super.resetColor();
 		if (invisible != null){
 			alpha(0.4f);
+		}
+
+		if (plague != null) {
+			rm = 0.4f;
+			gm = 0.85f;
+			bm = 0f;
 		}
 	}
 	

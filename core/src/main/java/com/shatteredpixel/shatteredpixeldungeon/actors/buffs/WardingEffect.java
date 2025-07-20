@@ -37,7 +37,6 @@ public class WardingEffect extends Buff {
                 Buff.affect(ch, Burning.class).reignite(ch,left);
                 break;
 
-            case Terrain.ICE:
             case Terrain.WATER:         // Chill
                 if (nonChar){
                     result = "chill";

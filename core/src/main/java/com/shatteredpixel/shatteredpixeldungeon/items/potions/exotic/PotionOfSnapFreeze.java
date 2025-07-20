@@ -25,9 +25,14 @@ import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Freezing;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.ToxicGas;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Roots;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
+import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.PathFinder;
@@ -55,9 +60,30 @@ public class PotionOfSnapFreeze extends ExoticPotion {
 				
 				Char ch = Actor.findChar( cell + offset);
 				if (ch != null){
-					Buff.affect(ch, Roots.class, Roots.DURATION*2f);
+					Buff.affect(ch, Roots.class, bonus(Roots.DURATION*2f));
 				}
 				
+			}
+		}
+	}
+
+	@Override
+	public void apply( Hero hero ) {
+		if (hero.subClass != HeroSubClass.ALCHEMIST)
+			super.apply(hero);
+
+		int cell = hero.pos;
+		identify();
+		for (int offset : PathFinder.NEIGHBOURS9){
+			if (!Dungeon.level.solid[cell+offset]) {
+
+				Freezing.affect( cell + offset );
+
+				Char ch = Actor.findChar( cell + offset);
+				if (ch != null){
+					Buff.affect(ch, Roots.class, bonus(Roots.DURATION*2f));
+				}
+
 			}
 		}
 	}

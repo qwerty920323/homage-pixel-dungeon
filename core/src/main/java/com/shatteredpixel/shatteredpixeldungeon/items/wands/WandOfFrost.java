@@ -25,33 +25,21 @@ import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
-import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Fire;
-import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Freezing;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Chill;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.FlavourBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Frost;
-import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.MagicMissile;
-import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SnowParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
-import com.shatteredpixel.shatteredpixeldungeon.items.Item;
-import com.shatteredpixel.shatteredpixeldungeon.items.potions.Potion;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
-import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
-import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.special.MagicalFireRoom;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
-import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Callback;
 import com.watabou.utils.PointF;
 import com.watabou.utils.Random;
-
-import java.util.ArrayList;
-import java.util.Iterator;
 
 public class WandOfFrost extends DamageWand {
 
@@ -90,16 +78,6 @@ public class WandOfFrost extends DamageWand {
 
 		}
 
-		WandOfFireblast.MiniEternalFire miniEternalFire = (WandOfFireblast.MiniEternalFire)Dungeon.level.blobs.get(WandOfFireblast.MiniEternalFire.class);
-		if (miniEternalFire != null && miniEternalFire.volume > 0) {
-			miniEternalFire.clear( bolt.collisionPos );
-			//bolt ends 1 tile short of fire, so check next tile too
-			if (bolt.path.size() > bolt.dist+1){
-				miniEternalFire.clear( bolt.path.get(bolt.dist+1) );
-			}
-
-		}
-
 		Char ch = Actor.findChar(bolt.collisionPos);
 		if (ch != null){
 
@@ -121,7 +99,7 @@ public class WandOfFrost extends DamageWand {
 			Sample.INSTANCE.play( Assets.Sounds.HIT_MAGIC, 1, 1.1f * Random.Float(0.87f, 1.15f) );
 
 			if (ch.isAlive()){
-				if (Dungeon.level.water[ch.pos] || Dungeon.level.map[ch.pos] == Terrain.ICE)
+				if (Dungeon.level.water[ch.pos])
 					Buff.affect(ch, Chill.class, 4+buffedLvl());
 				else
 					Buff.affect(ch, Chill.class, 2+buffedLvl());
@@ -185,80 +163,6 @@ public class WandOfFrost extends DamageWand {
 		particle.acc.set( 0f, 1f);
 		particle.setSize( 0f, 1.5f);
 		particle.radiateXY(Random.Float(1f));
-	}
-
-	//scholar
-	@Override
-	public int bonusRange () {return 4 + 2 * super.bonusRange();}
-	@Override
-	public int scholarTurnCount(){
-		return super.scholarTurnCount() + 1;
-	}
-	@Override
-	public void scholarAbility(Ballistica bolt, int cell) {
-
-		super.scholarAbility(bolt,cell);
-		int iceToPlace = bonusRange(); //범위
-
-		ArrayList<Integer> cells = new ArrayList<>(bolt.path);
-
-		for (Iterator<Integer> i = cells.iterator(); i.hasNext(); ) {
-			int pos = i.next();
-			int terr = Dungeon.level.map[pos];
-			if (!(terr == Terrain.EMPTY || terr == Terrain.EMPTY_DECO ||  terr ==Terrain.EMBERS || terr ==Terrain.ICE ||
-					terr == Terrain.GRASS || terr == Terrain.HIGH_GRASS || terr == Terrain.FURROWED_GRASS)) {
-				i.remove();
-			} else if (Dungeon.level.distance(curUser.pos, pos) > bolt.dist) {
-				i.remove();
-			} else {
-				Char ch = Actor.findChar(pos);
-				if (ch == Dungeon.hero) i.remove();
-			}
-		}
-		for (int pos : bolt.path) {
-			if (Dungeon.level.distance(curUser.pos, pos) <= bolt.dist) {
-				CellEmitter.get(pos).burst(SnowParticle.FACTORY, 8);
-
-				Fire fire = (Fire) Dungeon.level.blobs.get(Fire.class);
-				if (fire != null && fire.volume > 0) {
-					fire.clear(cell);
-				}
-			}
-
-			if (iceToPlace > 0 && cells.contains(pos)) {
-				if (!Dungeon.level.solid[pos]) {
-					setIceGrass(pos);
-				}
-				iceToPlace--;
-				//moves cell to the back
-				cells.remove((Integer) pos);
-				cells.add(pos);
-			}
-		}
-	}
-
-	public void setIceGrass (int pos){
-		int terr = Dungeon.level.map[pos];
-		Heap heap = Dungeon.level.heaps.get(pos);
-
-		if (terr == Terrain.ICE) {
-			boolean inPotion = false;
-			if (heap != null && heap.type == Heap.Type.HEAP) {
-				for (Item item : heap.items.toArray(new Item[0])) {
-					if ((item instanceof Potion)) {
-						inPotion = true;
-					}
-				}
-			}
-			if (!inPotion) GameScene.add(Blob.seed(pos, scholarTurnCount(), Freezing.class));
-			
-		} else {
-			Dungeon.level.pressCell(pos);
-			Level.set(pos, Terrain.ICE);
-			CellEmitter.get(pos).burst(SnowParticle.FACTORY, 8);
-
-			GameScene.updateMap(pos);
-		}
 	}
 
 }

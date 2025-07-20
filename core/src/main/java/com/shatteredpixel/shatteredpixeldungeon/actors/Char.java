@@ -28,6 +28,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Electricity;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.StormCloud;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.ToxicGas;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Adrenaline;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AlchemistBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AllyBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Amok;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.ArcaneArmor;
@@ -63,6 +64,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Momentum;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MonkEnergy;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Ooze;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Paralysis;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Plague;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Poison;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Preparation;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.ShieldBuff;
@@ -79,6 +81,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.duelist.Challenge;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.potionist.Fleeing;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.rogue.DeathMark;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.warrior.Endure;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Brute;
@@ -92,6 +95,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.YogDzewa;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.MirrorImage;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.PrismaticImage;
 import com.shatteredpixel.shatteredpixeldungeon.effects.FloatingText;
+import com.shatteredpixel.shatteredpixeldungeon.effects.GasExplode;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ShadowParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.Gold;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
@@ -103,6 +107,8 @@ import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TimekeepersHourg
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.exotic.PotionOfCleansing;
 import com.shatteredpixel.shatteredpixeldungeon.items.quest.Pickaxe;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfElements;
+import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfForce;
+import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfFuror;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfRetribution;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTeleportation;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.exotic.ScrollOfChallenge;
@@ -229,7 +235,12 @@ public abstract class Char extends Actor {
 	
 	//swaps places by default
 	public boolean interact(Char c){
-
+		//veteran
+		float delay = 1 / c.speed();
+		if (c.buff(Talent.DelayInteractTracker.class) != null){
+			c.buff(Talent.DelayInteractTracker.class).detach();
+			delay = 0;
+		}
 		//don't allow char to swap onto hazard unless they're flying
 		//you can swap onto a hazard though, as you're not the one instigating the swap
 		if (!Dungeon.level.passable[pos] && !c.flying){
@@ -281,14 +292,15 @@ public abstract class Char extends Actor {
 		c.sprite.move( newPos, oldPos );
 		c.move( oldPos );
 		
-		c.spend( 1 / c.speed() );
+		c.spend( delay );
 
 		if (c == Dungeon.hero){
 			if (Dungeon.hero.subClass == HeroSubClass.FREERUNNER){
 				Buff.affect(Dungeon.hero, Momentum.class).gainStack();
 			}
-			if (Dungeon.hero.buff(DelayAct.class) != null){
-				Dungeon.hero.buff(DelayAct.class).delaySpend();
+			//veteran
+			if (c.buff(DelayAct.class) != null && delay == 0){
+				c.buff(DelayAct.class).resetPos();
 			}
 
 			Dungeon.hero.busy();
@@ -409,10 +421,6 @@ public abstract class Char extends Actor {
 				}
 			} else {
 				dmg = damageRoll();
-			}
-
-			if (buff(Talent.RushAttackTracker.class) != null){
-				dmg += 0.1f * dmg * ((Hero)this).pointsInTalent(Talent.RUSH_ATTACK);
 			}
 			dmg = dmg*dmgMulti;
 
@@ -572,7 +580,13 @@ public abstract class Char extends Actor {
 				//TODO enemy.defenseSound? currently miss plays for monks/crab even when they parry
 				Sample.INSTANCE.play(Assets.Sounds.MISS);
 			}
-			
+
+			//alchemist
+			AlchemistBuff buff = enemy.buff(AlchemistBuff.class);
+			if (buff != null){
+				buff.defenseSkill();
+			}
+
 			return false;
 			
 		}
@@ -670,6 +684,10 @@ public abstract class Char extends Actor {
 		Earthroot.Armor armor = buff( Earthroot.Armor.class );
 		if (armor != null) {
 			damage = armor.absorb( damage );
+		}
+
+		if (Dungeon.hero.subClass == HeroSubClass.BOMBER) {
+			Actor.add(new GasExplode(pos, enemy));
 		}
 
 		return damage;
@@ -810,14 +828,24 @@ public abstract class Char extends Actor {
 		}
 		shielded -= dmg;
 		HP -= dmg;
-
-		if (HP > 0 && dmg > 0 && buff(Talent.RushAttackTracker.class) != null){
-			buff(Talent.RushAttackTracker.class).detach();
-		}
-
 		if (HP > 0 && shielded > 0 && shielding() == 0){
 			if (this instanceof Hero && ((Hero) this).hasTalent(Talent.PROVOKED_ANGER)){
 				Buff.affect(this, Talent.ProvokedAngerTracker.class, 5f);
+			}
+		}
+
+		//veteran
+		if (HP > 0 && dmg > 0 && buff(Talent.RushAttackTracker.class) != null) {
+			buff(Talent.RushAttackTracker.class).detach();
+		}
+		//plague
+		if (buff( Plague.class ) != null) {
+			buff( Plague.class ).doAct(dmg, src);
+		}
+		//alchemist
+		for (AlchemistBuff buff : buffs(AlchemistBuff.class)) {
+			if (buff != null){
+				dmg = buff.defenseProc(dmg, src);
 			}
 		}
 
@@ -879,7 +907,8 @@ public abstract class Char extends Actor {
 			if (src instanceof Viscosity.DeferedDamage)                 icon = FloatingText.DEFERRED;
 			if (src instanceof Corruption)                              icon = FloatingText.CORRUPTION;
 			if (src instanceof AscensionChallenge)                      icon = FloatingText.AMULET;
-			if (src instanceof WandOfPrismaticLight.FireFly)            icon = FloatingText.MAGIC_DMG;
+
+			if (src instanceof Plague)                                  icon = FloatingText.PLAGUE;
 
 			sprite.showStatusWithIcon(CharSprite.NEGATIVE, Integer.toString(dmg + shielded), icon);
 		}
@@ -929,11 +958,11 @@ public abstract class Char extends Actor {
 			}
 			//veteran
 			if (ch.buff(DelayAct.class) != null && ch.buff(DelayAct.class).object == id()){
-				ch.buff(DelayAct.class).object = 0;
+				ch.buff(DelayAct.class).object = -1;
 			}
-			//scholar
-			if (ch.buff(WandOfPrismaticLight.FireFly.class) != null){
-				ch.buff(WandOfPrismaticLight.FireFly.class).detach();
+			//potionist
+			if (ch.buff(Fleeing.FleeingTracker.class) != null && ch.buff(Fleeing.FleeingTracker.class).object == id()){
+				ch.buff(Fleeing.FleeingTracker.class).destroy();
 			}
 			if (ch.buff(Talent.FollowupStrikeTracker.class) != null
 					&& ch.buff(Talent.FollowupStrikeTracker.class).object == id()){

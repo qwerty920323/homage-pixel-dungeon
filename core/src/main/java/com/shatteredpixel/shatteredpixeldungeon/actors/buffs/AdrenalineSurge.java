@@ -42,7 +42,7 @@ public class AdrenalineSurge extends Buff {
 		this.interval = interval;
 		spend(interval - cooldown());
 	}
-	
+
 	public int boost(){
 		return boost;
 	}

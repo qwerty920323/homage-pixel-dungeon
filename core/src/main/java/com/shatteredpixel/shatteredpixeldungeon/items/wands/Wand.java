@@ -29,6 +29,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Barrier;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Degrade;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.FlavourBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Invisibility;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MagicImmune;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Recharging;
@@ -41,9 +42,11 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.mage.WildMagic;
 import com.shatteredpixel.shatteredpixeldungeon.effects.FloatingText;
+import com.shatteredpixel.shatteredpixeldungeon.effects.GasExplode;
 import com.shatteredpixel.shatteredpixeldungeon.effects.MagicMissile;
-import com.shatteredpixel.shatteredpixeldungeon.effects.particles.EnergyParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
+import com.shatteredpixel.shatteredpixeldungeon.items.KindOfWeapon;
+import com.shatteredpixel.shatteredpixeldungeon.items.armor.ClassArmor;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TalismanOfForesight;
 import com.shatteredpixel.shatteredpixeldungeon.items.bags.Bag;
 import com.shatteredpixel.shatteredpixeldungeon.items.bags.MagicalHolster;
@@ -52,7 +55,6 @@ import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfRecharging
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.ShardOfOblivion;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.WondrousResin;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
-import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.CellSelector;
@@ -60,17 +62,17 @@ import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
-import com.shatteredpixel.shatteredpixeldungeon.tiles.CustomTilemap;
 import com.shatteredpixel.shatteredpixeldungeon.ui.QuickSlotButton;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
-import com.watabou.utils.Point;
 import com.watabou.utils.PointF;
 import com.watabou.utils.Random;
+import com.watabou.utils.Reflection;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 public abstract class Wand extends Item {
 
@@ -203,6 +205,14 @@ public abstract class Wand extends Item {
 
 	protected void wandProc(Char target, int chargesUsed){
 		wandProc(target, buffedLvl(), chargesUsed);
+		//wild magic
+		if (curItem instanceof ClassArmor &&
+				target != Dungeon.hero &&
+				Dungeon.hero.subClass == HeroSubClass.SCHOLAR) {
+			Buff.affect(target, WandProcTracker.class, 0f);
+			if (!mobCells.contains(target.pos)) mobCells.add(target.pos);
+			scholarWandProc(target, this);
+		}
 	}
 
 	//TODO Consider externalizing char awareness buff
@@ -217,6 +227,19 @@ public abstract class Wand extends Item {
 				//standard 1 - 0.92^x chance, plus 7%. Starts at 15%
 				Random.Float() > (Math.pow(0.92f, (wandLevel*chargesUsed)+1) - 0.07f)){
 			SoulMark.prolong(target, SoulMark.class, SoulMark.DURATION + wandLevel);
+		}
+
+		if (target != Dungeon.hero &&
+				Dungeon.hero.subClass == HeroSubClass.BOMBER) {
+			Actor.add(new GasExplode(target.pos, curUser));
+		}
+
+		if (curItem instanceof Wand &&
+				target != Dungeon.hero &&
+				Dungeon.hero.subClass == HeroSubClass.SCHOLAR) {
+			Buff.affect(target, WandProcTracker.class, 0f);
+			if (!mobCells.contains(target.pos)) mobCells.add(target.pos);
+			scholarWandProc(target, (Wand)curItem);
 		}
 	}
 
@@ -283,8 +306,13 @@ public abstract class Wand extends Item {
 		}
 
 		if (Dungeon.hero != null && Dungeon.hero.subClass == HeroSubClass.SCHOLAR){
-			int turn = scholarTurnCount() - (int)(Math.sqrt(8 * buffedLvl() + 1) - 1)/2;
-			desc += "\n\n" + Messages.get(this, "scholar_desc", isIdentified() ? scholarTurnCount() : turn , bonusRange());
+			MagesStaff staff = Dungeon.hero.belongings.getItem(MagesStaff.class);
+			if (staff != null) {
+				String name = Messages.get(staff.wandClass(), "staff_name");
+
+				String scholar = Messages.get(Wand.class, "magic_fusion", name);
+				desc += "\n\n" + scholar + Messages.get(staff.wandClass(), "scholar_desc");
+			}
 		}
 
 		return desc;
@@ -494,14 +522,17 @@ public abstract class Wand extends Item {
 			Buff.prolong(Dungeon.hero, Talent.LingeringMagicTracker.class, 5f);
 		}
 
+		//scholar
+		if (!magicFusionCheck(this.getClass())
+				&& Dungeon.hero.hasTalent(Talent.DOUBLE_FUSION)
+				&& Dungeon.hero.buff(Talent.DoubleEchoTracker.class) == null) {
+			Talent.DoubleEchoTracker tracker = Buff.affect(Dungeon.hero, Talent.DoubleEchoTracker.class);
+			tracker.setWand(this);
+			tracker.countUp(Dungeon.hero.pointsInTalent(Talent.DOUBLE_FUSION));
+		}
+
 		Invisibility.dispel();
 		updateQuickslot();
-
-		//scholar
-		if (Dungeon.hero.hasTalent(Talent.MAGIC_CIRCULATION)){
-			float talent = 0.12f * Dungeon.hero.pointsInTalent(Talent.MAGIC_CIRCULATION);
-			recycling(talent);
-		}
 
 		curUser.spendAndNext( TIME_TO_ZAP );
 	}
@@ -554,7 +585,7 @@ public abstract class Wand extends Item {
 		}
 		return price;
 	}
-	
+
 	private static final String USES_LEFT_TO_ID     = "uses_left_to_id";
 	private static final String AVAILABLE_USES      = "available_uses";
 	private static final String CUR_CHARGES         = "curCharges";
@@ -598,8 +629,12 @@ public abstract class Wand extends Item {
 	}
 
 	public int collisionProperties(int target){
-		if (cursed)     return Ballistica.MAGIC_BOLT | Ballistica.IGNORE_SOLID; //scholar
-		else            return collisionProperties | Ballistica.IGNORE_SOLID;   //scholar
+		if (cursed)     return Ballistica.MAGIC_BOLT;
+		else {
+			if (magicFusionCheck(WandOfDisintegration.class)) return Ballistica.STOP_TARGET | Ballistica.STOP_CHARS;
+
+			return collisionProperties;
+		}
 	}
 
 	public static class PlaceHolder extends Wand {
@@ -639,9 +674,11 @@ public abstract class Wand extends Item {
 					return;
 				}
 
+				target = curWand.disntegrationMagic(curWand, target);
+
 				final Ballistica shot = new Ballistica( curUser.pos, target, curWand.collisionProperties(target));
 				int cell = shot.collisionPos;
-				
+
 				if (target == curUser.pos || cell == curUser.pos) {
 					if (target == curUser.pos && curUser.hasTalent(Talent.SHIELD_BATTERY)){
 
@@ -712,38 +749,32 @@ public abstract class Wand extends Item {
 							}
 						}
 					}
-					
+
 					if (curWand.cursed){
 						if (!curWand.cursedKnown){
 							GLog.n(Messages.get(Wand.class, "curse_discover", curWand.name()));
 						}
 						CursedWand.cursedZap(curWand,
 								curUser,
-								new Ballistica(curUser.pos, target, Ballistica.MAGIC_BOLT | Ballistica.IGNORE_SOLID), //scholar
+								new Ballistica(curUser.pos, target, Ballistica.MAGIC_BOLT),
 								new Callback() {
 									@Override
 									public void call() {
-										if (((Hero)curUser).subClass == HeroSubClass.SCHOLAR){
-											curWand.scholarAbility(shot,target);
-										}
-
 										curWand.wandUsed();
 									}
 								});
 					} else {
+						//scholar
+						Integer finalTarget = target;
 						curWand.fx(shot, new Callback() {
 							public void call() {
-								if (((Hero)curUser).subClass == HeroSubClass.SCHOLAR){
-									curWand.scholarAbility(shot,target);
-								}
-
 								curWand.onZap(shot);
 
-								if (Random.Float() < WondrousResin.extraCurseEffectChance()){
+								if (Random.Float() < WondrousResin.extraCurseEffectChance()) {
 									WondrousResin.forcePositive = true;
 									CursedWand.cursedZap(curWand,
 											curUser,
-											new Ballistica(curUser.pos, target, Ballistica.MAGIC_BOLT | Ballistica.IGNORE_SOLID), //scholar
+											new Ballistica(curUser.pos, finalTarget, Ballistica.MAGIC_BOLT),
 											new Callback() {
 												@Override
 												public void call() {
@@ -756,7 +787,6 @@ public abstract class Wand extends Item {
 								}
 							}
 						});
-
 					}
 					curWand.cursedKnown = true;
 					
@@ -857,82 +887,98 @@ public abstract class Wand extends Item {
 
 	//scholar
 	public int scholarTurnCount(){
-		int bonusTurn = Dungeon.hero.pointsInTalent(Talent.STEP_GROWTH);
-		int turn = buffedLvl() > 0 ? 1 : 0;
-
-		//turn 1,2,5,9..
-		if (bonusTurn == 1) return bonusTurn(buffedLvl() + turn);
-		//turn 1,2,4,7..
-		else if (bonusTurn == 2) return turn + bonusTurn(buffedLvl() - turn);
-		//turn 1,2,3,5,8..
-		else if (bonusTurn == 3) {
-			return (buffedLvl() > 1 ? 1 : 0) + turn + bonusTurn(buffedLvl() - 2*turn);
-		} else
-			return bonusTurn(buffedLvl());
+		return 0;
 	}
-	/* 1 3 6 10 15 */
-	public int bonusTurn(int lvl){
-		int level = lvl;
-		if (level > 0) {
-			return (int)(Math.sqrt(8 * level + 1) - 1)/2;
-		} else
-			return 0;
+	public int bonusRange () {
+		return Dungeon.hero.pointsInTalent(Talent.DOUBLE_FUSION);
 	}
 
-	public boolean inBlobs (){
-		WandOfMagicMissile.UpgradeLight light
-				= (WandOfMagicMissile.UpgradeLight) Dungeon.level.blobs.get(WandOfMagicMissile.UpgradeLight.class);
+	public void scholarAbility(Ballistica bolt, int cell){}
 
-		if (light != null && light.volume > 0 && light.cur[Dungeon.hero.pos] > 0) {
-			return true;
+	/** Scholar */
+	public int disntegrationMagic (Wand wand, int target) {
+		/*
+		//calculating max range for wall disintegration
+		if (wand.magicFusionCheck(WandOfDisintegration.class)) {
+			final Ballistica shot = new Ballistica( curUser.pos, target, wand.ballisticaInFusion());
+
+			int pos = -1;
+			int maxDistance = Math.min(lvlCounter()*2 + 6, shot.dist);
+			for (int c : shot.subPath(maxDistance, shot.dist)) {
+				if (Dungeon.level.solid[c]) {
+					pos = shot.path.get(Dungeon.level.distance(curUser.pos, c)-1);
+					if (Dungeon.level.passable[c])
+						pos = c;
+					break;
+				}
+				pos = c;
+			}
+			if (pos > -1) target = pos;
 		}
+
+		 */
+
+		return target;
+	}
+	public static Class<? extends Wand> staffWandCls() {
+		MagesStaff staff = Dungeon.hero.belongings.getItem(MagesStaff.class);
+		return staff != null ? staff.wandClass() : null;
+	}
+	public int ballisticaInFusion() {
+		if (this instanceof WandOfBlastWave || this instanceof WandOfTransfusion)
+			return Ballistica.STOP_CHARS | Ballistica.STOP_TARGET;
+		else if (this instanceof WandOfCorrosion)
+			return Ballistica.STOP_TARGET;
+		else if (this instanceof WandOfDisintegration)
+			return collisionProperties;
+
+		return Ballistica.STOP_CHARS | Ballistica.WONT_STOP;
+	}
+	public static int lvlCounter() {
+		MagesStaff staff = Dungeon.hero.belongings.getItem(MagesStaff.class);
+		return staff != null ? staff.buffedLvl() : 0;
+	}
+	public boolean magicFusionCheck (Class <? extends Wand> wand) {
+		/*
+		if (curUser.subClass != HeroSubClass.SCHOLAR) return false;
+
+		if (onStaffUsed) {
+			Talent.DoubleEchoTracker tracker = curUser.buff(Talent.DoubleEchoTracker.class);
+			if (tracker != null)
+				return tracker.wand().getClass().equals(wand);
+		}
+
+		if (staffWandCls().equals(wand))
+			return this.getClass() != staffWandCls();
+
+		 */
 
 		return false;
 	}
+	public boolean onStaffUsed = false;
+	static ArrayList <Integer> mobCells = new ArrayList<>();
+	public static void scholarWandProc (Char target, Wand wand) {
+		MagesStaff staff = curUser.belongings.getItem(MagesStaff.class);
+		if (staff != null && staff.wandClass() != null && !wand.onStaffUsed) {
+			//staff attack
+			if (curUser.hasTalent(Talent.PHYSICAL_MAGIC) && target.HP > 0) {
+				KindOfWeapon weapon = curUser.belongings.weapon();
+				curUser.belongings.weapon = staff;
+				curUser.attack(target, curUser.pointsInTalent(Talent.PHYSICAL_MAGIC) / 6f, 0, 1);
+				curUser.belongings.weapon = weapon;
+			}
+			//staff charge
+			if (curUser.hasTalent(Talent.MAGIC_CIRCULATION)
+					&& wand.getClass() == staff.wandClass()
+					&& curUser.buff(StaffChargeTracker.class) == null) {
+				Buff.affect(curUser, StaffChargeTracker.class, 0f);
 
-	public int bonusRange () {
-		if (inBlobs())
-			return 1 + Dungeon.hero.pointsInTalent(Talent.WIDE_SUMMON);
-
-		return Dungeon.hero.pointsInTalent(Talent.WIDE_SUMMON);
-	}
-
-	public void scholarAbility(Ballistica bolt, int cell){
-
-	}
-
-	public boolean terrCheck (int pos, int bonusTerrian){
-		int terr = Dungeon.level.map[pos];
-		Point p = Dungeon.level.cellToPoint(pos);
-
-		//if a custom tilemap is over that cell, don't put water there
-		for (CustomTilemap cust : Dungeon.level.customTiles){
-			Point custPoint = new Point(p);
-			custPoint.x -= cust.tileX;
-			custPoint.y -= cust.tileY;
-			if (custPoint.x >= 0 && custPoint.y >= 0
-					&& custPoint.x < cust.tileW && custPoint.y < cust.tileH){
-				if (cust.image(custPoint.x, custPoint.y) != null){
-					return false;
-				}
+				ScrollOfRecharging.charge(curUser);
+				staff.gainCharge(0.2f * curUser.pointsInTalent(Talent.MAGIC_CIRCULATION));
 			}
 		}
-
-		if ((terr == Terrain.EMPTY || terr == Terrain.EMPTY_DECO || terr == Terrain.EMBERS || terr == Terrain.ICE
-				|| terr == Terrain.GRASS || terr == Terrain.HIGH_GRASS || terr == Terrain.FURROWED_GRASS
-				|| terr == bonusTerrian)) {
-
-			return true;
-		}
-		return false;
 	}
 
-	public void recycling(float charge){
-		if (curCharges < maxCharges) {
-			int quantity = Math.round(Math.max(10, 20 * charge * chargesPerCast()));
-			curUser.sprite.centerEmitter().burst(EnergyParticle.FACTORY,  quantity);
-
-			gainCharge(charge * chargesPerCast());
-		}
-	}
+	public static class WandProcTracker extends FlavourBuff {}
+	public static class StaffChargeTracker extends FlavourBuff {}
 }

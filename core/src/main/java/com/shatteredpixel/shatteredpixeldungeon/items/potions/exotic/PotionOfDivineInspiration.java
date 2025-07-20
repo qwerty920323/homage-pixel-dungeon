@@ -27,6 +27,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Flare;
+import com.shatteredpixel.shatteredpixeldungeon.items.Vial;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
@@ -52,15 +53,26 @@ public class PotionOfDivineInspiration extends ExoticPotion {
 	protected static boolean identifiedByUse = false;
 
 	@Override
+	public void vialDrink (Hero hero) {
+		super.vialDrink(hero);
+		this.drink(hero);
+	}
+
+	@Override
 	//need to override drink so that time isn't spent right away
 	protected void drink(final Hero hero) {
-
-		if (!isKnown()) {
-			identify();
-			curItem = detach( hero.belongings.backpack );
-			identifiedByUse = true;
-		} else {
+		//potionist
+		if (hero.buff(Talent.VialDrinkTracker.class) != null) {
 			identifiedByUse = false;
+			hero.buff(Talent.VialDrinkTracker.class).detach();
+		} else {
+			if (!isKnown()) {
+				identify();
+				curItem = detach(hero.belongings.backpack);
+				identifiedByUse = true;
+			} else {
+				identifiedByUse = false;
+			}
 		}
 
 		boolean[] enabled = new boolean[5];
@@ -105,7 +117,7 @@ public class PotionOfDivineInspiration extends ExoticPotion {
 				if (index != -1){
 					Buff.affect(curUser, DivineInspirationTracker.class).setBoosted(index+1);
 
-					if (!identifiedByUse) {
+					if (!identifiedByUse && !(curItem instanceof Vial)) {
 						curItem.detach(curUser.belongings.backpack);
 					}
 					identifiedByUse = false;
@@ -135,7 +147,12 @@ public class PotionOfDivineInspiration extends ExoticPotion {
 					new Flare( 6, 32 ).color(0xFFFF00, true).show( curUser.sprite, 2f );
 					GLog.p(Messages.get(PotionOfDivineInspiration.class, "bonus"));
 
-					if (!anonymous) {
+					alchemistBuff(PotionOfDivineInspiration.this, curUser);
+					if (curItem instanceof Vial) {
+						((Vial)curItem).updatePotion();
+					}
+
+					if (!anonymous && !(curItem instanceof Vial)) {
 						Catalog.countUse(PotionOfDivineInspiration.class);
 						if (Random.Float() < talentChance) {
 							Talent.onPotionUsed(curUser, curUser.pos, talentFactor);

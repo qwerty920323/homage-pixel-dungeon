@@ -25,6 +25,7 @@ import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
+import com.shatteredpixel.shatteredpixeldungeon.items.Vial;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.Armor;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MeleeWeapon;
@@ -50,6 +51,12 @@ public class PotionOfMastery extends ExoticPotion {
 	}
 
 	protected static boolean identifiedByUse = false;
+
+	@Override
+	public void vialDrink (Hero hero) {
+		identifiedByUse = false;
+		GameScene.selectItem(itemSelector);
+	}
 
 	@Override
 	//need to override drink so that time isn't spent right away
@@ -117,12 +124,17 @@ public class PotionOfMastery extends ExoticPotion {
 				Sample.INSTANCE.play( Assets.Sounds.DRINK );
 				curUser.sprite.operate(curUser.pos);
 
-				if (!identifiedByUse) {
+				if (!identifiedByUse && !(curItem instanceof Vial)) {
 					curItem.detach(curUser.belongings.backpack);
 				}
 				identifiedByUse = false;
 
-				if (!anonymous) {
+				alchemistBuff(PotionOfMastery.this, curUser);
+				if (curItem instanceof Vial) {
+					((Vial)curItem).updatePotion();
+				}
+
+				if (!anonymous && !(curItem instanceof Vial)) {
 					Catalog.countUse(PotionOfMastery.class);
 					if (Random.Float() < talentChance) {
 						Talent.onPotionUsed(curUser, curUser.pos, talentFactor);

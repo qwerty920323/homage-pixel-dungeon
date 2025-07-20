@@ -36,9 +36,10 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AscensionChallenge;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.ChampionEnemy;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
-import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.DemonSpawner;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Ghoul;
@@ -523,26 +524,8 @@ public class GameScene extends PixelScene {
 			}
 
 			//grave
-			int keyCount = Notes.BonusKeyCount(Notes.BonusKey.BONUS_KEY, Dungeon.depth);
-			if (Dungeon.hero.subClass == HeroSubClass.GRAVEROBBER && keyCount > 0){
-				ArrayList <Integer> cells = new ArrayList<>();
-
-				for (int i = 0; i < Dungeon.level.length(); i++){
-					if (Dungeon.level.passable[i] && Dungeon.level.heaps.get(i) == null){
-						cells.add(i);
-					}
-				}
-
-				for (int i = 0; i < keyCount; i++) {
-					Heap h = Dungeon.level.drop(new CrystalKey(Dungeon.depth), cells.get(Random.index(cells)));
-					h.type = Heap.Type.SKELETON;
-					h.sprite.link();
-					h.sprite.drop();
-
-					Notes.remove(Notes.BonusKey.BONUS_KEY);
-				}
-
-				GLog.p(Messages.get(this, "secret_skeleton"));
+			if (Talent.checkBonusKey()){
+				GLog.p(Messages.get(GameScene.class, "secret_skeleton"));
 			}
 
 			boolean unspentTalents = false;

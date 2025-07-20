@@ -24,8 +24,9 @@ package com.shatteredpixel.shatteredpixeldungeon.items.weapon;
 import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AlchemistBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Berserk;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.CrazyDance;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.BladeDance;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MagicImmune;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
@@ -253,9 +254,16 @@ abstract public class Weapon extends KindOfWeapon {
 		if (owner.buff(Scimitar.SwordDance.class) != null){
 			multi += 0.6f;
 		}
+		//blade dancer
+		if (owner.buff(BladeDance.class) != null && ((Hero)owner).immersion > 0){
+			multi += owner.buff(BladeDance.class).delay();
+		}
 
-		if (owner.buff(CrazyDance.class) != null){ //무예가
-			multi += owner.buff(CrazyDance.class).delay();
+		//alchemist
+		for (AlchemistBuff buff : owner.buffs(AlchemistBuff.class)) {
+			if (buff != null && buff.state() == AlchemistBuff.State.HASTE){
+				multi *= 1.5f;
+			}
 		}
 
 		return multi;
@@ -296,7 +304,25 @@ abstract public class Weapon extends KindOfWeapon {
 		if (curseInfusionBonus) level += 1 + level/6;
 		return level;
 	}
-	
+
+	//alchemist
+	@Override
+	public int buffedLvl() {
+		int lvl = super.buffedLvl();
+		if (Dungeon.hero != null){
+			//alchemist
+			for (AlchemistBuff buff : Dungeon.hero.buffs(AlchemistBuff.class)) {
+				if (buff != null && buff.state() == AlchemistBuff.State.EXPERIENCE
+						&& (isEquipped( Dungeon.hero ) || Dungeon.hero.belongings.contains( this ))) {
+
+					lvl+=2;
+					break;
+				}
+			}
+		}
+		return lvl;
+	}
+	//~
 	@Override
 	public Item upgrade() {
 		return upgrade(false);
@@ -459,6 +485,10 @@ abstract public class Weapon extends KindOfWeapon {
 			if (attacker.buff(Talent.StrikingWaveTracker.class) != null
 					&& ((Hero)attacker).pointsInTalent(Talent.STRIKING_WAVE) == 4){
 				multi += 0.2f;
+			}
+
+			if (attacker.buff(Talent.EnchantBlastTracker.class) != null) {
+				multi += 0.05f * attacker.buff(Talent.EnchantBlastTracker.class).count;
 			}
 
 			return multi;

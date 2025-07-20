@@ -351,7 +351,7 @@ public class MagesStaff extends MeleeWeapon {
 			}
 
 			if (Dungeon.hero.subClass == HeroSubClass.SCHOLAR){
-				info += "\n\n" + Messages.get(wand, "scholar_desc", wand.scholarTurnCount(), wand.bonusRange());
+				info += "\n\n" + Messages.get(wand, "scholar_desc", buffedLvl());
 			}
 		}
 

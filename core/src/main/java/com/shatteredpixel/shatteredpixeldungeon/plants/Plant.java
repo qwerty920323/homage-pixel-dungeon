@@ -78,8 +78,7 @@ public abstract class Plant implements Bundlable {
 	}
 
 	public boolean nearbyTrigger(Plant plant){ //scholar
-		WandOfRegrowth.MiniFoliage miniFoliage = (WandOfRegrowth.MiniFoliage)Dungeon.level.blobs.get(WandOfRegrowth.MiniFoliage.class);
-		if (miniFoliage != null && miniFoliage.volume >0 && miniFoliage.cur[pos] >0) {
+		if (pos > 0 && Dungeon.hero == null) { //test
 			for (int p : PathFinder.NEIGHBOURS8) {
 				Char ch = Actor.findChar(pos + p);
 
@@ -154,10 +153,7 @@ public abstract class Plant implements Bundlable {
 		}
 		//scholar
 		if (Dungeon.hero != null) {
-			WandOfRegrowth.MiniFoliage miniFoliage = (WandOfRegrowth.MiniFoliage) Dungeon.level.blobs.get(WandOfRegrowth.MiniFoliage.class);
-			if (miniFoliage != null && miniFoliage.volume > 0 && miniFoliage.cur[pos] > 0) {
-				desc += "\n\n" + Messages.get(this, "scholar_desc");
-			}
+			//if (pos > 0) {desc += "\n\n" + Messages.get(this, "scholar_desc");}
 		}
 		return desc;
 	}

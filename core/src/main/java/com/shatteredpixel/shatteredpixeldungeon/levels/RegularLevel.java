@@ -37,12 +37,14 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mimic;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Statue;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Ghost;
+import com.shatteredpixel.shatteredpixeldungeon.items.EnergyCrystal;
 import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.Torch;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.Artifact;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.DriedRose;
+import com.shatteredpixel.shatteredpixeldungeon.items.food.EnergyDrink;
 import com.shatteredpixel.shatteredpixeldungeon.items.food.SupplyRation;
 import com.shatteredpixel.shatteredpixeldungeon.items.journal.DocumentPage;
 import com.shatteredpixel.shatteredpixeldungeon.items.journal.GuidePage;
@@ -59,6 +61,7 @@ import com.shatteredpixel.shatteredpixeldungeon.levels.builders.LoopBuilder;
 import com.shatteredpixel.shatteredpixeldungeon.levels.painters.Painter;
 import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.Room;
 import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.secret.SecretRoom;
+import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.special.LaboratoryRoom;
 import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.special.MagicalFireRoom;
 import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.special.PitRoom;
 import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.special.ShopRoom;
@@ -537,6 +540,30 @@ public abstract class RegularLevel extends Level {
 					}
 				}
 			}
+		Random.popGenerator();
+
+		//energy drink try to drop in a laboratory room on floors 2/4/7, to a max of 2/3
+		Random.pushGenerator( Random.Long() );
+		if (Dungeon.hero.hasTalent(Talent.ENERGY_DRINK)){
+			Talent.EnergyDrinkDropped dropped = Buff.affect(Dungeon.hero, Talent.EnergyDrinkDropped.class);
+			int targetFloor = (int)(2 + dropped.count());
+			if (dropped.count() > 4) targetFloor++;
+			if (Dungeon.depth >= targetFloor && dropped.count() < 2 + 2*Dungeon.hero.pointsInTalent(Talent.ENERGY_DRINK)){
+				int cell;
+				int tries = 100;
+				boolean valid;
+				do {
+					cell = randomDropCell(LaboratoryRoom.class);
+					valid = cell != -1
+							&& map[cell] != Terrain.ALCHEMY
+							&& map[cell] != Terrain.WELL;
+				} while (tries-- > 0 && !valid);
+				if (valid) {
+					drop(new EnergyDrink(), cell).type = Heap.Type.HEAP;
+					dropped.countUp(2);
+				}
+			}
+		}
 		Random.popGenerator();
 
 		//guide pages

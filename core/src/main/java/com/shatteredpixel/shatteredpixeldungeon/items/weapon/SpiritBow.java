@@ -26,18 +26,22 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.ArrowBlast;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.CounterBuff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Invisibility;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.PinArrow;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.RangerArrow;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.RevealedArea;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.huntress.NaturesPower;
+import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Splash;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.LeafParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfSharpshooting;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Projecting;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.MissileWeapon;
+import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Blindweed;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Firebloom;
@@ -49,11 +53,13 @@ import com.shatteredpixel.shatteredpixeldungeon.scenes.CellSelector;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.MissileSprite;
+import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
 import com.shatteredpixel.shatteredpixeldungeon.ui.QuickSlotButton;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.noosa.particles.Emitter;
 import com.watabou.utils.Callback;
+import com.watabou.utils.PathFinder;
 import com.watabou.utils.Random;
 import com.watabou.utils.Reflection;
 
@@ -104,6 +110,10 @@ public class SpiritBow extends Weapon {
 
 	@Override
 	public int proc(Char attacker, Char defender, int damage) {
+		//arrow blast add only enchantment without anything else
+		if (attacker.buff(Talent.EnchantBlastTracker.class) != null) {
+			return super.proc(attacker, defender, damage);
+		}
 
 		if (attacker.buff(NaturesPower.naturesPowerTracker.class) != null && !sniperSpecial){
 
@@ -136,7 +146,7 @@ public class SpiritBow extends Weapon {
 		}
 
 		if (((Hero)attacker).subClass == HeroSubClass.RANGER){
-			Buff.prolong(((Hero)attacker), ArrowBlast.class, ArrowBlast.DURATION);
+			Buff.prolong(attacker, ArrowBlast.class, ArrowBlast.DURATION);
 			//ranger pinArrow
 			if (defender.isAlive()) {
 				PinArrow.prolong(defender, PinArrow.class, PinArrow.DURATION).count++;
@@ -361,22 +371,8 @@ public class SpiritBow extends Weapon {
 		protected void onThrow( int cell ) {
 			Char enemy = Actor.findChar( cell );
 			if (enemy == null || enemy == curUser) {
-				//ranger arrow change
-				RangerArrow rangerArrow = curUser.buff(RangerArrow.class);
-
-				if (rangerArrow != null && enemy == curUser){
-					curUser.sprite.operate(cell);
-					if (RangerArrow.piercingCheck) {
-						RangerArrow.piercingCheck = false;
-						GLog.w( Messages.get(RangerArrow.class, "change_wide_arrow") );
-					} else {
-						RangerArrow.piercingCheck = true;
-						GLog.w( Messages.get(RangerArrow.class, "change_pierce_arrow") );
-					}
-				}
-
 				parent = null;
-				Splash.at( cell, 0xCC99FFFF, 1 );
+				Splash.at(cell, 0xCC99FFFF, 1);
 			} else {
 				if (!curUser.shoot( enemy, this )) {
 					Splash.at(cell, 0xCC99FFFF, 1);
@@ -489,21 +485,37 @@ public class SpiritBow extends Weapon {
 					}
 				}
 
+				/** ranger */
 				Char enemy = Actor.findChar( cell );
+				if (enemy == user){
+					//ranger arrow change
+					user.sprite.operate(cell);
+					if (user.buff(WideArrow.class) != null) {
+						Buff.affect(curUser, PiercingArrow.class).countUp(user.buff(WideArrow.class).count());
+						user.buff(WideArrow.class).detach();
 
-				RangerArrow rangerArrow = user.buff(RangerArrow.class);
-				if (rangerAttack(user,enemy,cell,false)) {   // ranger wide arrow
-					rangerArrow.rangerArrow(user,cell,enemy,0);
+					} else if (user.buff(PiercingArrow.class) != null) {
+						Buff.affect(user, WideArrow.class).countUp(user.buff(PiercingArrow.class).count());
+						user.buff(PiercingArrow.class).detach();
+					} else {
+						super.cast(user, dst);
+					}
+					return;
+				}
+
+				if (user.buff(WideArrow.class) != null) {
 					super.cast(user, dst);
+					wideShot(user, cell, checkedWideCell(user, cell));
+					wideShot(user, cell,checkedWideCell(user, cell)+4);
 
-				} else if (rangerAttack(user,enemy,cell,true) && enemy != null){
-					user.sprite.zap( cell );
+				} else if (user.buff(PiercingArrow.class) != null && enemy != null){
+					QuickSlotButton.target(enemy);
 					user.busy();
 
 					throwSound();
-					QuickSlotButton.target(enemy);
+					user.sprite.zap(cell);
 
-					rangerArrow.rangerArrow(user,cell,enemy,castDelay(user, dst));
+					pierceingShot(user, dst);
 
 				} else {
 					super.cast(user, dst);
@@ -512,19 +524,172 @@ public class SpiritBow extends Weapon {
 				//super.cast(user, dst);
 			}
 		}
-	}
-
-	public boolean rangerAttack( final Hero user, Char enemy, int cell, boolean Check ) { //range arrow
-		int maxdistanc = 8;
-		RangerArrow rangerArrow = user.buff(RangerArrow.class);
-		if (enemy != user
-				&& Dungeon.level.distance(user.pos,cell) <= maxdistanc
-				&& rangerArrow != null && RangerArrow.piercingCheck == Check) {
-			return true;
+		public int checkedWideCell(Hero user, int cell) {
+			Ballistica beam = new Ballistica(user.pos, cell, Ballistica.PROJECTILE);
+			for (int i = 0; i<8; i++) {
+				if (beam.path.get(1) == user.pos + PathFinder.CIRCLE8[i]) {
+					return i;
+				}
+			}
+			return -1;
 		}
-		return false;
+
+		public void wideShot (Hero user, int cell, int circle) {
+			final int end = throwPos( user, cell + PathFinder.CIRCLE8[(circle + 2) % 8] );
+
+			Char ch = Actor.findChar(end);
+			if (ch != null) {
+				((MissileSprite) user.sprite.parent.recycle(MissileSprite.class)).
+						reset(user.sprite,
+								ch.sprite,
+								this,
+								new Callback() {
+									@Override
+									public void call() {
+										attackArrow(user, ch);
+									}
+								});
+			} else {
+				((MissileSprite) user.sprite.parent.recycle(MissileSprite.class)).
+						reset(user.sprite,
+								end,
+								this,
+								new Callback() {
+									@Override
+									public void call() {
+										Splash.at(end, 0xCC99FFFF, 1);
+									}
+								});
+			}
+		}
+
+		public void attackArrow(Hero hero, Char enemy){
+			if (enemy == hero) return;
+
+			float dmgMulti = 0.2f;
+
+			if (hero.hasTalent(Talent.ENCHANT_BLAST))
+				dmgMulti += 0.0667f * hero.pointsInTalent(Talent.ENCHANT_BLAST);
+
+			hero.belongings.thrownWeapon = this;
+			boolean hit = hero.attack(enemy, dmgMulti, 0, 1);
+			Invisibility.dispel();
+			hero.belongings.thrownWeapon = null;
+
+			if (hit) {
+				if (hero.buff(WideArrow.class) != null)
+					hero.buff(WideArrow.class).countDown(1);
+
+				if (hero.buff(PiercingArrow.class) != null)
+					hero.buff(PiercingArrow.class).countDown(1);
+			}
+		}
+
+		public void pierceingShot (Hero user, int dst) {
+			int ballistica = hasEnchant(Projecting.class, user) ? Ballistica.WONT_STOP : Ballistica.STOP_SOLID;
+			Ballistica beam = new Ballistica(user.pos, dst, ballistica);
+
+			int dist = 1;
+
+			ArrayList<Char> chars = new ArrayList<>();
+			for (int c : beam.subPath(1, beam.dist)) {
+				//when beyond the wall
+				if (Dungeon.level.distance(user.pos, c) > new Ballistica(user.pos, dst, Ballistica.STOP_SOLID).dist
+						&& Dungeon.level.distance(user.pos, c) > Math.round(4 * Enchantment.genericProcChanceMultiplier(user))) {
+					dist = Dungeon.level.distance(user.pos, c)-1;
+					break;
+				}
+
+				Char ch;
+				if ((ch = Actor.findChar(c)) != null) {
+
+					if (ch instanceof Mob && ((Mob) ch).state == ((Mob) ch).PASSIVE
+							&& !(Dungeon.level.mapped[c] || Dungeon.level.visited[c])) {
+						//avoid harming undiscovered passive chars
+					} else {
+						if (!chars.contains(ch)) chars.add(ch);
+
+						dist = Math.min(Dungeon.level.distance(user.pos, c)+1, beam.dist);
+						if (chars.size() >= 3) {
+							dist = Dungeon.level.distance(user.pos, c);
+							break;
+						}
+					}
+				}
+			}
+
+			int lastCell = beam.path.get(dist);
+
+			Char ch = Actor.findChar(lastCell);
+			if (ch == null) {
+				((MissileSprite) user.sprite.parent.recycle(MissileSprite.class)).
+						reset(user.sprite,
+								lastCell,
+								this,
+								new Callback() {
+									@Override
+									public void call() {
+										for (Char ch : chars) {
+											if (ch == chars.get(0)) {
+												onThrow(ch.pos);
+												continue;
+											}
+											attackArrow(user, ch);
+										}
+
+										if (user.buff(Talent.LethalMomentumTracker.class) != null) {
+											user.buff(Talent.LethalMomentumTracker.class).detach();
+											user.next();
+										} else {
+											user.spendAndNext(castDelay(user, dst));
+										}
+										Splash.at(lastCell, 0xCC99FFFF, 1);
+									}
+								});
+			} else {
+				((MissileSprite) user.sprite.parent.recycle(MissileSprite.class)).
+						reset(user.sprite,
+								ch.sprite,
+								this,
+								new Callback() {
+									@Override
+									public void call() {
+										for (Char ch : chars) {
+											if (ch == chars.get(0)) {
+												onThrow(ch.pos);
+												continue;
+											}
+											attackArrow(user, ch);
+										}
+
+										if (user.buff(Talent.LethalMomentumTracker.class) != null) {
+											user.buff(Talent.LethalMomentumTracker.class).detach();
+											user.next();
+										} else {
+											user.spendAndNext(castDelay(user, dst));
+										}
+									}
+								});
+			}
+		}
 	}
 
+	public static class WideArrow extends RangerArrow { public int icon() { return BuffIndicator.WIDE_ARROW; }}
+	public static class PiercingArrow extends RangerArrow { public int icon() { return BuffIndicator.PIERCE_ARROW; }}
+	public static class RangerArrow extends CounterBuff {
+		{announced = true;}
+		@Override
+		public float iconFadePercent() { return Math.max(0, (10f - (int)count()) / 10f); }
+		@Override
+		public String iconTextDisplay() { return Integer.toString((int)count()); }
+		public String desc() { return Messages.get(this, "desc", (int)count()); }
+		@Override
+		public void countDown( float inc ){
+			super.countDown(inc);
+			if (count() <= 0) detach();
+		}
+	}
+	/** ~ ranger end */
 	private CellSelector.Listener shooter = new CellSelector.Listener() {
 		@Override
 		public void onSelect( Integer target ) {

@@ -26,6 +26,8 @@ import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AlchemistBuff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.ArrowBlast;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MagicImmune;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Momentum;
@@ -64,10 +66,12 @@ import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.ShardOfOblivion;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
+import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.HeroSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
+import com.shatteredpixel.shatteredpixeldungeon.windows.WndOptions;
 import com.watabou.noosa.particles.Emitter;
 import com.watabou.utils.Bundlable;
 import com.watabou.utils.Bundle;
@@ -77,6 +81,8 @@ import com.watabou.utils.Reflection;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 
 public class Armor extends EquipableItem {
 
@@ -122,7 +128,11 @@ public class Armor extends EquipableItem {
 	public Armor( int tier ) {
 		this.tier = tier;
 	}
-	
+	//veteran
+	public ArrayList<Armor> items = new ArrayList<>();
+	public boolean layerCheck() { return !items.isEmpty(); }
+	private static final String ITEMS = "items";
+	//vet end
 	private static final String USES_LEFT_TO_ID = "uses_left_to_id";
 	private static final String AVAILABLE_USES  = "available_uses";
 	private static final String GLYPH			= "glyph";
@@ -143,6 +153,8 @@ public class Armor extends EquipableItem {
 		bundle.put( MASTERY_POTION_BONUS, masteryPotionBonus );
 		bundle.put( SEAL, seal);
 		bundle.put( AUGMENT, augment);
+		//veteran
+		bundle.put( ITEMS , items );
 	}
 
 	@Override
@@ -157,6 +169,8 @@ public class Armor extends EquipableItem {
 		seal = (BrokenSeal)bundle.get(SEAL);
 		
 		augment = bundle.getEnum(AUGMENT, Augment.class);
+		//veteran
+		items = new ArrayList<>((Collection<Armor>) ((Collection<?>) bundle.getCollection(ITEMS)));
 	}
 
 	@Override
@@ -228,11 +242,45 @@ public class Armor extends EquipableItem {
 		return !isIdentified() && usesLeftToID <= 0;
 	}
 
+	boolean layering = true; //wnd used
 	@Override
 	public boolean doEquip( Hero hero ) {
-		
-		detach(hero.belongings.backpack);
+		//veteran
+		if (layering
+				&& hero.belongings.armor != null
+				&& hero.belongings.armor.tier == tier
+				&& hero.hasTalent(Talent.LAYERED_ARMOR)) {
+			GameScene.show(
+					new WndOptions(new ItemSprite(this),
+							Messages.get(Armor.class, "choose"),
+							Messages.get(Armor.class, "choose_one", 4-Dungeon.hero.pointsInTalent(Talent.LAYERED_ARMOR)),
+							Messages.get(Armor.class, "layering"), Messages.get(Armor.class, "equip")) {
+						@Override
+						protected void onSelect(int index) {
+							if (index == 0) {
+								detach(hero.belongings.backpack);
+								//layering
+								if (seal != null) execute(hero, AC_DETACH);
 
+								hero.belongings.armor.items.add(Armor.this);
+								hero.belongings.armor.quantity++;
+								hero.spendAndNext( timeToEquip( hero ) );
+								updateQuickslot();
+
+								GLog.w(Messages.get(Armor.class, "act_layer", Armor.this.name()));
+							} else {
+								//equip
+								layering = false;
+								doEquip(hero);
+							}
+						}
+					}
+			);
+			return true;
+		}
+
+		layering = true;
+		detach(hero.belongings.backpack);
 		if (hero.belongings.armor == null || hero.belongings.armor.doUnequip( hero, true, false )) {
 			
 			hero.belongings.armor = this;
@@ -282,9 +330,26 @@ public class Armor extends EquipableItem {
 		return seal;
 	}
 
+	/** veteran */
+
+	@Override
+	public void cast( final Hero user, int dst ) {
+		if (isEquipped( user ) && !this.doUnequip( user, false, false )) {
+			return;
+		}
+		super.cast( user, dst );
+	}
 	@Override
 	public boolean doUnequip( Hero hero, boolean collect, boolean single ) {
 		if (super.doUnequip( hero, collect, single )) {
+			//veteran
+			if (!items.isEmpty()) {
+				for (Armor armor : items) {
+					Dungeon.level.drop(armor, hero.pos).sprite.drop();
+					if (quantity>1) quantity--;
+				}
+				items.clear();
+			}
 
 			hero.belongings.armor = null;
 			((HeroSprite)hero.sprite).updateArmor();
@@ -345,6 +410,14 @@ public class Armor extends EquipableItem {
 		if (hasGlyph(Stone.class, owner) && !((Stone)glyph).testingEvasion()){
 			return 0;
 		}
+
+		if (layerCheck()) {
+			for (Armor a : items) {
+				if (a.hasGlyph(Stone.class, owner) && !((Stone)a.glyph).testingEvasion()){
+					return 0;
+				}
+			}
+		}
 		
 		if (owner instanceof Hero){
 			int aEnc = STRReq() - ((Hero) owner).STR();
@@ -394,7 +467,7 @@ public class Armor extends EquipableItem {
 						|| Dungeon.level.map[owner.pos] == Terrain.OPEN_DOOR )) {
 			speed /= 3f * RingOfArcana.enchantPowerMultiplier(owner);
 		}
-		
+
 		return speed;
 		
 	}
@@ -404,9 +477,28 @@ public class Armor extends EquipableItem {
 		if (hasGlyph(Obfuscation.class, owner)){
 			stealth += (1 + buffedLvl()/3f) * glyph.procChanceMultiplier(owner);
 		}
-		
+
 		return stealth;
 	}
+
+	//alchemist
+	@Override
+	public int buffedLvl() {
+		int lvl = super.buffedLvl();
+		if (Dungeon.hero != null){
+			//alchemist
+			for (AlchemistBuff buff : Dungeon.hero.buffs(AlchemistBuff.class)) {
+				if (buff != null && buff.state() == AlchemistBuff.State.EXPERIENCE
+						&& (isEquipped( Dungeon.hero ) || Dungeon.hero.belongings.contains( this ))) {
+
+					lvl+=2;
+					break;
+				}
+			}
+		}
+		return lvl;
+	}
+	//~
 	
 	@Override
 	public int level() {
@@ -485,6 +577,12 @@ public class Armor extends EquipableItem {
 				}
 			}
 		}
+
+		if (layerCheck()) {
+			for (Armor a : items) {
+				damage = a.proc(attacker, defender, damage);
+			}
+		}
 		
 		return damage;
 	}
@@ -556,6 +654,28 @@ public class Armor extends EquipableItem {
 			info += "\n\n" + Messages.get(Armor.class, "seal_attached", seal.maxShield(tier, level()));
 		}
 
+		if (!items.isEmpty()) {
+			info += "\n\n" + Messages.get(Armor.class, "layer", items.size(), (4-Dungeon.hero.pointsInTalent(Talent.LAYERED_ARMOR)) * items.size()) + " ";
+
+			ArrayList <String> names = new ArrayList<>();
+			ArrayList <String> redu = new ArrayList<>();
+			for (Armor armor : items) names.add(armor.name());
+
+			Collections.sort(names);
+			for (String n : names) {
+				if (redu.contains(n)) continue;
+				int value = Collections.frequency(names,n);
+
+				String count = value >1 ? "x"+value : "";
+				String rest = names.lastIndexOf(n) == names.size()-1 ? "" : ", ";
+				info += n + count + rest;
+				redu.add(n);
+			}
+
+			info += Messages.get(Armor.class, "bonus_glyph");
+
+		}
+
 		return info;
 	}
 
@@ -611,6 +731,9 @@ public class Armor extends EquipableItem {
 		if (masteryPotionBonus){
 			req -= 2;
 		}
+		if (layerCheck()){
+			req += items.size() * (4-Dungeon.hero.pointsInTalent(Talent.LAYERED_ARMOR));
+		}
 		return req;
 	}
 
@@ -623,7 +746,7 @@ public class Armor extends EquipableItem {
 	
 	@Override
 	public int value() {
-		if (seal != null) return 0;
+		if (seal != null || layerCheck()) return 0;
 
 		int price = 20 * tier;
 		if (hasGoodGlyph()) {
@@ -713,7 +836,9 @@ public class Armor extends EquipableItem {
 		}
 
 		public static float genericProcChanceMultiplier( Char defender ){
-			return RingOfArcana.enchantPowerMultiplier(defender);
+			float result = RingOfArcana.enchantPowerMultiplier(defender);
+
+			return result;
 		}
 		
 		public String name() {
@@ -734,7 +859,7 @@ public class Armor extends EquipableItem {
 		public boolean curse() {
 			return false;
 		}
-		
+
 		@Override
 		public void restoreFromBundle( Bundle bundle ) {
 		}

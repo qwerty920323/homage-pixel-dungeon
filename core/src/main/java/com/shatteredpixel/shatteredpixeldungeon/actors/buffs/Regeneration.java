@@ -23,6 +23,7 @@ package com.shatteredpixel.shatteredpixeldungeon.actors.buffs;
 
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.ChaliceOfBlood;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfEnergy;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.ChaoticCenser;
@@ -53,8 +54,8 @@ public class Regeneration extends Buff {
 				spend(REGENERATION_DELAY);
 				return true;
 			}
-
-			if (target.HP < regencap() && !((Hero)target).isStarving()) {
+			int transfuse = Math.round(0.05f*regencap()*Dungeon.hero.pointsInTalent(Talent.AUTOTRANSFUSION));
+			if (target.HP < regencap() + transfuse && !((Hero)target).isStarving()) {
 				if (regenOn()) {
 					target.HP += 1;
 					if (target.HP == regencap()) {

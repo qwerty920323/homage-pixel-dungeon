@@ -26,11 +26,12 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Paralysis;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 
-public class StenchGas extends Blob {
+public class StenchGas extends Gas {
 
 	@Override
 	protected void evolve() {
@@ -43,8 +44,9 @@ public class StenchGas extends Blob {
 			for (int j = area.top; j < area.bottom; j++){
 				cell = i + j*Dungeon.level.width();
 				if (cur[cell] > 0 && (ch = Actor.findChar( cell )) != null) {
-					if (!ch.isImmune(this.getClass()))
-						Buff.prolong( ch, Paralysis.class, Paralysis.DURATION/5 );
+					if (!ch.isImmune(this.getClass())) {
+						Buff.prolong(ch, Paralysis.class, Paralysis.DURATION / 5);
+					}
 				}
 			}
 		}

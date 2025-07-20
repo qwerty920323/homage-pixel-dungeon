@@ -26,31 +26,20 @@ import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
-import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
-import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.WellWater;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Barrier;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Charm;
-import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mimic;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Beam;
-import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.FloatingText;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.BloodParticle;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ShadowParticle;
-import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ShaftParticle;
-import com.shatteredpixel.shatteredpixeldungeon.items.Item;
-import com.shatteredpixel.shatteredpixeldungeon.items.potions.elixirs.ElixirOfAquaticRejuvenation;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
-import com.shatteredpixel.shatteredpixeldungeon.journal.Notes;
-import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
-import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
-import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.tiles.DungeonTilemap;
@@ -238,140 +227,5 @@ public class WandOfTransfusion extends DamageWand {
 	}
 
 	//scholar
-	@Override
-	public int bonusRange(){
-		return scholarTurnCount() + super.bonusRange() + 2;
-	}
-	@Override
-	public int scholarTurnCount(){
-		//hero.HT 3%
-		int result = Math.round((20 + 5*(Dungeon.hero.lvl-1))* 0.03f);
-		return result + super.scholarTurnCount();
-	}
-	@Override
-	public void scholarAbility(Ballistica bolt, int cell) {
-		super.scholarAbility(bolt,cell);
 
-		int pos = bolt.collisionPos;
-		int terr = Dungeon.level.map[pos];
-
-		WaterOfMiniHealth miniHealth = (WaterOfMiniHealth) Dungeon.level.blobs.get(WaterOfMiniHealth.class);
-		int healthPos = -1;
-		for (int i = 0; i < Dungeon.level.length(); i++) {
-			if (miniHealth != null && miniHealth.volume > 0 && miniHealth.cur[i] > 0) {
-				healthPos = i;
-			}
-		}
-
-		int range = Random.Int(scholarTurnCount(), bonusRange());
-
-		if (healthPos>0) {
-			if (healthPos == pos && terr == Terrain.WELL) {
-				setWell(pos, range,-1);
-			} else if (terrCheck(pos, Terrain.EMPTY_WELL)) {
-
-				if (healthPos != pos) {
-					CellEmitter.get(healthPos).start(Speck.factory(Speck.LIGHT), 0.2f, 4);
-					Level.set(healthPos, miniHealth.terrian);
-					GameScene.updateMap(healthPos);
-					miniHealth.clear(healthPos);
-				}
-
-				setWell(pos, range, terr);
-
-			}
-		} else if (terrCheck(pos, Terrain.EMPTY_WELL)){
-			setWell(pos, range, terr);
-		}
-	}
-	public void setWell (int pos, int range, int terr) {
-		Level.set(pos, Terrain.WELL);
-
-		WaterOfMiniHealth water = Blob.seed(pos, 1, WaterOfMiniHealth.class);
-		water.setHealth(range);
-		if (terr >= 0) water.terrian = terr;
-
-		CellEmitter.get(pos).start( Speck.factory( Speck.LIGHT ), 0.2f , 4 );
-		GameScene.add(water);
-		GameScene.updateMap(pos);
-	}
-
-	public static class WaterOfMiniHealth extends WellWater {
-		private int turnLeft = 0;
-		public int terrian = -1;
-
-		@Override
-		protected void evolve() {
-			super.evolve();
-
-			int cell;
-			for (int i=area.top-1; i <= area.bottom; i++) {
-				for (int j = area.left-1; j <= area.right; j++) {
-					cell = j + i* Dungeon.level.width();
-					if (cur[cell] > 0) {
-						if (Dungeon.level.map[cell] != Terrain.WELL)
-							off[cell] = cur[cell] = 0;
-					}
-				}
-			}
-		}
-		@Override
-		protected boolean affectHero( Hero hero ) {
-
-			if (!hero.isAlive()) return false;
-
-			Sample.INSTANCE.play( Assets.Sounds.DRINK );
-			//Auqa healing
-			Buff.affect(hero, ElixirOfAquaticRejuvenation.AquaHealing.class).set(turnLeft);
-
-			CellEmitter.get( hero.pos ).start( ShaftParticle.FACTORY, 0.2f , 3 );
-			hero.sprite.emitter().start( Speck.factory( Speck.HEALING ), 0.4f, 4 );
-			turnLeft = 0;
-
-			Dungeon.hero.interrupt();
-
-			GLog.p( Messages.get(this, "procced") );
-
-			return true;
-		}
-
-		public WaterOfMiniHealth setHealth (int left){
-			this.turnLeft += left;
-			return this;
-		}
-
-		@Override
-		protected Item affectItem(Item item, int pos) {
-			return null;
-		}
-
-		@Override
-		public void use( BlobEmitter emitter ) {
-			super.use( emitter );
-			float interval = Dungeon.hero.HT;
-			emitter.start( Speck.factory( Speck.HEALING ), 0.6f - (0.2f * turnLeft/interval), 0 );
-		}
-
-		@Override
-		public String tileDesc() {
-			return Messages.get(this, "desc", turnLeft);
-		}
-
-
-		private static final String TURNLEFT = "turnleft";
-		private static final String TERRIAN	= "terrian";
-		@Override
-		public void restoreFromBundle(Bundle bundle) {
-			super.restoreFromBundle(bundle);
-			turnLeft = bundle.getInt( TURNLEFT );
-			terrian = bundle.getInt( TERRIAN );
-		}
-
-		@Override
-		public void storeInBundle(Bundle bundle) {
-			super.storeInBundle(bundle);
-			bundle.put( TURNLEFT, turnLeft);
-			bundle.put( TERRIAN, terrian );
-		}
-	}
 }

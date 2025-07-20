@@ -34,7 +34,9 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.DwarfKing;
 import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Lightning;
+import com.shatteredpixel.shatteredpixeldungeon.effects.MagicMissile;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SparkParticle;
+import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.WondrousResin;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Shocking;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
@@ -138,7 +140,6 @@ public class WandOfLightning extends DamageWand {
 		affected.addAll(hitThisArc);
 		for (Char hit : hitThisArc){
 			arcs.add(new Lightning.Arc(ch.sprite.center(), hit.sprite.center()));
-			spawnCell(ch.pos, hit.pos);
 			arc(hit);
 		}
 	}
@@ -185,176 +186,4 @@ public class WandOfLightning extends DamageWand {
 		particle.x -= dst;
 		particle.y += dst;
 	}
-
-	//scholar
-	@Override
-	public int bonusRange () {return 3 * super.bonusRange() +6;}
-	@Override
-	public int scholarTurnCount(){
-		return super.scholarTurnCount() + 6;
-	}
-	@Override
-	public void scholarAbility(Ballistica bolt, int cell){
-		super.scholarAbility(bolt,cell);
-
-		spawnCell(curUser.pos, bolt.collisionPos);
-
-	}
-
-	public void spawnShocker (int pos) {
-		ShockerBlob shockerBlob = Blob.seed(pos, scholarTurnCount(), ShockerBlob.class);
-		GameScene.add(shockerBlob);
-		shockerBlob.range = bonusRange();
-	}
-
-	public void spawnCell (int start, int end){
-		if (((Hero)curUser).subClass != HeroSubClass.SCHOLAR) return;
-
-		Ballistica bolt = new Ballistica( start, end, Ballistica.MAGIC_BOLT);
-		int dist = Dungeon.level.distance( start, end );
-
-		for (int pos : bolt.subPath(0, dist)) {
-			spawnShocker(pos);
-		}
-	}
-
-	public static class ShockerBlob extends Blob {
-
-		{
-			alwaysVisible = true;
-		}
-
-		private int targetNeighbor = Random.Int(8);
-		int range;
-		@Override
-		protected void evolve() {
-			int cell;
-			boolean on = false;
-			
-			for (int i = area.left; i < area.right; i++){
-				for (int j = area.top; j < area.bottom; j++){
-					cell = i + j* Dungeon.level.width();
-
-					if (cur[cell] > 0) {
-						off[cell] = cur[cell] - 1;
-						volume += off[cell];
-
-						if (Dungeon.level.distance(Dungeon.hero.pos, cell) > range) {
-							off[cell] = 0;
-						}
-
-						on = true;
-
-					} else {
-						off[cell] = 0;
-					}
-				}
-			}
-
-			if (on) {
-				energySourceSprite = null;
-				targetNeighbor = (targetNeighbor+1)%8;
-			}
-		}
-
-		private void shockCells(int pos){
-			ArrayList<Integer> shockCells = new ArrayList<>();
-
-			shockCells.add(pos);
-			shockCells.add(pos + PathFinder.CIRCLE8[targetNeighbor]);
-			shockCells.add(pos + PathFinder.CIRCLE8[(targetNeighbor+2)%8]);
-			shockCells.add(pos + PathFinder.CIRCLE8[(targetNeighbor+4)%8]);
-			shockCells.add(pos + PathFinder.CIRCLE8[(targetNeighbor+6)%8]);
-
-			float charge = (Random.Int(range) +1)/10f;
-
-			for (int cell : shockCells) {
-				int p = new Ballistica(pos, cell, Ballistica.STOP_SOLID | Ballistica.STOP_TARGET).collisionPos;
-
-				if (p != cell) continue;
-
-				if (Dungeon.hero.fieldOfView[cell] && !Dungeon.level.solid[cell]) {
-					Dungeon.hero.sprite.parent.add(new Lightning(DungeonTilemap.raisedTileCenterToWorld(pos),
-							DungeonTilemap.raisedTileCenterToWorld(cell), null));
-					CellEmitter.get(cell).burst(SparkParticle.FACTORY, 3);
-				}
-			}
-		}
-
-		private static CharSprite energySourceSprite = null;
-
-		private static Emitter.Factory DIRECTED_SPARKS = new Emitter.Factory() {
-			@Override
-			public void emit(Emitter emitter, int index, float x, float y) {
-				if (energySourceSprite == null){
-					Char ch = null;
-					for (Char c : Actor.chars()){
-						if (c instanceof Hero) continue;
-
-						if (ch == null) ch = c;
-
-						else if (Dungeon.level.distance(Dungeon.hero.pos, c.pos)
-								< Dungeon.level.distance(Dungeon.hero.pos, ch.pos)){
-							ch = c;
-						}
-					}
-
-					if (ch != null) energySourceSprite = ch.sprite;
-
-					else energySourceSprite = Dungeon.hero.sprite;
-
-				}
-
-				float dist = (float)Math.max( Math.abs(energySourceSprite.x - x), Math.abs(energySourceSprite.y - y) );
-				dist = GameMath.gate(0, dist-40, 320);
-				//more sparks closer up
-				if (Random.Float(360) > dist) {
-
-					SparkParticle s = ((SparkParticle) emitter.recycle(SparkParticle.class));
-					s.resetAttracting(x, y, energySourceSprite);
-				}
-			}
-
-			@Override
-			public boolean lightMode() {
-				return true;
-			}
-		};
-
-		@Override
-		public void fullyClear() {
-			super.fullyClear();
-			energySourceSprite = null;
-		}
-
-		@Override
-		public void use(BlobEmitter emitter) {
-			super.use(emitter);
-			energySourceSprite = null;
-			emitter.pour(DIRECTED_SPARKS, 0.15f);
-		}
-
-		@Override
-		public String tileDesc() {
-			return Messages.get(this, "desc");
-		}
-
-		private static final String NEIGHBER = "neighber";
-		private static final String RANGE = "range";
-
-		@Override
-		public void storeInBundle(Bundle bundle) {
-			super.storeInBundle(bundle);
-			bundle.put(NEIGHBER, targetNeighbor);
-			bundle.put(RANGE, range);
-		}
-
-		@Override
-		public void restoreFromBundle(Bundle bundle) {
-			super.restoreFromBundle(bundle);
-			targetNeighbor = bundle.getInt(NEIGHBER);
-			range = bundle.getInt(RANGE);
-		}
-	}
-	// scholar
 }

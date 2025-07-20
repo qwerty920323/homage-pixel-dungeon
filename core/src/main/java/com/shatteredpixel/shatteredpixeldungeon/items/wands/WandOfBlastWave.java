@@ -26,20 +26,15 @@ import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
-import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
-import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Regrowth;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.BlobImmunity;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Paralysis;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Effects;
 import com.shatteredpixel.shatteredpixeldungeon.effects.MagicMissile;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Pushing;
-import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Elastic;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.levels.features.Door;
-import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.special.MagicalFireRoom;
 import com.shatteredpixel.shatteredpixeldungeon.levels.traps.TenguDartTrap;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
@@ -298,71 +293,4 @@ public class WandOfBlastWave extends DamageWand {
 
 	}
 
-	//scholar
-	@Override
-	public int bonusRange () {return super.bonusRange()+2;}
-	@Override
-	public int scholarTurnCount(){
-		return super.scholarTurnCount() + 6;
-	}
-	@Override
-	public void scholarAbility(Ballistica bolt, int cell){
-		super.scholarAbility(bolt,cell);
-		int pos = bolt.collisionPos;
-
-		eraseBlobs(pos);
-
-		int openCount = bonusRange();
-		//erase cell
-		for (int p : PathFinder.NEIGHBOURS8) {
-
-			int terr = Dungeon.level.map[pos + p];
-			if (openCount > 0
-					&& (terr == Terrain.EMPTY_DECO || terr == Terrain.EMPTY_SP || terr == Terrain.INACTIVE_TRAP)) {
-
-				if (terr == Terrain.INACTIVE_TRAP) Dungeon.level.traps.remove(cell);
-
-				Dungeon.level.set(terr, Terrain.EMPTY);
-				GameScene.updateMap(terr);
-				WandOfBlastWave.BlastWave.blast(pos);
-				openCount--;
-			}
-		}
-	}
-
-
-	private void eraseBlobs(int pos){
-		ArrayList<Class> affectedBlobs = new ArrayList<>(new BlobImmunity().immunities());
-
-		ArrayList<Blob> blobs = new ArrayList<>();
-
-		for (int p : PathFinder.NEIGHBOURS8) {
-
-			int pathCell = pos + p;
-
-			for (Class c : affectedBlobs) {
-				Blob b = Dungeon.level.blobs.get(c);
-				if (b != null && b.volume > 0) {
-
-					if (b.cur[pathCell] > 0 || b.cur[pos] > 0) {
-						if (b instanceof Regrowth
-								|| b instanceof MagicalFireRoom.EternalFire
-								|| b instanceof WandOfPrismaticLight.FireFlyBlobs) {
-							// 마법의 불, 성장풀, 반딧불 은 제외
-						} else if (!blobs.contains(b)) {
-							blobs.add(b);
-						}
-					}
-				}
-			}
-
-			if (!blobs.isEmpty()) {
-				for (Blob blob : blobs) {
-					blob.cur[pathCell] -= scholarTurnCount();
-					blob.cur[pos] -= scholarTurnCount();
-				}
-				blobs.clear();
-			}
-		}
-	}
 }

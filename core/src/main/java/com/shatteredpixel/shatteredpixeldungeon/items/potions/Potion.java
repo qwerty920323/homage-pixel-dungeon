@@ -26,17 +26,24 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Fire;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AlchemistBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Burning;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Ooze;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Plague;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroClass;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Splash;
 import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.ItemStatusHandler;
 import com.shatteredpixel.shatteredpixeldungeon.items.Recipe;
+import com.shatteredpixel.shatteredpixeldungeon.items.Vial;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.brews.AquaBrew;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.brews.Brew;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.elixirs.Elixir;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.elixirs.ElixirOfHoneyedHealing;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.exotic.ExoticPotion;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.exotic.PotionOfCleansing;
@@ -69,6 +76,7 @@ import com.shatteredpixel.shatteredpixeldungeon.windows.WndOptions;
 import com.shatteredpixel.shatteredpixeldungeon.windows.WndUseItem;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
+import com.watabou.utils.PathFinder;
 import com.watabou.utils.Random;
 import com.watabou.utils.Reflection;
 
@@ -139,7 +147,7 @@ public class Potion extends Item {
 	protected float talentFactor = 1;
 	//the chance (0-1) of whether on-potion talents trigger from this potion
 	protected float talentChance = 1;
-	
+
 	{
 		stackable = true;
 		defaultAction = AC_DRINK;
@@ -284,7 +292,9 @@ public class Potion extends Item {
 	}
 	
 	protected void drink( Hero hero ) {
-		
+		//potionist
+		alchemistBuff(this, hero);
+
 		detach( hero.belongings.backpack );
 		
 		hero.spend( TIME_TO_DRINK );
@@ -310,6 +320,8 @@ public class Potion extends Item {
 			super.onThrow( cell );
 			
 		} else  {
+			//potionist
+			isThrowing();
 
 			//aqua brew and storm clouds specifically don't press cells, so they can disarm traps
 			if (!(this instanceof AquaBrew) && !(this instanceof PotionOfStormClouds)){
@@ -334,7 +346,12 @@ public class Potion extends Item {
 	public void shatter( int cell ) {
 		splash( cell );
 		if (Dungeon.level.heroFOV[cell]) {
-			GLog.i( Messages.get(Potion.class, "shatter") );
+			if (thrown) {
+				thrown = throwing; //false
+				GLog.i( Messages.get(Vial.class, "shatter") );
+			} else {
+				GLog.i( Messages.get(Potion.class, "shatter") );
+			}
 			Sample.INSTANCE.play( Assets.Sounds.SHATTER );
 		}
 	}
@@ -363,11 +380,21 @@ public class Potion extends Item {
 	
 	@Override
 	public Item identify( boolean byHero ) {
+		//potionist
+		if (!vialCanIdentify) {
+			vialCanIdentify = true;
+			return this;
+		}
 		super.identify(byHero);
 
 		if (!isKnown()) {
 			setKnown();
 		}
+
+		if (Dungeon.hero != null) {
+			vialIcon(this);
+		}
+
 		return this;
 	}
 	
@@ -384,7 +411,7 @@ public class Potion extends Item {
 
 	@Override
 	public String desc() {
-		return isKnown() ? super.desc() : Messages.get(this, "unknown_desc");
+		return isKnown() ? super.desc() + alchemistDesc(): Messages.get(this, "unknown_desc") + unKnownDesc();
 	}
 	
 	@Override
@@ -432,6 +459,22 @@ public class Potion extends Item {
 				Splash.at(cell, splashColor(), 5);
 			}
 		}
+		//plague
+		if (Dungeon.hero.subClass == HeroSubClass.PLAGUE_DR && throwing) {
+			thrown = throwing; //true;
+			throwing = false;
+
+			for (int path : PathFinder.NEIGHBOURS9) {
+				if (!Dungeon.level.solid[cell + path]) {
+					Splash.at(cell + path, 0x4ACC4A, 5);
+
+					Char mob = Actor.findChar(cell + path);
+					if (mob != null) {
+						Buff.affect(mob, Plague.class).set(Plague.DURATION);
+					}
+				}
+			}
+		}
 	}
 	
 	@Override
@@ -441,8 +484,104 @@ public class Potion extends Item {
 
 	@Override
 	public int energyVal() {
-		return 6 * quantity;
+		return bonusVal(6) * quantity;
 	}
+
+	/** potionist
+
+	 potionist only used its */
+	boolean vialCanIdentify = true;
+	public boolean canIdentfy(boolean identify) { return this.vialCanIdentify = identify; }
+
+	public void vialIcon (Potion potion) {
+		Vial v = Dungeon.hero.belongings.getItem(Vial.class);
+		if (v != null && v.potion().getClass() == potion.getClass()) {
+			v.icon = v.potionsIcon();
+			updateQuickslot();
+		}
+	}
+
+	public boolean mustDrinkPotion (Potion p) {
+		return isKnown() && !mustThrowPots.contains(p.getClass()) && !canThrowPots.contains(p.getClass());
+
+	}
+
+	/** talent */
+	public int bonusVal(int val) {
+		//val = origin energyVal
+		int result = val;
+		if (Dungeon.hero != null
+				&& Dungeon.hero.heroClass != HeroClass.POTIONIST)
+			result += Math.round((float) val * Dungeon.hero.pointsInTalent(Talent.ENERGIZE_VIAL)/4f);
+
+		return result;
+	}
+
+	public String unKnownDesc() {
+		boolean heroUsed = Dungeon.hero != null && Dungeon.hero.hasTalent(Talent.ALCHEMIST_INTUITION);
+		if (!isKnown() && heroUsed) {
+			if (this instanceof PotionOfLiquidFlame
+					|| this instanceof PotionOfFrost
+					|| this instanceof PotionOfToxicGas
+					|| this instanceof PotionOfParalyticGas
+					//exotic
+					|| this instanceof PotionOfSnapFreeze
+					|| this instanceof PotionOfCorrosiveGas)
+				return "\n\n" + Messages.get(this, "harmful");
+			else
+				return "\n\n" + Messages.get(this, "beneficial");
+		}
+		return "";
+	}
+	//amount is origin (buff & blob) amount
+	public static float bonus (float amount) {
+		if (curUser == null) return amount;
+		float publicTalent = 0.1f * Dungeon.hero.pointsInTalent(Talent.ENHANCED_POTION);
+		return amount * (1f + publicTalent);
+	}
+
+	/** plague */
+	boolean throwing, thrown = false; //TODO it's suck
+	public boolean isThrowing() {return throwing = true;}
+	/** alchemist */
+	public void alchemistBuff (Potion p, Hero hero) {
+		//brew can't drink! but unstableBrew is..
+		if (p instanceof Brew) return;
+
+		if (hero.subClass == HeroSubClass.ALCHEMIST) {
+			AlchemistBuff buff = hero.buff(AlchemistBuff.class);
+			float cooldown = buff != null ? buff.cooldown() : 0;
+			Buff.prolong(hero, AlchemistBuff.class, AlchemistBuff.DURATION).set(p, cooldown);
+		}
+	}
+
+	public String alchemistDesc () {
+		if (Dungeon.hero != null && Dungeon.hero.subClass == HeroSubClass.ALCHEMIST) {
+			Potion potion = this;
+			if (this instanceof ExoticPotion) {
+				potion = Reflection.newInstance(ExoticPotion.exoToReg.get(this.getClass()));
+			}
+			if (this instanceof Elixir) {
+				potion = Reflection.newInstance(AlchemistBuff.eliToReg.get(this.getClass()));
+			}
+			if (this instanceof Brew) {
+				return ""; //brew can't drink!
+			}
+
+			AlchemistBuff.State state = AlchemistBuff.potions.get(potion.getClass());
+			String desc = Messages.get(AlchemistBuff.class, state + "");
+			String n = Messages.get(AlchemistBuff.class,state + "_name");
+
+			return "\n\n" + Messages.get(Vial.class, "state_desc", n) + " " + desc;
+		}
+		return "";
+	}
+	/** Vial Brewing */
+	public void vialDrink (Hero hero) {
+		Buff.affect(hero, Talent.VialDrinkTracker.class);
+	}
+
+	//~
 
 	public static class PlaceHolder extends Potion {
 		
@@ -517,9 +656,12 @@ public class Potion extends Item {
 			}
 			
 			Potion result;
-			
-			if ( (seeds.size() == 2 && Random.Int(4) == 0)
-					|| (seeds.size() == 3 && Random.Int(2) == 0)) {
+
+			Hero h = Dungeon.hero;
+			//purity_vial 1 = chance 1 / purity_vial 2 = chance 3
+			int chance = h.heroClass != HeroClass.POTIONIST ? Math.round(1.4f*h.pointsInTalent(Talent.PURITY_VIAL)) : 0;
+			if ( (seeds.size() == 2 && Random.Int(4) == 0 && chance == 0)
+					|| (seeds.size() == 3 && Random.Int(2+chance) == 0)) {
 				
 				result = (Potion) Generator.randomUsingDefaults( Generator.Category.POTION );
 				

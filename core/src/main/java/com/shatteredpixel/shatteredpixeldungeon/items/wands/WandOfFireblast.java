@@ -25,7 +25,6 @@ import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
-import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blizzard;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Fire;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Freezing;
@@ -39,6 +38,9 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.mage.WildM
 import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.MagicMissile;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ElmoParticle;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.FlameParticle;
+import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
+import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.WondrousResin;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Blazing;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
@@ -46,6 +48,7 @@ import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.ConeAOE;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
+import com.shatteredpixel.shatteredpixeldungeon.plants.Plant;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.watabou.noosa.audio.Sample;
@@ -55,6 +58,7 @@ import com.watabou.utils.PathFinder;
 import com.watabou.utils.Random;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 public class WandOfFireblast extends DamageWand {
 
@@ -89,7 +93,6 @@ public class WandOfFireblast extends DamageWand {
 
 		ArrayList<Char> affectedChars = new ArrayList<>();
 		ArrayList<Integer> adjacentCells = new ArrayList<>();
-		ArrayList<Integer> fireCells = new ArrayList<>();
 		for( int cell : cone.cells ){
 
 			//ignore caster cell
@@ -111,11 +114,10 @@ public class WandOfFireblast extends DamageWand {
 				if (Dungeon.level.heaps.get(cell) != null){
 					Dungeon.level.heaps.get(cell).burn();
 				}
+			} else if (curUser.subClass == HeroSubClass.SCHOLAR){
+				GameScene.add( Blob.seed( cell, 2*(1+chargesPerCast()), Flame.class ) );
 			} else {
 				GameScene.add( Blob.seed( cell, 1+chargesPerCast(), Fire.class ) );
-				//scholar
-				if (Actor.findChar(cell) == null && Dungeon.level.passable[cell])
-					fireCells.add(cell);
 			}
 
 			Char ch = Actor.findChar( cell );
@@ -129,8 +131,6 @@ public class WandOfFireblast extends DamageWand {
 			adjacentCells.add(bolt.sourcePos);
 		}
 
-		setBonusFire(fireCells, affectedChars, bonusRange()-1); //scholar
-
 		//ignite cells that share a side with an adjacent cell, are flammable, and are closer to the collision pos
 		//This prevents short-range casts not igniting barricades or bookshelves
 		for (int cell : adjacentCells){
@@ -138,7 +138,11 @@ public class WandOfFireblast extends DamageWand {
 				if (Dungeon.level.trueDistance(cell+i, bolt.collisionPos) < Dungeon.level.trueDistance(cell, bolt.collisionPos)
 						&& Dungeon.level.flamable[cell+i]
 						&& Fire.volumeAt(cell+i, Fire.class) == 0){
-					GameScene.add( Blob.seed( cell+i, 1+chargesPerCast(), Fire.class ) );
+					if (curUser.subClass == HeroSubClass.SCHOLAR){
+						GameScene.add( Blob.seed( cell, 2*(1+chargesPerCast()), Flame.class ) );
+					} else {
+						GameScene.add( Blob.seed( cell, 1+chargesPerCast(), Fire.class ) );
+					}
 				}
 			}
 		}
@@ -185,8 +189,9 @@ public class WandOfFireblast extends DamageWand {
 		cone = new ConeAOE( bolt,
 				maxDist,
 				30 + 20*chargesPerCast(),
-				Ballistica.STOP_TARGET | Ballistica.STOP_SOLID |
-						     Ballistica.IGNORE_SOFT_SOLID | Ballistica.IGNORE_SOLID);
+				//scholar
+				magicFusionCheck(WandOfDisintegration.class) ? Ballistica.STOP_TARGET | Ballistica.WONT_STOP :
+				Ballistica.STOP_TARGET | Ballistica.STOP_SOLID | Ballistica.IGNORE_SOFT_SOLID);
 
 
 		//cast to cells at the tip, rather than all cells, better performance.
@@ -256,268 +261,98 @@ public class WandOfFireblast extends DamageWand {
 		particle.shuffleXY( 1.5f );
 	}
 
-	//scholar
-	@Override
-	public int bonusRange () {return super.bonusRange()+2;} // 실제로는 +1
-	@Override
-	public int scholarTurnCount(){
-		return super.scholarTurnCount() + 2;
-	}
+	public static class Flame extends Fire {
 
-	@Override
-	public void scholarAbility(Ballistica bolt, int cell){
-		super.scholarAbility(bolt,cell);
-		firePosition(bolt.collisionPos);
-	}
-
-	public int firePosition (int cell) {
-		int maxDist = 3 + 2*chargesPerCast();
-		int ball = cursed ? Ballistica.MAGIC_BOLT : Ballistica.PROJECTILE;
-
-		MiniEternalFire miniFire = (MiniEternalFire)Dungeon.level.blobs.get( MiniEternalFire.class );
-		if (miniFire != null) {
-			miniFire.fullyClear();
-		}
-
-		Ballistica ballistica = new Ballistica(curUser.pos, cell, ball | Ballistica.IGNORE_SOLID);
-		int pos = ballistica.collisionPos;
-
-		int dist = ballistica.dist - maxDist;
-		if (dist > 0 && !this.cursed) {
-			pos = ballistica.path.get(ballistica.dist-dist);
-		}
-
-		if (this.cursed) setCursedFire(cell, bonusRange()-1);
-
-		if (Dungeon.level.passable[pos]) {
-
-			int backTrace = ballistica.dist - 1;
-			while (Actor.findChar(pos) != null && pos != curUser.pos) {
-				pos = ballistica.path.get(backTrace);
-				backTrace--;
-			}
-
-			if (pos != curUser.pos) {
-				MiniEternalFire fire = Blob.seed(pos, scholarTurnCount(), MiniEternalFire.class);
-				GameScene.add(fire);
-				fire.nearbyHero++;
-			} else {
-				setCursedFire(pos, 1);
-			}
-		}
-
-		return pos;
-	}
-	public void setCursedFire (int cell, int count){
-		int pos =  new Ballistica(curUser.pos, cell, Ballistica.MAGIC_BOLT | Ballistica.IGNORE_SOLID).collisionPos;
-
-		ArrayList<Integer> spawnPoints = new ArrayList<>();
-		for (int i = 0; i < PathFinder.NEIGHBOURS8.length; i++) {
-			int p = pos + PathFinder.NEIGHBOURS8[i];
-			if (Dungeon.level.passable[p]
-					&& Actor.findChar(p) == null
-					&& !(Dungeon.level.adjacent(curUser.pos, p))) {
-				spawnPoints.add(p);
-			}
-		}
-
-		ArrayList<Integer> respawnPoints = new ArrayList<>();
-
-		while (count > 0 && spawnPoints.size() > 0) {
-			int index = Random.index( spawnPoints );
-
-			respawnPoints.add( spawnPoints.remove( index ) );
-			count--;
-		}
-
-		for (Integer cells : respawnPoints) {
-			if (MiniEternalFire.volumeAt(cells, MiniEternalFire.class) == 0) {
-				MiniEternalFire fire = Blob.seed(cells, scholarTurnCount(), MiniEternalFire.class);
-				GameScene.add(fire);
-				fire.nearbyHero++;
-			}
-		}
-	}
-
-	public void setBonusFire (ArrayList<Integer> fireCells, ArrayList<Char> affectedChars, int count) {
-		if (((Hero) curUser).subClass != HeroSubClass.SCHOLAR) {
-			return;
-		}
-
-		ArrayList<Integer> result = new ArrayList<>();
-		if (!affectedChars.isEmpty()) {
-			Char enemy = affectedChars.get(Random.Int(affectedChars.size() - 1));
-
-			ArrayList<Integer> spawnPoints = new ArrayList<>();
-
-			if (Dungeon.level.adjacent(enemy.pos, curUser.pos)) {
-				for (int cell : cone.cells) {
-					if (Dungeon.level.distance(enemy.pos, cell) == 1
-							&& Actor.findChar(cell) == null && Dungeon.level.passable[cell]) {
-						spawnPoints.add(cell);
-					}
-				}
-			} else {
-				for (int i = 0; i < PathFinder.NEIGHBOURS8.length; i++) {
-					int p = enemy.pos + PathFinder.NEIGHBOURS8[i];
-					if (Actor.findChar(p) == null && Dungeon.level.passable[p]
-							&& Dungeon.level.trueDistance(p, curUser.pos) < Dungeon.level.trueDistance(enemy.pos, curUser.pos)) {
-						spawnPoints.add(p);
-					}
-				}
-			}
-
-			while (count > 0 && !spawnPoints.isEmpty()) {
-				result.add(spawnPoints.remove(Random.index(spawnPoints)));
-				count--;
-			}
-		}
-
-		while (count > 0 && !fireCells.isEmpty()) {
-			result.add(fireCells.remove(Random.index(fireCells)));
-			count--;
-		}
-
-		while (!result.isEmpty()) {
-			int pos = result.remove( Random.index(result) );
-
-			if (MiniEternalFire.volumeAt(pos, MiniEternalFire.class) == 0) {
-				MiniEternalFire fire = Blob.seed(pos, scholarTurnCount() , MiniEternalFire.class);
-				GameScene.add(fire);
-				fire.nearbyHero++;
-			}
-		}
-
-	}
-
-
-	public static class MiniEternalFire extends Blob {
-		public int nearbyHero;
 		@Override
 		protected void evolve() {
+			super.evolve();
 
+			boolean[] flamable = Dungeon.level.flamable;
 			int cell;
-
-			Freezing freeze = (Freezing)Dungeon.level.blobs.get( Freezing.class );
-			Blizzard bliz = (Blizzard)Dungeon.level.blobs.get( Blizzard.class );
+			int flame;
 
 			Fire fire = (Fire)Dungeon.level.blobs.get( Fire.class );
 
-			Level l = Dungeon.level;
-			for (int i = area.left - 1; i <= area.right; i++){
-				for (int j = area.top - 1; j <= area.bottom; j++){
-					cell = i + j*l.width();
+			boolean observe = false;
 
-					if (cur[cell] > 0){
-						//evaporates in the presence of water, frost, or blizzard
-						//this blob is not considered interchangeable with fire, so those blobs do not interact with it otherwise
-						//potion of purity can cleanse it though
-						if (l.water[cell] || l.map[cell] == Terrain.ICE){
-							off[cell] = cur[cell] = 0;
+			for (int i = area.left-1; i <= area.right; i++) {
+				for (int j = area.top-1; j <= area.bottom; j++) {
+					cell = i + j*Dungeon.level.width();
+					if (cur[cell] > 0) {
 
-						}
-						//overrides fire
 						if (fire != null && fire.volume > 0 && fire.cur[cell] > 0){
 							fire.clear(cell);
+							off[cell] = cur[cell] = 0;
+							continue;
 						}
 
-						//clears itself if there is frost/blizzard on or next to it
-						for (int k : PathFinder.NEIGHBOURS9) {
+						burn( cell );
 
-							if (freeze != null && freeze.volume > 0 && freeze.cur[cell + k] > 0) {
-								freeze.clear(cell);
-								off[cell] = cur[cell] = 0;
+						flame = cur[cell] - 1;
+						if (flame <= 0 && flamable[cell]) {
 
-							}
-							if (bliz != null && bliz.volume > 0 && bliz.cur[cell + k] > 0) {
-								bliz.clear(cell);
-								off[cell] = cur[cell] = 0;
+							Dungeon.level.destroy( cell );
 
-							}
+							observe = true;
+							GameScene.updateMap( cell );
 
-							//spread fire to nearby flammable cells
-							if (Dungeon.level.flamable[cell + k]
-									&& (fire == null || fire.volume == 0 || fire.cur[cell + k] == 0)) {
-								GameScene.add(Blob.seed(cell + k, 4, Fire.class));
-							}
+						}
 
-							//ignite adjacent chars, but only on outside and non-water cells
-							Char ch = Actor.findChar(cell + k);
-							if (ch != null
-									&& !ch.isImmune(getClass())
-									&& ch.buff(Burning.class) == null
-									&& (Dungeon.level.map[cell + k] != Terrain.WATER
-									|| Dungeon.level.map[cell + k] != Terrain.ICE)) {
-								if (ch instanceof Hero){
-									if (nearbyHero <= 0)Buff.affect(ch, Burning.class).reignite(ch, 4);
+					} else if (fire == null || fire.volume <= 0 || fire.cur[cell] <= 0){
 
-								} else {
-									Buff.affect(ch, Burning.class).reignite(ch, 4f);
+						if (flamable[cell] &&
+								(cur[cell-1] > 0
+								|| cur[cell+1] > 0
+								|| cur[cell-Dungeon.level.width()] > 0
+								|| cur[cell+Dungeon.level.width()] > 0)) {
+							flame = 4;
+							burn(cell);
+							area.union(i, j);
+						} else {
+							flame = 0;
+						}
 
-								}
+						if (cur[cell-1] > 0
+								|| cur[cell+1] > 0
+								|| cur[cell-Dungeon.level.width()] > 0
+								|| cur[cell+Dungeon.level.width()] > 0) {
+
+							//ignite adjacent chars
+							Char ch = Actor.findChar(cell);
+							if (ch != null && !ch.isImmune(getClass()) && ch != Dungeon.hero) {
+								Buff.affect(ch, Burning.class).reignite(ch, 4f);
 							}
 
 							//burn adjacent heaps, but only on outside and non-water cells
-							if (Dungeon.level.heaps.get(cell + k) != null
-									&& (Dungeon.level.map[cell + k] != Terrain.WATER
-									|| Dungeon.level.map[cell + k] != Terrain.ICE)) {
-								Dungeon.level.heaps.get(cell + k).burn();
+							if (Dungeon.level.heaps.get(cell) != null
+									&& Dungeon.level.map[cell] != Terrain.EMPTY_SP
+									&& Dungeon.level.map[cell] != Terrain.WATER){
+								Dungeon.level.heaps.get(cell).burn();
 							}
-
 						}
 
-						if (nearbyHero > 0) nearbyHero--;
-
+					} else {
+						flame = 0;
 					}
-
-					off[cell] = cur[cell] > 0 ? cur[cell] - 1 : 0;
-
-					volume += off[cell];
-
-					l.passable[cell] = cur[cell] == 0 && (Terrain.flags[l.map[cell]] & Terrain.PASSABLE) != 0;
-
-					if (cur[cell] <= 0) Dungeon.level.buildFlagMaps();
-
+					volume += (off[cell] = flame);
 				}
+			}
+
+			if (observe) {
+				Dungeon.observe();
 			}
 		}
 
-		@Override
-		public void seed(Level level, int cell, int amount) {
-			super.seed(level, cell, amount);
-			level.passable[cell] = cur[cell] == 0 && (Terrain.flags[level.map[cell]] & Terrain.PASSABLE) != 0;
-		}
 
 		@Override
 		public void use( BlobEmitter emitter ) {
 			super.use( emitter );
-			emitter.pour( ElmoParticle.FACTORY, 0.02f );
-		}
-
-		@Override
-		public void clear(int cell) {
-			super.clear(cell);
-			Dungeon.level.buildFlagMaps();
-		}
-		@Override
-		public void fullyClear() {
-			super.fullyClear();
-			Dungeon.level.buildFlagMaps();
+			emitter.pour( ElmoParticle.FACTORY, 0.03f );
 		}
 
 		@Override
 		public String tileDesc() {
 			return Messages.get(this, "desc");
 		}
-
-		@Override
-		public void onBuildFlagMaps( Level l ) {
-			if (volume > 0){
-				for (int i=0; i < l.length(); i++) {
-					l.passable[i] = l.passable[i] && cur[i] == 0;
-				}
-			}
-		}
 	}
-	//scholar
 }

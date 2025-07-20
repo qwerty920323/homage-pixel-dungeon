@@ -40,7 +40,7 @@ public class Corruption extends AllyBuff {
 		target.HP = target.HT;
 		target.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(target.HT), FloatingText.HEALING);
 		for (Buff buff : target.buffs()) {
-			if (buff.type == Buff.buffType.NEGATIVE
+			if ((buff.type == Buff.buffType.NEGATIVE || buff instanceof Plague) //plague
 					&& !(buff instanceof SoulMark)) {
 				buff.detach();
 			}

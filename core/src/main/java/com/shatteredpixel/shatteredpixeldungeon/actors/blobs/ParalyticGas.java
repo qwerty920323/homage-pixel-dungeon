@@ -26,11 +26,12 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Paralysis;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 
-public class ParalyticGas extends Blob {
+public class ParalyticGas extends Gas {
 	
 	{
 		//acts after mobs, to give them a chance to resist paralysis
@@ -48,8 +49,9 @@ public class ParalyticGas extends Blob {
 			for (int j = area.top; j < area.bottom; j++) {
 				cell = i + j * Dungeon.level.width();
 				if (cur[cell] > 0 && (ch = Actor.findChar(cell)) != null) {
-					if (!ch.isImmune(this.getClass()))
+					if (!ch.isImmune(this.getClass())) {
 						Buff.prolong(ch, Paralysis.class, Paralysis.DURATION);
+					}
 				}
 			}
 		}

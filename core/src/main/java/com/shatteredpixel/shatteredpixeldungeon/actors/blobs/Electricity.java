@@ -91,7 +91,7 @@ public class Electricity extends Blob {
 							((MagesStaff) toShock).gainCharge(0.333f);
 						}
 					}
-					
+
 					off[cell] = cur[cell] - 1;
 					volume += off[cell];
 				} else {

@@ -76,9 +76,6 @@ public class BlobImmunity extends FlavourBuff {
 		immunities.add( StormCloud.class );
 		immunities.add( ToxicGas.class );
 		immunities.add( Web.class );
-		//scholar
-		immunities.add( WandOfPrismaticLight.FireFlyBlobs.class );
-		immunities.add( WandOfFireblast.MiniEternalFire.class );
 
 		immunities.add(Tengu.FireAbility.FireBlob.class);
 	}

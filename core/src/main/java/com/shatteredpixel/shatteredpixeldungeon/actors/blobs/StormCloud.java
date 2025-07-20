@@ -24,11 +24,12 @@ package com.shatteredpixel.shatteredpixeldungeon.actors.blobs;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 
-public class StormCloud extends Blob {
+public class StormCloud extends Gas {
 	
 	@Override
 	protected void evolve() {
@@ -45,13 +46,11 @@ public class StormCloud extends Blob {
 					if (fire != null){
 						fire.clear(cell);
 					}
-
 					//fiery enemies take damage as if they are in toxic gas
 					Char ch = Actor.findChar(cell);
-					if (ch != null
-							&& !ch.isImmune(getClass())
-							&& Char.hasProp(ch, Char.Property.FIERY)){
-						ch.damage(1 + Dungeon.scalingDepth()/5, this);
+					if (ch != null){
+						if (!ch.isImmune(getClass()) && Char.hasProp(ch, Char.Property.FIERY))
+							ch.damage(1 + Dungeon.scalingDepth()/5, this);
 					}
 				}
 			}

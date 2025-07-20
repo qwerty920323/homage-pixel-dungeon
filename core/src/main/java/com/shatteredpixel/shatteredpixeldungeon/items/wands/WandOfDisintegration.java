@@ -21,6 +21,7 @@
 
 package com.shatteredpixel.shatteredpixeldungeon.items.wands;
 
+import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
@@ -40,6 +41,7 @@ import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.tiles.DungeonTilemap;
+import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Callback;
 import com.watabou.utils.Random;
 
@@ -54,14 +56,14 @@ public class WandOfDisintegration extends DamageWand {
 	}
 
 
-	public int min(int lvl){
-		return 2+lvl;
+	public int min(int lvl) {
+		return 2 + lvl;
 	}
 
-	public int max(int lvl){
-		return 8+4*lvl;
+	public int max(int lvl) {
+		return 8 + 4 * lvl;
 	}
-	
+
 	@Override
 	public int targetingPos(Hero user, int dst) {
 		if (!cursed || !cursedKnown) {
@@ -73,33 +75,30 @@ public class WandOfDisintegration extends DamageWand {
 
 	@Override
 	public void onZap(Ballistica beam) {
-		
+
 		boolean terrainAffected = false;
-		
+
 		int level = buffedLvl();
-		
+
 		int maxDistance = Math.min(distance(), beam.dist);
-		
+
 		ArrayList<Char> chars = new ArrayList<>();
-		//scholar
-		int disinter = 0;
-		ArrayList<Integer> solidCells = new ArrayList<>(); //
 
 		Blob web = Dungeon.level.blobs.get(Web.class);
 
 		int terrainPassed = 2, terrainBonus = 0;
 		for (int c : beam.subPath(1, maxDistance)) {
-			
+
 			Char ch;
-			if ((ch = Actor.findChar( c )) != null) {
+			if ((ch = Actor.findChar(c)) != null) {
 
 				//we don't want to count passed terrain after the last enemy hit. That would be a lot of bonus levels.
 				//terrainPassed starts at 2, equivalent of rounding up when /3 for integer arithmetic.
-				terrainBonus += terrainPassed/3;
-				terrainPassed = terrainPassed%3;
+				terrainBonus += terrainPassed / 3;
+				terrainPassed = terrainPassed % 3;
 
 				if (ch instanceof Mob && ((Mob) ch).state == ((Mob) ch).PASSIVE
-						&& !(Dungeon.level.mapped[c] || Dungeon.level.visited[c])){
+						&& !(Dungeon.level.mapped[c] || Dungeon.level.visited[c])) {
 					//avoid harming undiscovered passive chars
 				} else {
 					chars.add(ch);
@@ -108,43 +107,30 @@ public class WandOfDisintegration extends DamageWand {
 
 			if (Dungeon.level.solid[c]) {
 				terrainPassed++;
-
-				//scholar ~
-				if (Dungeon.level.disinter[c]) {
-					terrainPassed++;
-				}
-				disinter++;
-				if (disinter <= bonusRange()
-						&& Dungeon.level.distance(curUser.pos,c) <= bonusRange()){
-					solidCells.add(c);
-				}
 			}
 
 			if (Dungeon.level.flamable[c]) {
 
-				Dungeon.level.destroy( c );
-				GameScene.updateMap( c );
+				Dungeon.level.destroy(c);
+				GameScene.updateMap(c);
 				terrainAffected = true;
-				
+
 			}
 
-			
-			CellEmitter.center( c ).burst( PurpleParticle.BURST, Random.IntRange( 1, 2 ) );
+			CellEmitter.center(c).burst(PurpleParticle.BURST, Random.IntRange(1, 2));
 		}
-		
+
 		if (terrainAffected) {
 			Dungeon.observe();
 		}
-		
-		int lvl = level + (chars.size()-1) + terrainBonus;
+
+		int lvl = level + (chars.size() - 1) + terrainBonus;
 		for (Char ch : chars) {
 			wandProc(ch, chargesPerCast());
-			ch.damage( damageRoll(lvl), this );
-			ch.sprite.centerEmitter().burst( PurpleParticle.BURST, Random.IntRange( 1, 2 ) );
+			ch.damage(damageRoll(lvl), this);
+			ch.sprite.centerEmitter().burst(PurpleParticle.BURST, Random.IntRange(1, 2));
 			ch.sprite.flash();
 		}
-
-		if (!solidCells.isEmpty()) disintergrationBlob(solidCells); //scholar
 	}
 
 	@Override
@@ -153,19 +139,19 @@ public class WandOfDisintegration extends DamageWand {
 	}
 
 	private int distance() {
-		return buffedLvl()*2 + 6;
+		return buffedLvl() * 2 + 6;
 	}
 
 	@Override
 	public String upgradeStat2(int level) {
-		return Integer.toString(6 + level*2);
+		return Integer.toString(6 + level * 2);
 	}
 
 	@Override
 	public void fx(Ballistica beam, Callback callback) {
-		
+
 		int cell = beam.path.get(Math.min(beam.dist, distance()));
-		curUser.sprite.parent.add(new Beam.DeathRay(curUser.sprite.center(), DungeonTilemap.raisedTileCenterToWorld( cell )));
+		curUser.sprite.parent.add(new Beam.DeathRay(curUser.sprite.center(), DungeonTilemap.raisedTileCenterToWorld(cell)));
 		callback.call();
 	}
 
@@ -175,95 +161,7 @@ public class WandOfDisintegration extends DamageWand {
 		particle.am = 0.6f;
 		particle.setLifespan(1f);
 		particle.acc.set(10, -10);
-		particle.setSize( 0.5f, 3f);
+		particle.setSize(0.5f, 3f);
 		particle.shuffleXY(1f);
 	}
-
-	//scholar
-	@Override
-	public int bonusRange () {return super.bonusRange()+2;}
-	@Override
-	public int scholarTurnCount(){
-		return super.scholarTurnCount()+2;
-	}
-	@Override
-	public void scholarAbility(Ballistica bolt, int cell) {
-		super.scholarAbility(bolt,cell);
-		// only cursed wand use to this
-		if (this.cursed)setCursedSolid(bolt.collisionPos);
-	}
-
-	public void setCursedSolid (int pos){
-		Ballistica beam = new Ballistica(curUser.pos, pos, Ballistica.WONT_STOP);
-		ArrayList <Integer> solidCells = new ArrayList<>();
-		for (int c : beam.subPath(1, bonusRange())) {
-			if (Dungeon.level.solid[c]) {
-				solidCells.add(c);
-			}
-		}
-		if (!solidCells.isEmpty()) disintergrationBlob(solidCells);
-	}
-
-	public void disintergrationBlob (ArrayList<Integer> cells) {
-		if (((Hero)curUser).subClass == HeroSubClass.SCHOLAR){
-			Piercing p = (Piercing) Dungeon.level.blobs.get(Piercing.class);
-			for (int cell : cells) {
-				if (Blob.volumeAt(cell, Piercing.class) != 0){
-					p.clear(cell);
-				}
-
-				GameScene.add(Blob.seed(cell, scholarTurnCount(), Piercing.class));
-				Dungeon.level.disinter[cell] = true;
-			}
-		}
-	}
-
-	public static class Piercing extends Blob {
-
-		{
-			alwaysVisible = true;
-		}
-		@Override
-		protected void evolve() {
-			int cell;
-
-			for (int i = area.left - 1; i <= area.right; i++) {
-				for (int j = area.top - 1; j <= area.bottom; j++) {
-					cell = i + j * Dungeon.level.width();
-					if (cur[cell] > 0) {
-						off[cell] = cur[cell] - 1;
-						volume += off[cell];
-
-						if (!Dungeon.level.solid[cell]) clear(cell);
-
-					} else {
-						off[cell] = 0;
-					}
-
-					if (off[cell] <= 0) {
-						Dungeon.level.disinter[cell] = false;
-					}
-				}
-			}
-		}
-
-		@Override
-		public void clear( int cell ) {
-			super.clear(cell);
-			Dungeon.level.disinter[cell] = false;
-		}
-
-		@Override
-		public void use(BlobEmitter emitter) {
-			super.use(emitter);
-			emitter.start(ScholarParticle.YELLOW, 0.05f, 0);
-		}
-
-		@Override
-		public String tileDesc() {
-			return Messages.get(this, "desc");
-		}
-
-	}
-
 }

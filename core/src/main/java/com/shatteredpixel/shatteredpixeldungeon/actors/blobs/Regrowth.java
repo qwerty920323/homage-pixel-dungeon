@@ -26,13 +26,14 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Roots;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.LeafParticle;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 
-public class Regrowth extends Blob {
+public class Regrowth extends Gas {
 	
 	@Override
 	protected void evolve() {
@@ -46,7 +47,7 @@ public class Regrowth extends Blob {
 					if (off[cell] > 0) {
 						int c = Dungeon.level.map[cell];
 						int c1 = c;
-						if (c == Terrain.EMPTY || c == Terrain.EMBERS || c == Terrain.EMPTY_DECO || c == Terrain.ICE) {
+						if (c == Terrain.EMPTY || c == Terrain.EMBERS || c == Terrain.EMPTY_DECO) {
 							c1 = (cur[cell] > 9 && Actor.findChar( cell ) == null)
 									? Terrain.HIGH_GRASS : Terrain.GRASS;
 						} else if ((c == Terrain.GRASS || c == Terrain.FURROWED_GRASS)
@@ -59,11 +60,12 @@ public class Regrowth extends Blob {
 							GameScene.updateMap( cell );
 						}
 
+
 						Char ch = Actor.findChar( cell );
-						if (ch != null
-								&& !ch.isImmune(this.getClass())
-								&& off[cell] > 1) {
-							Buff.prolong( ch, Roots.class, TICK );
+						if (ch != null && off[cell] > 1) {
+
+							if (!ch.isImmune(this.getClass()))
+								Buff.prolong( ch, Roots.class, TICK );
 						}
 					}
 				}

@@ -90,6 +90,9 @@ public abstract class RemainsItem extends Item {
 				return new BowFragment();
 			case DUELIST:
 				return new BrokenHilt();
+
+			case POTIONIST:
+				return new ShatteredVial();
 		}
 	}
 

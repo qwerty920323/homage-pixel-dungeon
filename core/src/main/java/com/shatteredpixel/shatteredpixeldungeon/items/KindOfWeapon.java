@@ -234,7 +234,13 @@ abstract public class KindOfWeapon extends EquipableItem {
 
 	public int damageRoll( Char owner ) {
 		if (owner instanceof Hero){
-			return Hero.heroDamageIntRange(min(), max());
+			//veteran
+			int min = min();
+			if (owner.buff(Talent.RushAttackTracker.class) != null) {
+				min += Math.round(0.25f * min * ((Hero)owner).pointsInTalent(Talent.RUSH_ATTACK));
+			}
+
+			return Hero.heroDamageIntRange(min, max());
 		} else {
 			return Random.NormalIntRange(min(), max());
 		}

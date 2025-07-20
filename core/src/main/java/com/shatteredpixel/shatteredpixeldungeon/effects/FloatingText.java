@@ -77,6 +77,8 @@ public class FloatingText extends RenderedTextBlock {
 	public static int GOLD      = 23;
 	public static int ENERGY    = 24;
 
+	//potionist
+	public static int PLAGUE    = 29;
 	private Image icon;
 	private boolean iconLeft;
 

@@ -22,25 +22,15 @@
 package com.shatteredpixel.shatteredpixeldungeon.items.wands;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
-import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
-import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Blindness;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Cripple;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.FlashDots;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.FlavourBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Light;
-import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
-import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Shopkeeper;
-import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
-import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TalismanOfForesight;
-import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Beam;
-import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.RainbowParticle;
@@ -53,16 +43,11 @@ import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.tiles.DungeonTilemap;
-import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
-import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
-import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
 import com.watabou.utils.PathFinder;
 import com.watabou.utils.PointF;
 import com.watabou.utils.Random;
-
-import java.util.ArrayList;
 
 public class WandOfPrismaticLight extends DamageWand {
 
@@ -188,247 +173,5 @@ public class WandOfPrismaticLight extends DamageWand {
 		particle.speed.polar(Random.Float(PointF.PI2), 2f);
 		particle.setSize( 1f, 2f);
 		particle.radiateXY( 0.5f);
-	}
-
-	//scholar
-	@Override
-	public int scholarTurnCount(){
-		return super.scholarTurnCount() + 5;
-	}
-
-	@Override
-	public void scholarAbility(Ballistica bolt, int cell) {
-		super.scholarAbility(bolt,cell);
-
-		int distance = Dungeon.level.distance(curUser.pos,bolt.collisionPos); //거리
-		int maxDist = distance;
-		int count = bonusRange();
-		int amount = 250;
-
-		for (int pos : bolt.path) {
-
-			ArrayList<Integer> spawnPoints = new ArrayList<>();
-			for (int i = 0; i < PathFinder.NEIGHBOURS8.length; i++) {
-				int p = pos + PathFinder.NEIGHBOURS8[i];
-				if (Dungeon.level.passable[p] || Dungeon.level.avoid[p]) {
-					spawnPoints.add(p);
-				}
-			}
-
-			ArrayList<Integer> respawnPoints = new ArrayList<>();
-
-			while (count > 0 && spawnPoints.size() > 0) {
-				int index = Random.index(spawnPoints);
-
-				respawnPoints.add(spawnPoints.remove(index));
-				count--;
-			}
-
-			Char ch = Actor.findChar(pos);
-
-			if (maxDist > 0 && ch != Dungeon.hero) {
-				if (!Dungeon.level.solid[pos]) {
-					amount *= (maxDist + distance) / distance;
-
-					FireFlyBlobs flyLight = Blob.seed(pos, amount, FireFlyBlobs.class);
-					flyLight.turn(scholarTurnCount());
-					GameScene.add(flyLight);
-					amount -= 15;
-
-					for (Integer bonuscell : respawnPoints) {
-						FireFlyBlobs f = Blob.seed(bonuscell, amount, FireFlyBlobs.class);
-						f.turn(scholarTurnCount());
-						GameScene.add(f);
-					}
-				}
-
-				GameScene.updateMap(pos);
-				maxDist--;
-			}
-		}
-	}
-
-	public static class FireFlyBlobs extends Blob {
-
-		{
-			alwaysVisible = true;
-		}
-		private static float turnLeft = 0;
-		@Override
-		protected void evolve() {
-			super.evolve();
-
-			int cell;
-			if (volume == 0){
-				turnLeft = 0;
-
-			} else {
-				for (int i = area.left - 1; i <= area.right; i++) {
-					for (int j = area.top - 1; j <= area.bottom; j++) {
-						cell = i + j * Dungeon.level.width();
-						if (cur[cell] > 0) {
-
-							off[cell] = 2 * cur[cell] / 3;
-							shine(cell);
-
-						}
-						volume += off[cell];
-					}
-				}
-			}
-
-		}
-
-		public static void shine(int cell ){
-			Char ch = Actor.findChar( cell );
-			if (ch != null
-					&& !(ch instanceof Shopkeeper)
-					&& !ch.isImmune(FireFlyBlobs.class)
-					&& ch.buff(FireFly.class) == null) {
-				Buff.affect( ch, FireFly.class ).set(turnLeft);
-			}
-
-			Heap h = Dungeon.level.heaps.get(cell);
-			if (h != null){
-				Buff.append(Dungeon.hero, TalismanOfForesight.HeapAwareness.class, turnLeft).pos = h.pos;
-			}
-		}
-
-		public FireFlyBlobs turn(int left){
-			turnLeft = left;
-			return this;
-		}
-
-		@Override
-		public void use( BlobEmitter emitter ) {
-			super.use( emitter );
-			emitter.pour( FlashDots.GREEN, 0.85f );
-		}
-
-		@Override
-		public String tileDesc() {
-			return Messages.get(this, "desc");
-		}
-
-		private static final String LEFT = "left";
-		@Override
-		public void storeInBundle( Bundle bundle ) {
-			super.storeInBundle( bundle );
-			bundle.put( LEFT, turnLeft );
-		}
-
-		@Override
-		public void restoreFromBundle( Bundle bundle ) {
-			super.restoreFromBundle( bundle );
-			turnLeft = bundle.getFloat( LEFT );
-		}
-
-	}
-
-	public static class FireFly extends Buff implements Hero.Doom{
-		private float duration;
-
-		{
-			type = buffType.NEGATIVE;
-			announced = true;
-		}
-
-		private float left;
-
-		public void set( float duration ) {
-			this.duration = Math.max(duration, left);
-			left = Math.max(duration, left);
-		}
-
-		private static final String LEFT	 = "left";
-		private static final String DURATION =  "left";
-		@Override
-		public void storeInBundle( Bundle bundle ) {
-			super.storeInBundle( bundle );
-			bundle.put( DURATION, duration );
-			bundle.put( LEFT, left );
-		}
-
-		@Override
-		public void restoreFromBundle( Bundle bundle ) {
-			super.restoreFromBundle(bundle);
-			duration = bundle.getFloat( DURATION );
-			left = bundle.getFloat( LEFT );
-		}
-
-		@Override
-		public boolean act() {
-			if (target.isAlive()) {
-				if (target.fieldOfView == null || target.fieldOfView.length != Dungeon.level.length()){
-					target.fieldOfView = new boolean[Dungeon.level.length()];
-				}
-				if (target.fieldOfView != null) {
-					Dungeon.level.updateFieldOfView(target, target.fieldOfView);
-				}
-				GameScene.updateFog(target.pos, target.viewDistance+(int)Math.ceil(target.speed()));
-
-				if ((target.properties().contains(Char.Property.UNDEAD)
-						|| target.properties().contains(Char.Property.DEMONIC))) {
-					int damage = Hero.heroDamageIntRange( 1, 1+Dungeon.scalingDepth()/6 );
-					target.damage( damage, this );
-					target.sprite.emitter().start( ShadowParticle.UP, 0.05f, 8 + damage );
-				}
-			}
-
-			spend( TICK );
-			left -= TICK;
-
-			if (left <= 0) {
-				detach();
-			}
-
-			return true;
-		}
-		@Override
-		public void detach() {
-			Actor.add(new Actor() {
-				@Override
-				protected boolean act() {
-					Dungeon.observe();
-					GameScene.updateFog();
-					Actor.remove(this);
-					return true;
-				}
-			});
-			super.detach();
-		}
-
-		@Override
-		public int icon() {
-			return BuffIndicator.SCHOLAR_BUFF;
-		}
-
-		@Override
-		public float iconFadePercent() {
-			return Math.max(0, (duration - left) / duration);
-		}
-
-		@Override
-		public String iconTextDisplay() {
-			return Integer.toString((int)left);
-		}
-
-		@Override
-		public void fx(boolean on) {
-			if (on) target.sprite.add(CharSprite.State.FIREFLY);
-			else target.sprite.remove(CharSprite.State.FIREFLY);
-		}
-
-		@Override
-		public String desc() {
-			return Messages.get(this, "desc", 1, 1+(Dungeon.scalingDepth()/6),(int)left);
-		}
-
-		@Override
-		public void onDeath() {
-			Badges.validateDeathFromFriendlyMagic();
-			Dungeon.fail(this);
-			GLog.n(Messages.get(this, "ondeath"));
-		}
 	}
 }

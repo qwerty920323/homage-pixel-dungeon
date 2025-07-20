@@ -460,6 +460,9 @@ public enum Icons {
 				return new ItemSprite(ItemSpriteSheet.SPIRIT_BOW);
 			case DUELIST:
 				return new ItemSprite(ItemSpriteSheet.RAPIER);
+
+			case POTIONIST:
+				return new ItemSprite(ItemSpriteSheet.VIAL);
 			default:
 				return null;
 		}

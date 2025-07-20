@@ -67,6 +67,8 @@ public class Badges {
 		MASTERY_ROGUE,
 		MASTERY_HUNTRESS,
 		MASTERY_DUELIST,
+		//cleric
+		MASTERY_POTIONIST, // 약재사
 		FOUND_RATMOGRIFY,
 
 		//bronze
@@ -75,6 +77,7 @@ public class Badges {
 		UNLOCK_HUNTRESS             ( 3 ),
 		UNLOCK_DUELIST              ( 4 ),
 		//UNLOCK_CLERIC             ( 5 ),
+		UNLOCK_POTIONIST            ( 6 ),
 		MONSTERS_SLAIN_1            ( 6 ),
 		MONSTERS_SLAIN_2            ( 7 ),
 		GOLD_COLLECTED_1            ( 8 ),
@@ -125,6 +128,8 @@ public class Badges {
 		BOSS_SLAIN_1_ROGUE,
 		BOSS_SLAIN_1_HUNTRESS,
 		BOSS_SLAIN_1_DUELIST,
+		//cleric
+		BOSS_SLAIN_1_POTIONIST, //약재사
 		BOSS_SLAIN_1_ALL_CLASSES    ( 54, BadgeType.GLOBAL ),
 		RESEARCHER_2                ( 55, BadgeType.JOURNAL ),
 		GAMES_PLAYED_2              ( 56, BadgeType.GLOBAL ),
@@ -176,6 +181,8 @@ public class Badges {
 		VICTORY_ROGUE,
 		VICTORY_HUNTRESS,
 		VICTORY_DUELIST,
+		//cleric
+		VICTORY_POTIONIST, //약재사
 		VICTORY_ALL_CLASSES         ( 101, BadgeType.GLOBAL ),
 		DEATH_FROM_ALL              ( 102, BadgeType.GLOBAL ),
 		BOSS_SLAIN_3_GLADIATOR,
@@ -193,6 +200,10 @@ public class Badges {
 		BOSS_SLAIN_3_CHAMPION,
 		BOSS_SLAIN_3_MONK,
 		BOSS_SLAIN_3_BLADEDANCER, //무예가
+		//cleric
+		BOSS_SLAIN_3_PLAGUE_DR,
+		BOSS_SLAIN_3_ALCHEMIST,
+		BOSS_SLAIN_3_BOMBER,
 		BOSS_SLAIN_3_ALL_SUBCLASSES ( 103, BadgeType.GLOBAL ),
 		BOSS_CHALLENGE_3            ( 104 ),
 		BOSS_CHALLENGE_4            ( 105 ),
@@ -791,6 +802,8 @@ public class Badges {
 		firstBossClassBadges.put(HeroClass.ROGUE, Badge.BOSS_SLAIN_1_ROGUE);
 		firstBossClassBadges.put(HeroClass.HUNTRESS, Badge.BOSS_SLAIN_1_HUNTRESS);
 		firstBossClassBadges.put(HeroClass.DUELIST, Badge.BOSS_SLAIN_1_DUELIST);
+
+		firstBossClassBadges.put(HeroClass.POTIONIST, Badge.BOSS_SLAIN_1_POTIONIST);
 	}
 
 	private static LinkedHashMap<HeroClass, Badge> victoryClassBadges = new LinkedHashMap<>();
@@ -800,6 +813,8 @@ public class Badges {
 		victoryClassBadges.put(HeroClass.ROGUE, Badge.VICTORY_ROGUE);
 		victoryClassBadges.put(HeroClass.HUNTRESS, Badge.VICTORY_HUNTRESS);
 		victoryClassBadges.put(HeroClass.DUELIST, Badge.VICTORY_DUELIST);
+
+		victoryClassBadges.put(HeroClass.POTIONIST, Badge.VICTORY_POTIONIST);
 	}
 
 	private static LinkedHashMap<HeroSubClass, Badge> thirdBossSubclassBadges = new LinkedHashMap<>();
@@ -819,6 +834,10 @@ public class Badges {
 		thirdBossSubclassBadges.put(HeroSubClass.CHAMPION, Badge.BOSS_SLAIN_3_CHAMPION);
 		thirdBossSubclassBadges.put(HeroSubClass.MONK, Badge.BOSS_SLAIN_3_MONK);
 		thirdBossSubclassBadges.put(HeroSubClass.BLADEDANCER, Badge.BOSS_SLAIN_3_BLADEDANCER); //무예가
+
+		thirdBossSubclassBadges.put(HeroSubClass.PLAGUE_DR, Badge.BOSS_SLAIN_3_PLAGUE_DR);
+		thirdBossSubclassBadges.put(HeroSubClass.ALCHEMIST, Badge.BOSS_SLAIN_3_ALCHEMIST);
+		thirdBossSubclassBadges.put(HeroSubClass.BOMBER, Badge.BOSS_SLAIN_3_BOMBER);
 	}
 	
 	public static void validateBossSlain() {
@@ -938,6 +957,10 @@ public class Badges {
 			case DUELIST:
 				badge = Badge.MASTERY_DUELIST;
 				break;
+			//cleric
+			case POTIONIST:
+				badge = Badge.MASTERY_POTIONIST;
+				break;
 		}
 		
 		unlock(badge);
@@ -979,6 +1002,12 @@ public class Badges {
 					((MeleeWeapon) Dungeon.hero.belongings.weapon).STRReq(0) <= Dungeon.hero.STR()){
 				displayBadge(Badge.UNLOCK_DUELIST);
 			}
+		}
+	}
+
+	public static void validatePotionistUnlock(){
+		if (Dungeon.hero != null && !isUnlocked(Badge.UNLOCK_POTIONIST)){
+			displayBadge( Badge.UNLOCK_POTIONIST );
 		}
 	}
 	

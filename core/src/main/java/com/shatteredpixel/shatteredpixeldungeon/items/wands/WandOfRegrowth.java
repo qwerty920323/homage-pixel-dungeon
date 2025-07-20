@@ -109,7 +109,7 @@ public class WandOfRegrowth extends Wand {
 		for (Iterator<Integer> i = cells.iterator(); i.hasNext();) {
 			int cell = i.next();
 			int terr = Dungeon.level.map[cell];
-			if (!(terr == Terrain.EMPTY || terr == Terrain.EMBERS || terr == Terrain.EMPTY_DECO || terr == Terrain.ICE || //scholar
+			if (!(terr == Terrain.EMPTY || terr == Terrain.EMBERS || terr == Terrain.EMPTY_DECO ||
 					terr == Terrain.GRASS || terr == Terrain.HIGH_GRASS || terr == Terrain.FURROWED_GRASS)) {
 				i.remove();
 			} else if (Char.hasProp(Actor.findChar(cell), Char.Property.IMMOVABLE)) {
@@ -192,6 +192,7 @@ public class WandOfRegrowth extends Wand {
 			} else {
 				Level.set(cell, Terrain.FURROWED_GRASS);
 			}
+
 			GameScene.updateMap( cell );
 			grassToPlace--;
 		}
@@ -258,7 +259,9 @@ public class WandOfRegrowth extends Wand {
 		cone = new ConeAOE( bolt,
 				maxDist,
 				20 + 10*chargesPerCast(),
-				Ballistica.STOP_SOLID | Ballistica.STOP_TARGET | Ballistica.IGNORE_SOLID);
+				//scholar
+				magicFusionCheck(WandOfDisintegration.class) ? Ballistica.STOP_TARGET :
+				Ballistica.STOP_SOLID | Ballistica.STOP_TARGET);
 
 		//cast to cells at the tip, rather than all cells, better performance.
 		Ballistica longestRay = null;
@@ -517,128 +520,4 @@ public class WandOfRegrowth extends Wand {
 			wandLvl = bundle.getInt(WAND_LVL);
 		}
 	}
-
-	//scholar
-	@Override
-	public int bonusRange () {return 6 + 3 * super.bonusRange();}
-	@Override
-	public int scholarTurnCount(){
-		return super.scholarTurnCount() + 10;
-	}
-
-	@Override
-	public void scholarAbility(Ballistica bolt, int cell) {
-		super.scholarAbility(bolt,cell);
-
-		int count = bonusRange();
-		int maxDist = 2 + 2*chargesPerCast();
-
-		Ballistica beam = new Ballistica(curUser.pos, cell, Ballistica.STOP_SOLID | Ballistica.IGNORE_SOLID);
-
-		foliageRange(beam, count, maxDist);
-	}
-
-	public void foliageRange(Ballistica bolt, int count, int maxDist){
-		ArrayList<Integer> cells = new ArrayList<>(cone.cells);
-
-		for (int cell : bolt.path){
-			if (Blob.volumeAt(cell, MiniFoliage.class) != 0 || cell == curUser.pos)
-				continue;
-
-			if (count > 0 && cells.contains(cell)
-					&& Dungeon.level.trueDistance(curUser.pos, cell) <= maxDist) {
-				spawnFoliage(cell);
-				count--;
-			}
-		}
-
-		if (!cursed) {
-			for (int pos : cells) {
-				if (Blob.volumeAt(pos, MiniFoliage.class) != 0)
-					continue;
-
-				if (count > 0 && Dungeon.level.trueDistance(curUser.pos, pos) <= maxDist) {
-					spawnFoliage(pos);
-				}
-				count--;
-			}
-		} else {
-			ArrayList<Integer> candidates = new ArrayList<>();
-			for (int n : PathFinder.NEIGHBOURS9) {
-				if (Dungeon.level.passable[bolt.collisionPos+n]) {
-					candidates.add( bolt.collisionPos+n );
-				}
-			}
-
-			while (count >0 && !candidates.isEmpty()){
-				int pos = candidates.remove( Random.index(candidates));
-				if (Blob.volumeAt(pos, MiniFoliage.class) == 0) {
-					spawnFoliage(pos);
-					count--;
-				}
-			}
-		}
-	}
-	
-	public void spawnFoliage(int pos){
-		if (Dungeon.level.passable[pos]) {
-
-			CellEmitter.get(pos).burst(LeafParticle.GENERAL, 16);
-			MiniFoliage light = Blob.seed(pos, scholarTurnCount(), MiniFoliage.class);
-			GameScene.add(light);
-		}
-	}
-
-	public static class MiniFoliage extends Foliage {
-		@Override
-		protected void evolve() {
-
-			int[] map = Dungeon.level.map;
-
-			int cell;
-			for (int i = area.left; i < area.right; i++) {
-				for (int j = area.top; j < area.bottom; j++) {
-					cell = i + j*Dungeon.level.width();
-
-					if (cur[cell] > 0) {
-
-						off[cell] = cur[cell] - 1;
-						volume += off[cell];
-
-						if (map[cell] == Terrain.EMBERS) {
-							map[cell] = Terrain.GRASS;
-							GameScene.updateMap(cell);
-						}
-
-						Emitter e = CellEmitter.get(cell);
-						e.burst(Speck.factory(Speck.LIGHT), 4);
-
-					} else {
-						off[cell] = 0;
-					}
-				}
-			}
-
-			Hero hero = Dungeon.hero;
-			if (hero.isAlive() && cur[hero.pos] > 0) {
-				Shadows s = Buff.affect( hero, Shadows.class );
-				if (s != null){
-					s.prolong();
-				}
-			}
-
-		}
-
-		@Override
-		public void use( BlobEmitter emitter ) {
-			super.use( emitter );
-			emitter.start( ShaftParticle.FACTORY, 0.7f, 0 );
-		}
-
-		@Override
-		public String tileDesc() {
-			return Messages.get(this, "desc");
-		}
-	}
-
 }

@@ -215,10 +215,12 @@ public class BrokenSeal extends Item {
 		private Armor armor;
 		private float partialShield;
 
+		public float bonuscharge;
 		@Override
 		public synchronized boolean act() {
+			float basic = Math.max(1, bonuscharge);
 			if (Regeneration.regenOn() && shielding() < maxShield()) {
-				partialShield += 1/30f;
+				partialShield += basic/30f;
 			}
 			
 			while (partialShield >= 1){

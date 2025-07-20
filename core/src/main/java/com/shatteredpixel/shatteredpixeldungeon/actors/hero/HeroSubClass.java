@@ -50,7 +50,13 @@ public enum HeroSubClass {
 
 	CHAMPION(HeroIcon.CHAMPION),
 	MONK(HeroIcon.MONK),
-	BLADEDANCER(HeroIcon.BLADEDANCER); //무예가
+	BLADEDANCER(HeroIcon.BLADEDANCER), //무예가
+
+	//cleric
+
+	PLAGUE_DR(HeroIcon.PLAGUE_DR),
+	ALCHEMIST(HeroIcon.ALCHEMIST),
+	BOMBER(HeroIcon.BOMBER);
 
 	int icon;
 

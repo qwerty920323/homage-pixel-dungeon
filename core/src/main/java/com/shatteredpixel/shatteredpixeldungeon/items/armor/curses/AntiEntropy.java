@@ -49,7 +49,7 @@ public class AntiEntropy extends Glyph {
 				Freezing.affect(defender.pos+i);
 			}
 
-			if (!(Dungeon.level.water[defender.pos] || Dungeon.level.map[defender.pos] == Terrain.ICE)) {
+			if (!(Dungeon.level.water[defender.pos])) {
 				Buff.affect(defender, Burning.class).reignite(defender, 4);
 			}
 			defender.sprite.emitter().burst( FlameParticle.FACTORY, 5 );

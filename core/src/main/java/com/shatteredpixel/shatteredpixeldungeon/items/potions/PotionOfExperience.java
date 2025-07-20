@@ -52,6 +52,6 @@ public class PotionOfExperience extends Potion {
 
 	@Override
 	public int energyVal() {
-		return isKnown() ? 10 * quantity : super.energyVal();
+		return isKnown() ? bonusVal(10) * quantity : super.energyVal();
 	}
 }

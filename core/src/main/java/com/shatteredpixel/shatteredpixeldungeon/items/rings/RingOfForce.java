@@ -27,6 +27,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MonkEnergy;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroClass;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
@@ -81,7 +82,14 @@ public class RingOfForce extends Ring {
 				&& hero.buff(MonkEnergy.MonkAbility.UnarmedAbilityTracker.class) == null) {
 			int level = getBuffedBonus(hero, Force.class);
 			float tier = tier(hero.STR());
-			int dmg = Hero.heroDamageIntRange(min(level, tier), max(level, tier));
+
+			//veteran
+			int min = min(level, tier);
+			if (hero.buff(Talent.RushAttackTracker.class) != null) {
+				min += Math.round(0.25f * min * hero.pointsInTalent(Talent.RUSH_ATTACK));
+			}
+
+			int dmg = Hero.heroDamageIntRange(min, max(level, tier));
 			if (hero.buff(BrawlersStance.class) != null
 				&& hero.buff(BrawlersStance.class).active){
 				// 3+tier base dmg, roughly +60%->45% dmg at T1->5

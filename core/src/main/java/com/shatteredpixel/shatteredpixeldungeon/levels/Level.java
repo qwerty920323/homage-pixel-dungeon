@@ -49,6 +49,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.huntress.SpiritHawk;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.potionist.Homunculus;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.GnollGeomancer;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mimic;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
@@ -149,7 +150,6 @@ public abstract class Level implements Bundlable {
 	public int[] map;
 	public boolean[] visited;
 	public boolean[] mapped;
-	public boolean[] disinter; //scholar
 	public boolean[] discoverable;
 
 	public int viewDistance = Dungeon.isChallenged( Challenges.DARKNESS ) ? 2 : 8;
@@ -198,7 +198,6 @@ public abstract class Level implements Bundlable {
 	private static final String HEIGHT      = "height";
 	private static final String MAP			= "map";
 	private static final String VISITED		= "visited";
-	private static final String DISINTER	= "disinter"; //scholar
 	private static final String MAPPED		= "mapped";
 	private static final String TRANSITIONS	= "transitions";
 	private static final String LOCKED      = "locked";
@@ -326,7 +325,6 @@ public abstract class Level implements Bundlable {
 		
 		visited     = new boolean[length];
 		mapped      = new boolean[length];
-		disinter    = new boolean[length]; //scholar
 		
 		heroFOV     = new boolean[length];
 		
@@ -382,7 +380,6 @@ public abstract class Level implements Bundlable {
 
 		visited	= bundle.getBooleanArray( VISITED );
 		mapped	= bundle.getBooleanArray( MAPPED );
-		disinter= bundle.getBooleanArray( DISINTER ); //scholar
 
 		transitions = new ArrayList<>();
 		for (Bundlable b : bundle.getCollection( TRANSITIONS )){
@@ -464,7 +461,6 @@ public abstract class Level implements Bundlable {
 		bundle.put( MAP, map );
 		bundle.put( VISITED, visited );
 		bundle.put( MAPPED, mapped );
-		bundle.put( DISINTER, disinter ); //scholar
 		bundle.put( TRANSITIONS, transitions );
 		bundle.put( LOCKED, locked );
 		bundle.put( HEAPS, heaps.valueList() );
@@ -1076,7 +1072,7 @@ public abstract class Level implements Bundlable {
 		if (terr == Terrain.EMPTY || terr == Terrain.GRASS ||
 				terr == Terrain.EMBERS || terr == Terrain.EMPTY_SP ||
 				terr == Terrain.HIGH_GRASS || terr == Terrain.FURROWED_GRASS ||
-				terr == Terrain.EMPTY_DECO || terr ==Terrain.ICE){ //scholar
+				terr == Terrain.EMPTY_DECO ){
 			set(cell, Terrain.WATER);
 			GameScene.updateMap(cell);
 			return true;
@@ -1192,19 +1188,6 @@ public abstract class Level implements Bundlable {
 			
 		case Terrain.DOOR:
 			Door.enter( cell );
-			break;
-			//scholar
-		case Terrain.ICE:
-			if (Dungeon.level.heroFOV[cell]) {
-				CellEmitter.get( cell ).start( SnowParticle.FACTORY, 0.2f, 6 );
-			}
-
-			if (ShatteredPixelDungeon.scene() instanceof GameScene) {
-				GameScene.updateMap(cell);
-
-				Splash.at(cell, 0xCCBFFFFE, 2);
-				if (Dungeon.level.heroFOV[cell]) Dungeon.observe();
-			}
 			break;
 		}
 
@@ -1433,8 +1416,7 @@ public abstract class Level implements Bundlable {
 			for (Mob m : mobs){
 				if (m instanceof WandOfWarding.Ward
 						|| m instanceof WandOfRegrowth.Lotus
-						|| m instanceof SpiritHawk.HawkAlly
-						|| m.buff(WandOfPrismaticLight.FireFly.class) != null){ //scholar
+						|| m instanceof SpiritHawk.HawkAlly){ //scholar
 					if (m.fieldOfView == null || m.fieldOfView.length != length()){
 						m.fieldOfView = new boolean[length()];
 						Dungeon.level.updateFieldOfView( m, m.fieldOfView );
@@ -1572,8 +1554,6 @@ public abstract class Level implements Bundlable {
 				return Messages.get(Level.class, "bookshelf_name");
 			case Terrain.ALCHEMY:
 				return Messages.get(Level.class, "alchemy_name");
-			case Terrain.ICE: //scholar
-				return Messages.get(Level.class, "ice_grass_name");
 			default:
 				return Messages.get(Level.class, "default_name");
 		}
@@ -1614,8 +1594,6 @@ public abstract class Level implements Bundlable {
 				return Messages.get(Level.class, "alchemy_desc");
 			case Terrain.EMPTY_WELL:
 				return Messages.get(Level.class, "empty_well_desc");
-			case Terrain.ICE: //scholar
-				return Messages.get(Level.class, "ice_grass_desc");
 			default:
 				return "";
 		}

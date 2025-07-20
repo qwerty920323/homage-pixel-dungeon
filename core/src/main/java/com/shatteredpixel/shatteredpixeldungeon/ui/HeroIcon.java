@@ -52,6 +52,9 @@ public class HeroIcon extends Image {
 	public static final int CHAMPION    = 8;
 	public static final int MONK        = 9;
 	public static final int BLADEDANCER = 14; //무예가
+	public static final int PLAGUE_DR   = 48;
+	public static final int ALCHEMIST   = 49;
+	public static final int BOMBER      = 50;
 	//abilities
 	public static final int HEROIC_LEAP     = 16;
 	public static final int SHOCKWAVE       = 17;
@@ -80,7 +83,11 @@ public class HeroIcon extends Image {
 	public static final int MONK_ABILITIES  = 38;
 	public static final int DELAY_ACT       = 40; //veteran
 	public static final int ARROW_BLAST     = 41; //ranger
-	public static final int BLADE_DANCE     = 42; //bladedancer
+	public static final int MISSILE_MARK    = 42; //bladedancer
+	public static final int GAS_EXPLODE     = 43; //bomber
+	public static final int HOMUNCULUS      = 51; //potionist
+	public static final int FLEEING         = 52; //potionist
+	public static final int VIAL_BREWING    = 53; //potionist
 
 	public HeroIcon(HeroSubClass subCls){
 		super( Assets.Interfaces.HERO_ICONS );

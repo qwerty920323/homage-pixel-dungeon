@@ -95,6 +95,8 @@ public class UnstableBrew extends Brew {
 
 		p.anonymize();
 		p.apply(hero);
+		//alchemist
+		alchemistBuff(p, hero);
 
 		if (Dungeon.isChallenged(Challenges.NO_HEALING)){
 			potionChances.put(PotionOfHealing.class, 3f);

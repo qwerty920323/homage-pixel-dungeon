@@ -23,6 +23,11 @@ package com.shatteredpixel.shatteredpixeldungeon.effects;
 
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Fire;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Freezing;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Gas;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.tiles.DungeonTilemap;
 import com.watabou.noosa.particles.Emitter;
 import com.watabou.utils.Random;
@@ -62,6 +67,11 @@ public class BlobEmitter extends Emitter {
 				if (cell < Dungeon.level.heroFOV.length
 						&& (Dungeon.level.heroFOV[cell] || blob.alwaysVisible)
 						&& map[cell] > 0) {
+					if ((blob instanceof Gas || blob instanceof Fire || blob instanceof Freezing)
+							&& Dungeon.hero.isAlive() && Dungeon.hero.hasTalent(Talent.GAS_BARRIER)) {
+						Buff.affect(Dungeon.hero, Talent.GasBarrierTracker.class);
+					}
+
 					float x = (i + Random.Float(bound.left, bound.right)) * size;
 					float y = (j + Random.Float(bound.top, bound.bottom)) * size;
 					factory.emit(this, index, x, y);

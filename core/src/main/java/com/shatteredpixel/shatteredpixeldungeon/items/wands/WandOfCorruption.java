@@ -26,7 +26,6 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
-import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AllyBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Amok;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AscensionChallenge;
@@ -34,7 +33,6 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Bleeding;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Blindness;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Burning;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.ChampionEnemy;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Charm;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Chill;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Corrosion;
@@ -58,9 +56,6 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Terror;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Vertigo;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Vulnerable;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Weakness;
-import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
-import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
-import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.ArmoredStatue;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Bee;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.DwarfKing;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mimic;
@@ -69,33 +64,16 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Piranha;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Statue;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Swarm;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Wraith;
-import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.NPC;
-import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
-import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.MagicMissile;
-import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
-import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SacrificialParticle;
-import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
-import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
-import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
-import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
-import com.shatteredpixel.shatteredpixeldungeon.levels.traps.GuardianTrap;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
-import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
-import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
-import com.watabou.utils.BArray;
-import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
-import com.watabou.utils.PathFinder;
 import com.watabou.utils.Random;
-import com.watabou.utils.Reflection;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 public class WandOfCorruption extends Wand {
@@ -303,348 +281,4 @@ public class WandOfCorruption extends Wand {
 		particle.shuffleXY(1f);
 	}
 
-	//scholar
-
-	@Override
-	public String info() {
-		String desc = super.info();
-		if (Dungeon.hero.subClass == HeroSubClass.SCHOLAR){
-			//desc += " " + Messages.get(this, "mob_count",scholarTurnCount());
-		}
-
-		return desc;
-	}
-	@Override
-	public int bonusRange () {return 2 + super.bonusRange();}
-	@Override
-	public int scholarTurnCount(){
-		return super.scholarTurnCount() + 1;
-	}
-	@Override
-	public void scholarAbility(Ballistica bolt, int cell) {
-		super.scholarAbility(bolt,cell);
-
-		int pos = bolt.collisionPos;
-		int terr = Dungeon.level.map[pos];
-
-		MiniSacrificialFire miniSacrificial = (MiniSacrificialFire) Dungeon.level.blobs.get(MiniSacrificialFire.class);
-		int sacrificialPos = -1;
-		for (int i = 0; i < Dungeon.level.length(); i++) {
-			if (miniSacrificial != null && miniSacrificial.volume > 0 && miniSacrificial.cur[i] > 0) {
-				sacrificialPos = i;
-			}
-		}
-
-		//int turn = Math.max(1, Dungeon.scalingDepth()/4);
-		int turn = scholarTurnCount();
-
-		if (sacrificialPos>0) {
-			if (sacrificialPos == pos && terr == Terrain.PEDESTAL) {
-				setPedestal(pos, turn);
-			} else if (terrCheck(pos, Terrain.EMPTY)) {
-
-				if (sacrificialPos != pos) {
-					CellEmitter.get(sacrificialPos).start(Speck.factory(Speck.LIGHT), 0.2f, 4);
-					Level.set(sacrificialPos, Terrain.EMBERS);
-					GameScene.updateMap(sacrificialPos);
-					miniSacrificial.fullyClear();
-				}
-
-				setPedestal(pos, turn);
-
-			}
-		} else if (terrCheck(pos, Terrain.EMPTY)){
-			setPedestal(pos, turn);
-		}
-	}
-	public void setPedestal(int pos, int turn) {
-		for (int p : PathFinder.NEIGHBOURS8){
-			if (terrCheck(pos+p, Terrain.EMPTY) && Dungeon.level.map[pos+p] != Terrain.EMBERS) {
-				Dungeon.level.pressCell(pos + p);
-				Level.set(pos + p, Terrain.EMBERS);
-				CellEmitter.get( pos+p ).start( SacrificialParticle.FACTORY, 0.01f, 20 );
-			}
-		}
-
-		Dungeon.level.pressCell(pos);
-		Level.set(pos, Terrain.PEDESTAL);
-
-		MiniSacrificialFire miniSacrificial = Blob.seed(pos, scholarTurnCount(), MiniSacrificialFire.class);
-		miniSacrificial.setSpawn(turn);
-
-		CellEmitter.get( pos ).start( SacrificialParticle.FACTORY, 0.01f, 10 );
-		GameScene.add(miniSacrificial);
-		GameScene.updateMap(pos);
-	}
-
-
-
-	public static class MiniSacrificialFire extends Blob {
-		BlobEmitter curEmitter;
-
-		{
-			//acts after mobs, so they can get marked as they move
-			actPriority = MOB_PRIO-1;
-		}
-		private int turn ;
-		@Override
-		protected void evolve() {
-			int cell;
-			for (int i=area.top-1; i <= area.bottom; i++) {
-				for (int j = area.left-1; j <= area.right; j++) {
-					cell = j + i* Dungeon.level.width();
-					if (Dungeon.level.insideMap(cell)) {
-						off[cell] = cur[cell];
-						volume += off[cell];
-						if (off[cell] > 0){
-							for (int k : PathFinder.NEIGHBOURS9){
-								Char ch = Actor.findChar( cell+k );
-								if (ch != null && !(ch instanceof NPC)){
-									if (Dungeon.level.heroFOV[cell+k] && ch.buff( Marked.class ) == null) {
-										CellEmitter.get(cell+k).burst( SacrificialParticle.FACTORY, 5 );
-									}
-									Buff.prolong( ch, Marked.class, Marked.DURATION );
-								}
-							}
-							// 연구가가 제단 위에서 소환할때
-							if (off[cell] > 0 && off[Dungeon.hero.pos] > 0) {
-								int spawn = 2+Dungeon.hero.pointsInTalent(Talent.WIDE_SUMMON);
-								if (setMob() != null && mobCount() < turn)
-									spawnMob(spawn, setMob());
-							}
-							//제단 위에 아이템 밀어내기
-							Heap heap = Dungeon.level.heaps.get(cell);
-							if (heap != null && heap.type == Heap.Type.HEAP) {
-								ArrayList<Integer> candidates = new ArrayList<>();
-								for (int n : PathFinder.NEIGHBOURS8) {
-									if (Dungeon.level.passable[cell + n]) {
-										candidates.add(cell + n);
-									}
-								}
-								Item item = heap.pickUp();
-								Dungeon.level.drop(item, Random.element(candidates)).sprite.drop(cell);
-							}
-						}
-					}
-
-					if (cur[cell] > 0 && Dungeon.level.map[cell] != Terrain.PEDESTAL) {
-						off[cell] = cur[cell] = 0;
-					}
-				}
-			}
-
-			int max = 6 + turn * 2;
-			curEmitter.pour( SacrificialParticle.FACTORY, 0.01f + ((mobCount()+1f / (float)max) * 0.09f) );
-		}
-
-		public void setSpawn(int turn){
-			this.turn = turn;
-		}
-
-		public Mob setMob () {
-			if (Dungeon.hero.buff(MarkedMob.class) != null)
-				return Dungeon.hero.buff(MarkedMob.class).mob;
-			else
-				return null;
-		}
-
-		public int mobCount () {
-			ArrayList<Mob> mobs = new ArrayList<>();
-			for (Mob mob : Dungeon.level.mobs.toArray(new Mob[0])) {
-				if (mob.buff(Spawned.class) != null) {
-					mobs.add(mob);
-				}
-			}
-			return mobs.size();
-		}
-
-		public boolean spawnMob(int disLimit, Mob mobs){
-			PathFinder.buildDistanceMap( Dungeon.hero.pos, BArray.not( Dungeon.level.solid, null ), disLimit );
-
-			Mob mob = Reflection.newInstance(mobs.getClass());
-			ChampionEnemy.rollForChampion(mob);
-			mob.state = mob.WANDERING;
-			mob.EXP = (int) (mob.EXP / Math.pow(1.22f,(turn-mobCount()))); //ez corruption
-			mob.maxLvl = -5; //no exp, item
-			mob.pos = -1;
-
-			ArrayList <Integer> cells = new ArrayList<>();
-			for (int i = 0; i < Dungeon.level.length(); i++){
-				if (Actor.findChar(i) == null
-						&& PathFinder.distance[i] < Integer.MAX_VALUE
-						&& Dungeon.level.passable[i] && !Dungeon.level.solid[i])
-					cells.add(i);
-			}
-
-			while (!cells.isEmpty()){
-				int index = cells.remove(Random.index(cells));
-				if (Dungeon.level.distance(Dungeon.hero.pos, index) <= disLimit) {
-					mob.pos = index;
-					break;
-				}
-			}
-
-			if (Dungeon.hero.isAlive() && mob.pos != -1) {
-				Mob m = mobChoice(mob);
-				GameScene.add(m,1f);
-				Buff.affect(m, Spawned.class);
-
-				GLog.w( Messages.get(this, "respawn"));
-
-				if (Dungeon.level.heroFOV[mob.pos]) {
-					CellEmitter.get(mob.pos).burst(SacrificialParticle.FACTORY, 20);
-					Sample.INSTANCE.play(Assets.Sounds.BURNING);
-					Sample.INSTANCE.play(Assets.Sounds.BURNING);
-					Sample.INSTANCE.play(Assets.Sounds.BURNING);
-				}
-
-				if (!mob.buffs(ChampionEnemy.class).isEmpty()){
-					GLog.w(Messages.get(ChampionEnemy.class, "warn"));
-				}
-				return true;
-			} else {
-				return false;
-			}
-		}
-
-		public Mob mobChoice(Mob mob){
-			Mob m;
-			m = mob;
-			if (mob instanceof Bee){
-				Bee bee = new Bee();
-				bee.spawn( Dungeon.depth );
-				bee.HP = bee.HT;
-				bee.pos = mob.pos;
-
-				bee.setPotInfo(mob.pos, null);
-				m = bee;
-			} else if (mob instanceof Mimic){
-				m = Mimic.spawnAt(mob.pos, mob.getClass(), false);
-				((Mimic)m).stopHiding();
-				m.alignment = Char.Alignment.ENEMY;
-				((Mimic)m).items = null;
-			} else if (mob instanceof Statue){
-				//no spawn
-				Statue statue = new Statue();
-
-				if (mob.getClass() == GuardianTrap.Guardian.class ){
-					statue = new GuardianTrap.Guardian();
-				} else if (mob.getClass() == ArmoredStatue.class){
-					statue = new ArmoredStatue();
-				}
-
-				statue.createWeapon(false);
-				statue.pos = mob.pos;
-				m = statue;
-			}
-			return m;
-		}
-
-
-		@Override
-		public void use( BlobEmitter emitter ) {
-			super.use( emitter );
-			curEmitter = emitter;
-
-			int max = 6 + turn * 2;
-			curEmitter.pour( SacrificialParticle.FACTORY, 0.01f + ((mobCount()+1f / (float)max) * 0.09f) );
-		}
-
-		public String mobName (){
-			if (setMob() != null)
-				return setMob().name();
-			return Messages.get(this, "null");
-		}
-
-		@Override
-		public String tileDesc() {
-			return Messages.get(this, "desc", turn - mobCount(), mobName());
-		}
-
-		private static final String TURN = "turn";
-
-		@Override
-		public void storeInBundle(Bundle bundle) {
-			super.storeInBundle(bundle);
-			bundle.put( TURN, turn);
-		}
-
-		@Override
-		public void restoreFromBundle(Bundle bundle) {
-			super.restoreFromBundle(bundle);
-			turn = bundle.getInt( TURN );
-		}
-
-		public void sacrifice( Char ch ) {
-			int firePos = -1;
-			for (int i : PathFinder.NEIGHBOURS9){
-				if (volume > 0 && cur[ch.pos+i] > 0){
-					firePos = ch.pos+i;
-					break;
-				}
-			}
-
-			if (firePos != -1) {
-				if (ch instanceof Mob
-						&& !ch.isImmune(Corruption.class)
-						&& ch.alignment == Char.Alignment.ENEMY
-						&& !(ch instanceof Statue)
-				    ) {
-
-					Buff.affect(Dungeon.hero, MarkedMob.class).setMobClass((Mob)ch);
-					CellEmitter.get(firePos).burst(SacrificialParticle.FACTORY, 20);
-					Sample.INSTANCE.play(Assets.Sounds.BURNING);
-					GLog.w(Messages.get(this, "worthy"));
-				} else {
-					GLog.w( Messages.get(this, "unworthy"));
-				}
-			}
-		}
-
-		public static class Marked extends FlavourBuff {
-
-			public static final float DURATION	= 2f;
-
-			@Override
-			public void detach() {
-				if (!target.isAlive()) {
-					MiniSacrificialFire fire = (MiniSacrificialFire) Dungeon.level.blobs.get(MiniSacrificialFire.class);
-					if (fire != null) {
-						fire.sacrifice(target);
-					}
-				}
-				super.detach();
-			}
-		}
-	}
-
-	public static class MarkedMob extends Buff {
-		{
-			revivePersists = true;
-		}
-		Mob mob = null;
-		private void setMobClass (Mob mob){
-			this.mob = mob;
-		}
-		private static final String MOB = "mob";
-		@Override
-		public void storeInBundle(Bundle bundle) {
-			super.storeInBundle(bundle);
-			bundle.put( MOB, mob);
-		}
-		@Override
-		public void restoreFromBundle(Bundle bundle) {
-			super.restoreFromBundle(bundle);
-			if (bundle.contains(MOB)) mob = (Mob) bundle.get(MOB);
-		}
-	}
-
-	public static class Spawned extends Buff {
-		{type = buffType.NEGATIVE;}
-		@Override
-		public void fx(boolean on) {
-			if (on) target.sprite.add(CharSprite.State.MARKED);
-			else target.sprite.remove(CharSprite.State.MARKED);
-		}
-	}
 }
