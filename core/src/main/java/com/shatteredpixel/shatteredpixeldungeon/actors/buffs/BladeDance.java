@@ -49,6 +49,7 @@ public class BladeDance extends Buff implements ActionIndicator.Action {
     public static String ability = "ability";
     public static String shoot   = "shoot";
 
+
     public boolean crazyDance;
     int icon = -1;
 
