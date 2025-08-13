@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2024 Evan Debenham
+ * Copyright (C) 2014-2025 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 
 package com.shatteredpixel.shatteredpixeldungeon;
 
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AscensionChallenge;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
@@ -30,6 +31,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.bags.PotionBandolier;
 import com.shatteredpixel.shatteredpixeldungeon.items.bags.ScrollHolder;
 import com.shatteredpixel.shatteredpixeldungeon.items.bags.VelvetPouch;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.Potion;
+import com.shatteredpixel.shatteredpixeldungeon.items.quest.Pickaxe;
 import com.shatteredpixel.shatteredpixeldungeon.items.remains.RemainsItem;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.Scroll;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MeleeWeapon;
@@ -67,6 +69,7 @@ public class Badges {
 		MASTERY_ROGUE,
 		MASTERY_HUNTRESS,
 		MASTERY_DUELIST,
+		MASTERY_CLERIC,
 		//cleric
 		MASTERY_POTIONIST, // 약재사
 		FOUND_RATMOGRIFY,
@@ -76,8 +79,8 @@ public class Badges {
 		UNLOCK_ROGUE                ( 2 ),
 		UNLOCK_HUNTRESS             ( 3 ),
 		UNLOCK_DUELIST              ( 4 ),
-		//UNLOCK_CLERIC             ( 5 ),
-		UNLOCK_POTIONIST            ( 6 ),
+		UNLOCK_CLERIC               ( 5 ),
+		UNLOCK_POTIONIST            ( 200 ),
 		MONSTERS_SLAIN_1            ( 6 ),
 		MONSTERS_SLAIN_2            ( 7 ),
 		GOLD_COLLECTED_1            ( 8 ),
@@ -128,50 +131,50 @@ public class Badges {
 		BOSS_SLAIN_1_ROGUE,
 		BOSS_SLAIN_1_HUNTRESS,
 		BOSS_SLAIN_1_DUELIST,
-		//cleric
-		BOSS_SLAIN_1_POTIONIST, //약재사
 		BOSS_SLAIN_1_ALL_CLASSES    ( 54, BadgeType.GLOBAL ),
 		RESEARCHER_2                ( 55, BadgeType.JOURNAL ),
 		GAMES_PLAYED_2              ( 56, BadgeType.GLOBAL ),
 		HIGH_SCORE_2                ( 57 ),
 
 		//gold
-		PIRANHAS                    ( 64 ),
-		GRIM_WEAPON                 ( 65 ),
+		ENEMY_HAZARDS               ( 64 ),
+		PIRANHAS                    ( 65 ),
+		GRIM_WEAPON                 ( 66 ),
 		BAG_BOUGHT_VELVET_POUCH,
 		BAG_BOUGHT_SCROLL_HOLDER,
 		BAG_BOUGHT_POTION_BANDOLIER,
 		BAG_BOUGHT_MAGICAL_HOLSTER,
-		ALL_BAGS_BOUGHT             ( 66 ),
-		MASTERY_COMBO               ( 67 ),
-		MONSTERS_SLAIN_5            ( 68 ),
-		GOLD_COLLECTED_5            ( 69 ),
-		ITEM_LEVEL_4                ( 70 ),
-		LEVEL_REACHED_4             ( 71 ),
-		STRENGTH_ATTAINED_4         ( 72 ),
-		STRENGTH_ATTAINED_5         ( 73 ),
-		FOOD_EATEN_4                ( 74 ),
-		FOOD_EATEN_5                ( 75 ),
-		ITEMS_CRAFTED_4             ( 76 ),
-		ITEMS_CRAFTED_5             ( 77 ),
-		BOSS_SLAIN_4                ( 78 ),
+		ALL_BAGS_BOUGHT             ( 67 ),
+		MASTERY_COMBO               ( 68 ),
+		MONSTERS_SLAIN_5            ( 69 ),
+		GOLD_COLLECTED_5            ( 70 ),
+		ITEM_LEVEL_4                ( 71 ),
+		LEVEL_REACHED_4             ( 72 ),
+		STRENGTH_ATTAINED_4         ( 73 ),
+		STRENGTH_ATTAINED_5         ( 74 ),
+		FOOD_EATEN_4                ( 75 ),
+		FOOD_EATEN_5                ( 76 ),
+		ITEMS_CRAFTED_4             ( 77 ),
+		ITEMS_CRAFTED_5             ( 78 ),
+		BOSS_SLAIN_4                ( 79 ),
 		ALL_RINGS_IDENTIFIED        , //still exists internally for pre-2.5 saves
 		ALL_ARTIFACTS_IDENTIFIED    , //still exists internally for pre-2.5 saves
-		ALL_RARE_ENEMIES            ( 79, BadgeType.JOURNAL ),
-		DEATH_FROM_GRIM_TRAP        ( 80 ), //also disintegration traps
-		VICTORY                     ( 81 ),
-		BOSS_CHALLENGE_1            ( 82 ),
-		BOSS_CHALLENGE_2            ( 83 ),
-		RESEARCHER_3                ( 84, BadgeType.JOURNAL ),
-		GAMES_PLAYED_3              ( 85, BadgeType.GLOBAL ),
-		HIGH_SCORE_3                ( 86 ),
+		ALL_RARE_ENEMIES            ( 80, BadgeType.JOURNAL ), //no longer all, just 10 as of v3.1
+		DEATH_FROM_GRIM_TRAP        ( 81 ), //also disintegration traps
+		VICTORY                     ( 82 ),
+		BOSS_CHALLENGE_1            ( 83 ),
+		BOSS_CHALLENGE_2            ( 84 ),
+		RESEARCHER_3                ( 85, BadgeType.JOURNAL ),
+		GAMES_PLAYED_3              ( 86, BadgeType.GLOBAL ),
+		HIGH_SCORE_3                ( 87 ),
 
 		//platinum
-		ITEM_LEVEL_5                ( 96 ),
-		LEVEL_REACHED_5             ( 97 ),
-		HAPPY_END                   ( 98 ),
-		HAPPY_END_REMAINS           ( 99 ),
-		RODNEY                      ( 100, BadgeType.JOURNAL ),
+		MANY_BUFFS                  ( 96 ),
+		ITEM_LEVEL_5                ( 97 ),
+		LEVEL_REACHED_5             ( 98 ),
+		HAPPY_END                   ( 99 ),
+		HAPPY_END_REMAINS           ( 100 ),
+		RODNEY                      ( 101, BadgeType.JOURNAL ),
 		ALL_WEAPONS_IDENTIFIED      , //still exists internally for pre-2.5 saves
 		ALL_ARMOR_IDENTIFIED        , //still exists internally for pre-2.5 saves
 		ALL_WANDS_IDENTIFIED        , //still exists internally for pre-2.5 saves
@@ -181,10 +184,10 @@ public class Badges {
 		VICTORY_ROGUE,
 		VICTORY_HUNTRESS,
 		VICTORY_DUELIST,
-		//cleric
-		VICTORY_POTIONIST, //약재사
-		VICTORY_ALL_CLASSES         ( 101, BadgeType.GLOBAL ),
-		DEATH_FROM_ALL              ( 102, BadgeType.GLOBAL ),
+		VICTORY_CLERIC,
+        VICTORY_POTIONIST, //약재사
+		VICTORY_ALL_CLASSES         ( 102, BadgeType.GLOBAL ),
+		DEATH_FROM_ALL              ( 103, BadgeType.GLOBAL ),
 		BOSS_SLAIN_3_GLADIATOR,
 		BOSS_SLAIN_3_BERSERKER,
 		BOSS_SLAIN_3_VETERAN,     //베테랑
@@ -199,26 +202,29 @@ public class Badges {
 		BOSS_SLAIN_3_CHASER, //추적자
 		BOSS_SLAIN_3_CHAMPION,
 		BOSS_SLAIN_3_MONK,
-		BOSS_SLAIN_3_BLADEDANCER, //무예가
-		//cleric
-		BOSS_SLAIN_3_PLAGUE_DR,
-		BOSS_SLAIN_3_ALCHEMIST,
-		BOSS_SLAIN_3_BOMBER,
-		BOSS_SLAIN_3_ALL_SUBCLASSES ( 103, BadgeType.GLOBAL ),
-		BOSS_CHALLENGE_3            ( 104 ),
-		BOSS_CHALLENGE_4            ( 105 ),
-		RESEARCHER_4                ( 106, BadgeType.JOURNAL ),
-		GAMES_PLAYED_4              ( 107, BadgeType.GLOBAL ),
-		HIGH_SCORE_4                ( 108 ),
-		CHAMPION_1                  ( 109 ),
+        BOSS_SLAIN_3_BLADEDANCER, //무예가
+		BOSS_SLAIN_3_PRIEST,
+		BOSS_SLAIN_3_PALADIN,
+        BOSS_SLAIN_3_PLAGUE_DR,
+        BOSS_SLAIN_3_ALCHEMIST,
+        BOSS_SLAIN_3_BOMBER,
+		BOSS_SLAIN_3_ALL_SUBCLASSES ( 104, BadgeType.GLOBAL ),
+		BOSS_CHALLENGE_3            ( 105 ),
+		BOSS_CHALLENGE_4            ( 106 ),
+		RESEARCHER_4                ( 107, BadgeType.JOURNAL ),
+		GAMES_PLAYED_4              ( 108, BadgeType.GLOBAL ),
+		HIGH_SCORE_4                ( 109 ),
+		CHAMPION_1                  ( 110 ),
 
 		//diamond
-		BOSS_CHALLENGE_5            ( 120 ),
-		RESEARCHER_5                ( 121, BadgeType.JOURNAL ),
-		GAMES_PLAYED_5              ( 122, BadgeType.GLOBAL ),
-		HIGH_SCORE_5                ( 123 ),
-		CHAMPION_2                  ( 124 ),
-		CHAMPION_3                  ( 125 );
+		PACIFIST_ASCENT             ( 120 ),
+		TAKING_THE_MICK             ( 121 ), //This might be the most obscure game reference I've made
+		BOSS_CHALLENGE_5            ( 122 ),
+		RESEARCHER_5                ( 123, BadgeType.JOURNAL ),
+		GAMES_PLAYED_5              ( 124, BadgeType.GLOBAL ),
+		HIGH_SCORE_5                ( 125 ),
+		CHAMPION_2                  ( 126 ),
+		CHAMPION_3                  ( 127 );
 
 		public boolean meta;
 
@@ -537,6 +543,13 @@ public class Badges {
 		
 		displayBadge( badge );
 	}
+
+	public static void validateHazardAssists() {
+		if (!local.contains( Badge.ENEMY_HAZARDS ) && Statistics.hazardAssistedKills >= 10) {
+			local.add( Badge.ENEMY_HAZARDS );
+			displayBadge( Badge.ENEMY_HAZARDS );
+		}
+	}
 	
 	public static void validatePiranhasKilled() {
 		Badge badge = null;
@@ -695,7 +708,7 @@ public class Badges {
 			displayBadge(Badge.CATALOG_POTIONS_SCROLLS);
 		}
 
-		if (Bestiary.RARE.totalEntities() == Bestiary.RARE.totalSeen()){
+		if (Bestiary.RARE.totalSeen() >= 10){
 			displayBadge(Badge.ALL_RARE_ENEMIES);
 		}
 
@@ -802,6 +815,7 @@ public class Badges {
 		firstBossClassBadges.put(HeroClass.ROGUE, Badge.BOSS_SLAIN_1_ROGUE);
 		firstBossClassBadges.put(HeroClass.HUNTRESS, Badge.BOSS_SLAIN_1_HUNTRESS);
 		firstBossClassBadges.put(HeroClass.DUELIST, Badge.BOSS_SLAIN_1_DUELIST);
+		firstBossClassBadges.put(HeroClass.CLERIC, Badge.BOSS_SLAIN_1_CLERIC);
 
 		firstBossClassBadges.put(HeroClass.POTIONIST, Badge.BOSS_SLAIN_1_POTIONIST);
 	}
@@ -813,6 +827,7 @@ public class Badges {
 		victoryClassBadges.put(HeroClass.ROGUE, Badge.VICTORY_ROGUE);
 		victoryClassBadges.put(HeroClass.HUNTRESS, Badge.VICTORY_HUNTRESS);
 		victoryClassBadges.put(HeroClass.DUELIST, Badge.VICTORY_DUELIST);
+		victoryClassBadges.put(HeroClass.CLERIC, Badge.VICTORY_CLERIC);
 
 		victoryClassBadges.put(HeroClass.POTIONIST, Badge.VICTORY_POTIONIST);
 	}
@@ -833,7 +848,9 @@ public class Badges {
 		thirdBossSubclassBadges.put(HeroSubClass.RANGER, Badge.BOSS_SLAIN_3_CHASER); //레인저
 		thirdBossSubclassBadges.put(HeroSubClass.CHAMPION, Badge.BOSS_SLAIN_3_CHAMPION);
 		thirdBossSubclassBadges.put(HeroSubClass.MONK, Badge.BOSS_SLAIN_3_MONK);
-		thirdBossSubclassBadges.put(HeroSubClass.BLADEDANCER, Badge.BOSS_SLAIN_3_BLADEDANCER); //무예가
+        thirdBossSubclassBadges.put(HeroSubClass.BLADEDANCER, Badge.BOSS_SLAIN_3_BLADEDANCER); //무예가
+        thirdBossSubclassBadges.put(HeroSubClass.PRIEST, Badge.BOSS_SLAIN_3_PRIEST);
+		thirdBossSubclassBadges.put(HeroSubClass.PALADIN, Badge.BOSS_SLAIN_3_PALADIN);
 
 		thirdBossSubclassBadges.put(HeroSubClass.PLAGUE_DR, Badge.BOSS_SLAIN_3_PLAGUE_DR);
 		thirdBossSubclassBadges.put(HeroSubClass.ALCHEMIST, Badge.BOSS_SLAIN_3_ALCHEMIST);
@@ -957,7 +974,9 @@ public class Badges {
 			case DUELIST:
 				badge = Badge.MASTERY_DUELIST;
 				break;
-			//cleric
+			case CLERIC:
+				badge = Badge.MASTERY_CLERIC;
+				break;
 			case POTIONIST:
 				badge = Badge.MASTERY_POTIONIST;
 				break;
@@ -1005,12 +1024,18 @@ public class Badges {
 		}
 	}
 
+	public static void validateClericUnlock(){
+		if (!isUnlocked(Badge.UNLOCK_CLERIC)){
+			displayBadge( Badge.UNLOCK_CLERIC );
+		}
+	}
+
 	public static void validatePotionistUnlock(){
 		if (Dungeon.hero != null && !isUnlocked(Badge.UNLOCK_POTIONIST)){
 			displayBadge( Badge.UNLOCK_POTIONIST );
 		}
 	}
-	
+
 	public static void validateMasteryCombo( int n ) {
 		if (!local.contains( Badge.MASTERY_COMBO ) && n == 10) {
 			Badge badge = Badge.MASTERY_COMBO;
@@ -1043,11 +1068,21 @@ public class Badges {
 		}
 	}
 
+	public static void validateTakingTheMick(Object cause){
+		if (cause == Dungeon.hero &&
+				Dungeon.hero.belongings.attackingWeapon() instanceof Pickaxe
+				&& Dungeon.hero.belongings.attackingWeapon().level() >= 20){
+			local.add( Badge.TAKING_THE_MICK );
+			displayBadge(Badge.TAKING_THE_MICK);
+		}
+	}
+
 	public static void validateNoKilling() {
 		if (!local.contains( Badge.NO_MONSTERS_SLAIN ) && Statistics.completedWithNoKilling) {
 			Badge badge = Badge.NO_MONSTERS_SLAIN;
 			local.add( badge );
 			displayBadge( badge );
+			Statistics.completedWithNoKilling = false;
 		}
 	}
 	
@@ -1058,7 +1093,15 @@ public class Badges {
 			displayBadge( badge );
 		}
 	}
-	
+
+	public static void validateManyBuffs(){
+		if (!local.contains( Badge.MANY_BUFFS )) {
+			Badge badge = Badge.MANY_BUFFS;
+			local.add( badge );
+			displayBadge( badge );
+		}
+	}
+
 	public static void validateGamesPlayed() {
 		Badge badge = null;
 		if (Rankings.INSTANCE.totalNumber >= 10 || Rankings.INSTANCE.wonNumber >= 1) {
@@ -1121,6 +1164,11 @@ public class Badges {
 		if( Dungeon.hero.belongings.getItem(RemainsItem.class) != null ){
 			local.add( Badge.HAPPY_END_REMAINS );
 			displayBadge( Badge.HAPPY_END_REMAINS );
+		}
+
+		if (AscensionChallenge.qualifiedForPacifist()) {
+			local.add( Badge.PACIFIST_ASCENT );
+			displayBadge( Badge.PACIFIST_ASCENT );
 		}
 	}
 
@@ -1222,12 +1270,16 @@ public class Badges {
 	};
 
 	//don't show the later badge if the earlier one isn't unlocked
+	//we aren't too aggressive with this, mainly just want to prevent boss spoilers,
+	// and all diamond tier badges must have a gold/plat prerequisite
 	private static final Badge[][] prerequisiteBadges = new Badge[][]{
 			{Badge.BOSS_SLAIN_1, Badge.BOSS_CHALLENGE_1},
 			{Badge.BOSS_SLAIN_2, Badge.BOSS_CHALLENGE_2},
 			{Badge.BOSS_SLAIN_3, Badge.BOSS_CHALLENGE_3},
 			{Badge.BOSS_SLAIN_4, Badge.BOSS_CHALLENGE_4},
 			{Badge.VICTORY,      Badge.BOSS_CHALLENGE_5},
+			{Badge.HAPPY_END,    Badge.PACIFIST_ASCENT},
+			{Badge.VICTORY,      Badge.TAKING_THE_MICK}
 	};
 
 	//If the summary badge is unlocked, don't show the component badges

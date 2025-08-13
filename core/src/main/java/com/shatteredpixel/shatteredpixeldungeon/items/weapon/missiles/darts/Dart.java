@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2024 Evan Debenham
+ * Copyright (C) 2014-2025 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,6 +48,8 @@ import java.util.ArrayList;
 public class Dart extends MissileWeapon {
 
 	{
+		levelKnown = true;
+
 		image = ItemSpriteSheet.DART;
 		hitSound = Assets.Sounds.HIT_ARROW;
 		hitSoundPitch = 1.3f;
@@ -56,6 +58,9 @@ public class Dart extends MissileWeapon {
 		
 		//infinite, even with penalties
 		baseUses = 1000;
+
+		//all darts share a set ID
+		setID = 0L;
 	}
 	
 	protected static final String AC_TIP = "TIP";
@@ -79,8 +84,8 @@ public class Dart extends MissileWeapon {
 	public int min(int lvl) {
 		if (bow != null){
 			if (!(this instanceof TippedDart) && Dungeon.hero.buff(Crossbow.ChargedShot.class) != null){
-				//ability increases base dmg by 37.5%, scaling by 50%
-				return  7 +                     //7 base
+				//ability increases base dmg by 50%, scaling by 50%
+				return  8 +                     //8 base
 						2*bow.buffedLvl() + lvl;//+2 per bow level, +1 per level
 			} else {
 				return  4 +                     //4 base
@@ -96,8 +101,8 @@ public class Dart extends MissileWeapon {
 	public int max(int lvl) {
 		if (bow != null){
 			if (!(this instanceof TippedDart) && Dungeon.hero.buff(Crossbow.ChargedShot.class) != null){
-				//ability increases base dmg by 37.5%, scaling by 50%
-				return  15 +                       //15 base
+				//ability increases base dmg by 50%, scaling by 50%
+				return  16 +                       //16 base
 						4*bow.buffedLvl() + 2*lvl; //+4 per bow level, +2 per level
 			} else {
 				return  12 +                       //12 base
@@ -227,11 +232,11 @@ public class Dart extends MissileWeapon {
 	public String info() {
 		updateCrossbow();
 		if (bow != null && !bow.isIdentified()){
-			int level = bow.level();
-			//temporarily sets the level of the bow to 0 for IDing purposes
-			bow.level(0);
+			Crossbow realBow = bow;
+			//create a temporary bow for IDing purposes
+			bow = new Crossbow();
 			String info = super.info();
-			bow.level(level);
+			bow = realBow;
 			return info;
 		} else {
 			return super.info();
@@ -242,10 +247,20 @@ public class Dart extends MissileWeapon {
 	public boolean isUpgradable() {
 		return false;
 	}
-	
+
+	@Override
+	public boolean isIdentified() {
+		return true;
+	}
+
+	@Override
+	public int defaultQuantity() {
+		return 2;
+	}
+
 	@Override
 	public int value() {
-		return super.value()/2; //half normal value
+		return Math.round(super.value()/2f); //half normal value
 	}
 	
 	private final WndBag.ItemSelector itemSelector = new WndBag.ItemSelector() {

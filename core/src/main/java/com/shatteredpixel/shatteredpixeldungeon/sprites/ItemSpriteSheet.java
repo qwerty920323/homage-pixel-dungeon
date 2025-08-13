@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2024 Evan Debenham
+ * Copyright (C) 2014-2025 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -151,13 +151,14 @@ public class ItemSpriteSheet {
 	public static final int CLOAK_SCRAP     = MISC_CONSUMABLE +18;
 	public static final int BOW_FRAGMENT    = MISC_CONSUMABLE +19;
 	public static final int BROKEN_HILT     = MISC_CONSUMABLE +20;
-	public static final int TRINKET_CATA    = MISC_CONSUMABLE +21;
+	public static final int TORN_PAGE       = MISC_CONSUMABLE +21;
+	public static final int TRINKET_CATA    = MISC_CONSUMABLE +22;
 	public static final int SHATTERED_VIAL  = MISC_CONSUMABLE +23;
 	static{
 		assignItemRect(ANKH,            10, 16);
 		assignItemRect(STYLUS,          12, 13);
 		
-		assignItemRect(SEAL,            9,  15);
+		assignItemRect(SEAL,            13, 13);
 		assignItemRect(TORCH,           12, 15);
 		assignItemRect(BEACON,          16, 15);
 		
@@ -173,15 +174,15 @@ public class ItemSpriteSheet {
 		assignItemRect(MASTERY,         13, 16);
 		assignItemRect(KIT,             16, 15);
 
-		assignItemRect(SEAL_SHARD,      11, 11);
+		assignItemRect(SEAL_SHARD,      12, 12);
 		assignItemRect(BROKEN_STAFF,    14, 10);
 		assignItemRect(CLOAK_SCRAP,      9,  9);
 		assignItemRect(BOW_FRAGMENT,    12,  9);
 		assignItemRect(BROKEN_HILT,      9,  9);
+		assignItemRect(TORN_PAGE,       11, 13);
 
 		assignItemRect(TRINKET_CATA,    12, 11);
-
-		assignItemRect(SHATTERED_VIAL,     11, 12);
+		assignItemRect(SHATTERED_VIAL,  11, 12);
 	}
 	
 	private static final int BOMBS          =                               xy(1, 6);   //16 slots
@@ -220,9 +221,10 @@ public class ItemSpriteSheet {
 	public static final int RAPIER          = WEP_TIER1+3;
 	public static final int DAGGER          = WEP_TIER1+4;
 	public static final int MAGES_STAFF     = WEP_TIER1+5;
-	public static final int KNIFE = WEP_TIER1+6;
+	public static final int KNIFE           = WEP_TIER1+6;
 	static{
 		assignItemRect(WORN_SHORTSWORD, 13, 13);
+		assignItemRect(CUDGEL,          15, 15);
 		assignItemRect(GLOVES,          12, 16);
 		assignItemRect(RAPIER,          13, 14);
 		assignItemRect(DAGGER,          12, 13);
@@ -377,7 +379,7 @@ public class ItemSpriteSheet {
 	public static final int ARMOR_ROGUE     = ARMOR+7;
 	public static final int ARMOR_HUNTRESS  = ARMOR+8;
 	public static final int ARMOR_DUELIST   = ARMOR+9;
-	//cleric
+	public static final int ARMOR_CLERIC    = ARMOR+10;
 	public static final int ARMOR_POTIONIST = ARMOR+11;
 	static{
 		assignItemRect(ARMOR_CLOTH,     15, 12);
@@ -390,6 +392,7 @@ public class ItemSpriteSheet {
 		assignItemRect(ARMOR_ROGUE,     14, 12);
 		assignItemRect(ARMOR_HUNTRESS,  13, 15);
 		assignItemRect(ARMOR_DUELIST,   12, 13);
+		assignItemRect(ARMOR_CLERIC,    13, 14);
 		assignItemRect(ARMOR_POTIONIST, 15, 16);
 	}
 
@@ -456,6 +459,7 @@ public class ItemSpriteSheet {
 	public static final int ARTIFACT_ROSE1      = ARTIFACTS+20;
 	public static final int ARTIFACT_ROSE2      = ARTIFACTS+21;
 	public static final int ARTIFACT_ROSE3      = ARTIFACTS+22;
+	public static final int ARTIFACT_TOME       = ARTIFACTS+23;
 	static{
 		assignItemRect(ARTIFACT_CLOAK,      9,  15);
 		assignItemRect(ARTIFACT_ARMBAND,    16, 13);
@@ -480,6 +484,7 @@ public class ItemSpriteSheet {
 		assignItemRect(ARTIFACT_ROSE1,      14, 14);
 		assignItemRect(ARTIFACT_ROSE2,      14, 14);
 		assignItemRect(ARTIFACT_ROSE3,      14, 14);
+		assignItemRect(ARTIFACT_TOME,       14, 16);
 	}
 
 	private static final int TRINKETS        =                               xy(9, 17);  //24 slots
@@ -498,6 +503,7 @@ public class ItemSpriteSheet {
 	public static final int BLOOD_VIAL      = TRINKETS+12;
 	public static final int OBLIVION_SHARD  = TRINKETS+13;
 	public static final int CHAOTIC_CENSER  = TRINKETS+14;
+	public static final int FERRET_TUFT     = TRINKETS+15;
 	static{
 		assignItemRect(RAT_SKULL,       16, 11);
 		assignItemRect(PARCHMENT_SCRAP, 10, 14);
@@ -514,6 +520,7 @@ public class ItemSpriteSheet {
 		assignItemRect(BLOOD_VIAL,      6,  15);
 		assignItemRect(OBLIVION_SHARD,  7,  14);
 		assignItemRect(CHAOTIC_CENSER,  13, 15);
+		assignItemRect(FERRET_TUFT,     16, 15);
 	}
 
 	private static final int SCROLLS        =                               xy(1, 19);  //16 slots

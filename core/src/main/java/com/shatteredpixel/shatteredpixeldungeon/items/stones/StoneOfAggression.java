@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2024 Evan Debenham
+ * Copyright (C) 2014-2025 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.FlavourBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
-import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
 import com.watabou.noosa.audio.Sample;
@@ -52,15 +51,10 @@ public class StoneOfAggression extends Runestone {
 			} else {
 				Buff.prolong(ch, Aggression.class, Aggression.DURATION);
 			}
-			CellEmitter.center(cell).start( Speck.factory( Speck.SCREAM ), 0.3f, 3 );
-			Sample.INSTANCE.play( Assets.Sounds.READ );
-		} else {
-			//Item.onThrow
-			Heap heap = Dungeon.level.drop( this, cell );
-			if (!heap.isEmpty()) {
-				heap.sprite.drop( cell );
-			}
 		}
+
+		CellEmitter.center(cell).start( Speck.factory( Speck.SCREAM ), 0.3f, 3 );
+		Sample.INSTANCE.play( Assets.Sounds.READ );
 		
 	}
 

@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2024 Evan Debenham
+ * Copyright (C) 2014-2025 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,9 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.QuickSlot;
 import com.shatteredpixel.shatteredpixeldungeon.SPDSettings;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.ArmorAbility;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.cleric.AscendedForm;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.cleric.PowerOfMany;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.cleric.Trinity;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.duelist.Challenge;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.duelist.ElementalStrike;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.duelist.Feint;
@@ -54,6 +57,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.Vial;
 import com.shatteredpixel.shatteredpixeldungeon.items.Waterskin;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.ClothArmor;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.CloakOfShadows;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.HolyTome;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.DriedRose;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TalismanOfForesight;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TimekeepersHourglass;
@@ -66,6 +70,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfInvisibili
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfLevitation;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfLiquidFlame;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfMindVision;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfPurity;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfStrength;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfToxicGas;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.brews.AquaBrew;
@@ -80,6 +85,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfLullaby;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfMagicMapping;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfMirrorImage;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfRage;
+import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfRemoveCurse;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTerror;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfUpgrade;
 import com.shatteredpixel.shatteredpixeldungeon.items.spells.CurseInfusion;
@@ -100,6 +106,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfRegrowth;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfTransfusion;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfWarding;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.SpiritBow;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Cudgel;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Dagger;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Gloves;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
@@ -122,7 +129,7 @@ public enum HeroClass {
 	ROGUE( HeroSubClass.ASSASSIN, HeroSubClass.FREERUNNER, HeroSubClass.GRAVEROBBER), // 도굴꾼 추가
 	HUNTRESS( HeroSubClass.SNIPER, HeroSubClass.WARDEN, HeroSubClass.RANGER),         // 레인저 추가
 	DUELIST( HeroSubClass.CHAMPION, HeroSubClass.MONK, HeroSubClass.BLADEDANCER ),    // 무예가 추가
-	//cleric
+    CLERIC( HeroSubClass.PRIEST, HeroSubClass.PALADIN ),
 	POTIONIST( HeroSubClass.PLAGUE_DR, HeroSubClass.ALCHEMIST, HeroSubClass.BOMBER );      // 약재사
 
 	private HeroSubClass[] subClasses;
@@ -171,7 +178,9 @@ public enum HeroClass {
 				initDuelist( hero );
 				break;
 
-			//c
+			case CLERIC:
+				initCleric( hero );
+				break;
 
 			case POTIONIST:
 				initPotionist( hero );
@@ -201,6 +210,8 @@ public enum HeroClass {
 				return Badges.Badge.MASTERY_HUNTRESS;
 			case DUELIST:
 				return Badges.Badge.MASTERY_DUELIST;
+			case CLERIC:
+				return Badges.Badge.MASTERY_CLERIC;
 			case POTIONIST:
 				return Badges.Badge.MASTERY_POTIONIST;
 		}
@@ -210,7 +221,8 @@ public enum HeroClass {
 	private static void initWarrior( Hero hero ) {
 		(hero.belongings.weapon = new WornShortsword()).identify();
 		ThrowingStone stones = new ThrowingStone();
-		stones.quantity(3).collect();
+		stones.identify().collect();
+
 		Dungeon.quickslot.setSlot(0, stones);
 
 		if (hero.belongings.armor != null){
@@ -220,37 +232,6 @@ public enum HeroClass {
 
 		new PotionOfHealing().identify();
 		new ScrollOfRage().identify();
-
-		//테스트용 아이템
-		TengusMask tm = new TengusMask();
-		tm.quantity(1).collect();
-		PotionOfExperience pe = new PotionOfExperience();
-		pe.quantity(30).collect();
-		PotionOfLevitation wwdd = new PotionOfLevitation();
-		wwdd.quantity(30).collect();
-		StoneOfAugmentation rrs = new StoneOfAugmentation();
-		rrs.quantity(100).collect();
-		PotionOfMindVision xcc = new PotionOfMindVision();
-		xcc.quantity(100).collect();
-		StoneOfEnchantment sss = new StoneOfEnchantment();
-		sss.quantity(100).collect();
-		StoneOfFlock gg = new StoneOfFlock();
-		gg.quantity(100).collect();
-		ScrollOfMirrorImage we = new ScrollOfMirrorImage();
-		we.quantity(100).collect();
-
-		CurseInfusion cee = new CurseInfusion();
-		cee.quantity(100).collect();
-		ScrollOfUpgrade su = new ScrollOfUpgrade();
-		su.quantity(30).collect();
-
-		DriedRose w = new DriedRose();
-		w.quantity(1).collect();
-		w.cursed = true;
-		TimekeepersHourglass dff = new TimekeepersHourglass();
-		dff.quantity(1).collect();
-		ClothArmor wer = new ClothArmor();
-		wer.quantity(10).collect();
 	}
 
 	private static void initMage( Hero hero ) {
@@ -265,49 +246,6 @@ public enum HeroClass {
 
 		new ScrollOfUpgrade().identify();
 		new PotionOfLiquidFlame().identify();
-
-		//테스트용 아이템
-		TengusMask tm = new TengusMask();
-		tm.quantity(1).collect();
-
-		PotionOfExperience pe = new PotionOfExperience();
-		pe.quantity(30).collect();
-		TalismanOfForesight ss = new TalismanOfForesight();
-		ss.quantity(1).collect();
-		AquaBrew ds = new AquaBrew();
-		ds.quantity(130).collect();
-
-		ScrollOfUpgrade su = new ScrollOfUpgrade();
-		su.quantity(30).collect();
-		ScrollOfIdentify d = new ScrollOfIdentify();
-		d.quantity(30).collect();
-
-		WandOfFireblast sa = new WandOfFireblast();
-		sa.quantity(1).collect();
-		WandOfLightning asa = new WandOfLightning();
-		asa.quantity(1).collect();
-		WandOfTransfusion wa = new WandOfTransfusion();
-		wa.quantity(1).collect();
-		WandOfFrost wad = new WandOfFrost();
-		wad.quantity(1).collect();
-		WandOfPrismaticLight sdss = new WandOfPrismaticLight();
-		sdss.quantity(1).collect();
-		WandOfBlastWave sdsdaw = new WandOfBlastWave();
-		sdsdaw.quantity(1).collect();
-		WandOfRegrowth rre = new WandOfRegrowth();
-        rre.quantity(1).collect();
-		WandOfCorrosion wes = new WandOfCorrosion();
-		wes.quantity(1).collect();
-		WandOfLivingEarth eewwaa = new WandOfLivingEarth();
-		eewwaa.quantity(1).collect();
-		WandOfWarding sth = new WandOfWarding();
-		sth.quantity(1).collect();
-		WandOfDisintegration tyy = new WandOfDisintegration();
-		tyy.quantity(1).collect();
-		WandOfCorruption eewaa = new WandOfCorruption();
-		eewaa.quantity(1).collect();
-
-	//
 	}
 
 	private static void initRogue( Hero hero ) {
@@ -318,25 +256,13 @@ public enum HeroClass {
 		hero.belongings.artifact.activate( hero );
 
 		ThrowingKnife knives = new ThrowingKnife();
-		knives.quantity(3).collect();
+		knives.identify().collect();
 
 		Dungeon.quickslot.setSlot(0, cloak);
 		Dungeon.quickslot.setSlot(1, knives);
 
 		new ScrollOfMagicMapping().identify();
 		new PotionOfInvisibility().identify();
-
-		//테스트용 아이템
-		TengusMask tm = new TengusMask();
-		tm.quantity(1).collect();
-		PotionOfExperience pe = new PotionOfExperience();
-		pe.quantity(100).collect();
-		ScrollOfUpgrade waa = new ScrollOfUpgrade();
-		waa.quantity(100).collect();
-		StoneOfEnchantment waaa = new StoneOfEnchantment();
-		waaa.quantity(310).collect();
-		CurseInfusion sa = new CurseInfusion();
-		sa.quantity(310).collect();
 	}
 
 	private static void initHuntress( Hero hero ) {
@@ -349,21 +275,6 @@ public enum HeroClass {
 
 		new PotionOfMindVision().identify();
 		new ScrollOfLullaby().identify();
-
-		//테스트용 아이템
-		TengusMask tm = new TengusMask();
-		tm.quantity(1).collect();
-
-		PotionOfExperience pe = new PotionOfExperience();
-		pe.quantity(30).collect();
-		PotionOfMindVision waa = new PotionOfMindVision();
-		waa.quantity(30).collect();
-		StoneOfEnchantment waaa = new StoneOfEnchantment();
-		waaa.quantity(310).collect();
-		RingOfArcana yy = new RingOfArcana();
-		yy.quantity(1).collect();
-		yy.level(10);
-
 	}
 
 	private static void initDuelist( Hero hero ) {
@@ -372,59 +283,43 @@ public enum HeroClass {
 		hero.belongings.weapon.activate(hero);
 
 		ThrowingSpike spikes = new ThrowingSpike();
-		spikes.quantity(2).collect();
+		spikes.quantity(2).identify().collect(); //set quantity is 3, but Duelist starts with 2
 
 		Dungeon.quickslot.setSlot(0, hero.belongings.weapon);
 		Dungeon.quickslot.setSlot(1, spikes);
 
 		new PotionOfStrength().identify();
 		new ScrollOfMirrorImage().identify();
-
-		//테스트용 아이템
-		TengusMask tm = new TengusMask();
-		tm.quantity(1).collect();
 	}
 
-	//c
+	private static void initCleric( Hero hero ) {
 
-	private static void initPotionist( Hero hero ) {
+		(hero.belongings.weapon = new Cudgel()).identify();
+		hero.belongings.weapon.activate(hero);
 
-		(hero.belongings.weapon = new Knife()).identify();
-		Vial vial = new Vial();
-		vial.quantity(1).collect();
- 
-		Dungeon.quickslot.setSlot(0, vial);
+		HolyTome tome = new HolyTome();
+		(hero.belongings.artifact = tome).identify();
+		hero.belongings.artifact.activate( hero );
 
-		new PotionOfToxicGas().identify();
-		new ScrollOfTerror().identify();
+		Dungeon.quickslot.setSlot(0, tome);
 
-		//테스트용 아이템
-		TengusMask tm = new TengusMask();
-		tm.quantity(1).collect();
-		KingsCrown ef = new KingsCrown();
-		ef.quantity(1).collect();
-
-		PotionOfExperience ees = new PotionOfExperience();
-		ees.quantity(100).collect();
-		PotionOfDivineInspiration sddw = new PotionOfDivineInspiration();
-		sddw.quantity(100).collect();
-		PotionOfMastery w = new PotionOfMastery();
-		w.quantity(100).collect();
-		UnstableBrew h = new UnstableBrew();
-		h.quantity(100).collect();
-		Bomb yjyj = new Bomb();
-		yjyj.quantity(100).collect();
-		ElixirOfArcaneArmor yy = new ElixirOfArcaneArmor();
-		yy.quantity(100).collect();
-		ElixirOfMight uu = new ElixirOfMight();
-		uu.quantity(100).collect();
-		Rotberry.Seed jj = new Rotberry.Seed();
-		jj.quantity(100).collect();
-		Starflower.Seed ii = new Starflower.Seed();
-		ii.quantity(100).collect();
+		new PotionOfPurity().identify();
+		new ScrollOfRemoveCurse().identify();
 	}
 
-	public String title() {
+    private static void initPotionist( Hero hero ) {
+
+        (hero.belongings.weapon = new Knife()).identify();
+        Vial vial = new Vial();
+        vial.quantity(1).collect();
+
+        Dungeon.quickslot.setSlot(0, vial);
+
+        new PotionOfToxicGas().identify();
+        new ScrollOfTerror().identify();
+    }
+
+        public String title() {
 		return Messages.get(HeroClass.class, name());
 	}
 
@@ -452,7 +347,8 @@ public enum HeroClass {
 				return new ArmorAbility[]{new SpectralBlades(), new NaturesPower(), new SpiritHawk()};
 			case DUELIST:
 				return new ArmorAbility[]{new Challenge(), new ElementalStrike(), new Feint()};
-
+			case CLERIC:
+				return new ArmorAbility[]{new AscendedForm(), new Trinity(), new PowerOfMany()};
 			case POTIONIST:
 				return new ArmorAbility[]{new Homunculus(), new Fleeing(), new VialBrewing()};
 		}
@@ -470,7 +366,8 @@ public enum HeroClass {
 				return Assets.Sprites.HUNTRESS;
 			case DUELIST:
 				return Assets.Sprites.DUELIST;
-
+			case CLERIC:
+				return Assets.Sprites.CLERIC;
 			case POTIONIST:
 				return Assets.Sprites.POTIONIST;
 		}
@@ -488,7 +385,8 @@ public enum HeroClass {
 				return Assets.Splashes.HUNTRESS;
 			case DUELIST:
 				return Assets.Splashes.DUELIST;
-
+			case CLERIC:
+				return Assets.Splashes.CLERIC;
 			case POTIONIST:
 				return Assets.Splashes.POTIONIST;
 		}
@@ -509,7 +407,8 @@ public enum HeroClass {
 				return Badges.isUnlocked(Badges.Badge.UNLOCK_HUNTRESS);
 			case DUELIST:
 				return Badges.isUnlocked(Badges.Badge.UNLOCK_DUELIST);
-
+			case CLERIC:
+				return Badges.isUnlocked(Badges.Badge.UNLOCK_CLERIC);
 			case POTIONIST:
 				return Badges.isUnlocked(Badges.Badge.UNLOCK_POTIONIST);
 		}

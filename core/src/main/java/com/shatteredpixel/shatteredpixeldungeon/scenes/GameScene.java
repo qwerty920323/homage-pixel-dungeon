@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2024 Evan Debenham
+ * Copyright (C) 2014-2025 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -140,6 +140,7 @@ import com.watabou.noosa.Visual;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.noosa.particles.Emitter;
 import com.watabou.noosa.tweeners.Tweener;
+import com.watabou.utils.Callback;
 import com.watabou.utils.DeviceCompat;
 import com.watabou.utils.GameMath;
 import com.watabou.utils.Point;
@@ -1004,7 +1005,7 @@ public class GameScene extends PixelScene {
 
 		float offset = Camera.main.centerOffset.y;
 		banner.x = align( uiCamera, (uiCamera.width - banner.width) / 2 );
-		banner.y = align( uiCamera, (uiCamera.height - banner.height) / 2 - banner.height/2 - 16 - offset );
+		banner.y = align( uiCamera, (uiCamera.height - banner.height) / 2 - 32 - offset );
 
 		addToFront( banner );
 	}
@@ -1363,12 +1364,18 @@ public class GameScene extends PixelScene {
 
 	public static void flash( int color, boolean lightmode ) {
 		if (scene != null) {
-			//greater than 0 to account for negative values (which have the first bit set to 1)
-			if (color > 0 && color < 0x01000000) {
-				scene.fadeIn(0xFF000000 | color, lightmode);
-			} else {
-				scene.fadeIn(color, lightmode);
-			}
+			//don't want to do this on the actor thread
+			ShatteredPixelDungeon.runOnRenderThread(new Callback() {
+				@Override
+				public void call() {
+					//greater than 0 to account for negative values (which have the first bit set to 1)
+					if (color > 0 && color < 0x01000000) {
+						scene.fadeIn(0xFF000000 | color, lightmode);
+					} else {
+						scene.fadeIn(color, lightmode);
+					}
+				}
+			});
 		}
 	}
 
@@ -1389,7 +1396,7 @@ public class GameScene extends PixelScene {
 
 			@Override
 			public void update() {
-				alpha(gameOver.am);
+				alpha((float)Math.pow(gameOver.am, 2));
 				super.update();
 			}
 		};
@@ -1400,7 +1407,7 @@ public class GameScene extends PixelScene {
 		restart.setSize(Math.max(80, restart.reqWidth()), 20);
 		restart.setPos(
 				align(uiCamera, (restart.camera.width - restart.width()) / 2),
-				align(uiCamera, (restart.camera.height - restart.height()) / 2 + restart.height()/2 + 16 - offset)
+				align(uiCamera, (restart.camera.height - restart.height()) / 2 + 8 - offset)
 		);
 		scene.add(restart);
 
@@ -1412,7 +1419,7 @@ public class GameScene extends PixelScene {
 
 			@Override
 			public void update() {
-				alpha(gameOver.am);
+				alpha((float)Math.pow(gameOver.am, 2));
 				super.update();
 			}
 		};

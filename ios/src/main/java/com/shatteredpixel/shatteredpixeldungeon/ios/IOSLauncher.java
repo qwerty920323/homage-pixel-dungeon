@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2024 Evan Debenham
+ * Copyright (C) 2014-2025 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,8 @@ import com.badlogic.gdx.Files;
 import com.badlogic.gdx.backends.iosrobovm.IOSApplication;
 import com.badlogic.gdx.backends.iosrobovm.IOSApplicationConfiguration;
 import com.badlogic.gdx.backends.iosrobovm.IOSPreferences;
+import com.badlogic.gdx.backends.iosrobovm.bindings.metalangle.MGLDrawableColorFormat;
+import com.badlogic.gdx.backends.iosrobovm.bindings.metalangle.MGLDrawableDepthFormat;
 import com.badlogic.gdx.graphics.glutils.HdpiMode;
 import com.shatteredpixel.shatteredpixeldungeon.SPDSettings;
 import com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon;
@@ -42,10 +44,7 @@ import org.robovm.apple.foundation.NSException;
 import org.robovm.apple.foundation.NSMutableDictionary;
 import org.robovm.apple.foundation.NSObject;
 import org.robovm.apple.foundation.NSString;
-import org.robovm.apple.glkit.GLKViewDrawableColorFormat;
-import org.robovm.apple.glkit.GLKViewDrawableDepthFormat;
 import org.robovm.apple.uikit.UIApplication;
-import org.robovm.apple.uikit.UIRectEdge;
 
 import java.io.File;
 
@@ -95,18 +94,12 @@ public class IOSLauncher extends IOSApplication.Delegate {
 
 		IOSApplicationConfiguration config = new IOSApplicationConfiguration();
 
-		config.colorFormat = GLKViewDrawableColorFormat.RGBA8888;
-		config.depthFormat = GLKViewDrawableDepthFormat.None;
+		config.colorFormat = MGLDrawableColorFormat.RGBA8888;
+		config.depthFormat = MGLDrawableDepthFormat.None;
 		config.hdpiMode = HdpiMode.Pixels;
 
 		config.hideHomeIndicator = SPDSettings.fullscreen();
 		config.overrideRingerSwitch = SPDSettings.ignoreSilentMode();
-
-		//game has to ignore input from system gestures itself, otherwise there is lag on
-		//every button press on the corner of the screen. Currently this is accomplished via
-		//clearing all pointer events on the first frame after the game is resumed.
-		//TODO this may not be needed anymore with libgdx 1.12.1
-		config.screenEdgesDeferringSystemGestures = UIRectEdge.All;
 
 		CGRect statusBarFrame = UIApplication.getSharedApplication().getStatusBarFrame();
 		double statusBarHeight = Math.min(statusBarFrame.getWidth(), statusBarFrame.getHeight());
@@ -117,6 +110,7 @@ public class IOSLauncher extends IOSApplication.Delegate {
 			UIApplication.getSharedApplication().setStatusBarHidden(true);
 		}
 
+		config.useHaptics = true;
 		config.useAccelerometer = false;
 		config.useCompass = false;
 

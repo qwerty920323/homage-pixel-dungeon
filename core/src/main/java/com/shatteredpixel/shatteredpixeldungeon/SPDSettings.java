@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2024 Evan Debenham
+ * Copyright (C) 2014-2025 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -146,6 +146,8 @@ public class SPDSettings extends GameSettings {
 	public static final String KEY_SYSTEMFONT	= "system_font";
 	public static final String KEY_VIBRATION    = "vibration";
 
+	public static final String KEY_GAMES_SORT    = "games_sort";
+
 	//0 = mobile, 1 = mixed (large without inventory in main UI), 2 = large
 	public static void interfaceSize( int value ){
 		put( KEY_UI_SIZE, value );
@@ -210,7 +212,8 @@ public class SPDSettings extends GameSettings {
 
 	public static boolean systemFont(){
 		return getBoolean(KEY_SYSTEMFONT,
-				(language() == Languages.KOREAN || language() == Languages.CHINESE || language() == Languages.JAPANESE));
+				(language() == Languages.CHI_SMPL || language() == Languages.CHI_TRAD
+						|| language() == Languages.KOREAN || language() == Languages.JAPANESE));
 	}
 
 	public static void vibration(boolean value){
@@ -219,6 +222,14 @@ public class SPDSettings extends GameSettings {
 
 	public static boolean vibration(){
 		return getBoolean(KEY_VIBRATION, true);
+	}
+
+	public static String gamesInProgressSort(){
+		return getString(KEY_GAMES_SORT, "level");
+	}
+
+	public static void gamesInProgressSort(String value){
+		put(KEY_GAMES_SORT, value);
 	}
 
 	//Game State

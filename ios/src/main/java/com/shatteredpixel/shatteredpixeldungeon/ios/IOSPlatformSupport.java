@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2024 Evan Debenham
+ * Copyright (C) 2014-2025 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,15 +35,30 @@ import com.watabou.noosa.Game;
 import com.watabou.utils.PlatformSupport;
 
 import org.robovm.apple.audiotoolbox.AudioServices;
+import org.robovm.apple.foundation.NSURL;
 import org.robovm.apple.systemconfiguration.SCNetworkReachability;
 import org.robovm.apple.systemconfiguration.SCNetworkReachabilityFlags;
 import org.robovm.apple.uikit.UIApplication;
+import org.robovm.apple.uikit.UIApplicationOpenURLOptions;
 
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class IOSPlatformSupport extends PlatformSupport {
+
+	@Override
+	public boolean openURI( String uri ){
+		//backported from libGDX 1.13.1, required for opening URLs on modern iOS
+		UIApplication uiApp = UIApplication.getSharedApplication();
+		NSURL url = new NSURL(uri);
+		if (uiApp.canOpenURL(url)) {
+			uiApp.openURL(url, new UIApplicationOpenURLOptions(), null);
+			return true;
+		}
+		return false;
+	}
+
 	@Override
 	public void updateDisplaySize() {
 		//non-zero safe insets on left/top/right means device has a notch, show status bar
@@ -169,17 +184,17 @@ public class IOSPlatformSupport extends PlatformSupport {
 		}
 	}
 
-	//splits on newlines, underscores, and chinese/japaneses characters
+	//splits on newline (for layout), chinese/japanese (for font choice), and '_'/'**' (for highlighting)
 	private Pattern regularsplitter = Pattern.compile(
-			"(?<=\n)|(?=\n)|(?<=_)|(?=_)|" +
+			"(?<=\n)|(?=\n)|(?<=_)|(?=_)|(?<=\\*\\*)|(?=\\*\\*)|" +
 					"(?<=\\p{InHiragana})|(?=\\p{InHiragana})|" +
 					"(?<=\\p{InKatakana})|(?=\\p{InKatakana})|" +
 					"(?<=\\p{InCJK_Unified_Ideographs})|(?=\\p{InCJK_Unified_Ideographs})|" +
 					"(?<=\\p{InCJK_Symbols_and_Punctuation})|(?=\\p{InCJK_Symbols_and_Punctuation})");
 
-	//additionally splits on words, so that each word can be arranged individually
+	//additionally splits on spaces, so that each word can be laid out individually
 	private Pattern regularsplitterMultiline = Pattern.compile(
-			"(?<= )|(?= )|(?<=\n)|(?=\n)|(?<=_)|(?=_)|" +
+			"(?<= )|(?= )|(?<=\n)|(?=\n)|(?<=_)|(?=_)|(?<=\\*\\*)|(?=\\*\\*)|" +
 					"(?<=\\p{InHiragana})|(?=\\p{InHiragana})|" +
 					"(?<=\\p{InKatakana})|(?=\\p{InKatakana})|" +
 					"(?<=\\p{InCJK_Unified_Ideographs})|(?=\\p{InCJK_Unified_Ideographs})|" +

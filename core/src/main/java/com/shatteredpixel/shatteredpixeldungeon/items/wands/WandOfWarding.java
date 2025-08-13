@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2024 Evan Debenham
+ * Copyright (C) 2014-2025 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Vertigo;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.WardingEffect;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.spells.Stasis;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.NPC;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.FloatingText;
@@ -65,6 +66,7 @@ public class WandOfWarding extends Wand {
 
 	{
 		image = ItemSpriteSheet.WAND_WARDING;
+		usesTargeting = false; //player usually targets wards or spaces, not enemies
 	}
 
 	@Override
@@ -72,6 +74,13 @@ public class WandOfWarding extends Wand {
 		if (cursed)                                 return super.collisionProperties(target);
 		else if (!Dungeon.level.heroFOV[target])    return Ballistica.PROJECTILE;
 		else                                        return Ballistica.STOP_TARGET;
+	}
+
+	@Override
+	public void execute(Hero hero, String action) {
+		//cursed warding does use targeting as it's just doing regular cursed zaps
+		usesTargeting = cursed && cursedKnown;
+		super.execute(hero, action);
 	}
 
 	private boolean wardAvailable = true;
@@ -85,7 +94,11 @@ public class WandOfWarding extends Wand {
 				currentWardEnergy += ((Ward) ch).tier;
 			}
 		}
-		
+
+		if (Stasis.getStasisAlly() instanceof Ward){
+			currentWardEnergy += ((Ward) Stasis.getStasisAlly()).tier;
+		}
+
 		int maxWardEnergy = 0;
 		for (Buff buff : curUser.buffs()){
 			if (buff instanceof Wand.Charger){
@@ -154,10 +167,7 @@ public class WandOfWarding extends Wand {
 			Dungeon.level.occupyCell(ward);
 			ward.sprite.emitter().burst(MagicMissile.WardParticle.UP, ward.tier);
 			Dungeon.level.pressCell(target);
-		}
-		//scholar
-		if (Dungeon.hero.subClass == HeroSubClass.SCHOLAR) {
-			scholarAbility(bolt, bolt.collisionPos);
+
 		}
 	}
 
@@ -305,18 +315,28 @@ public class WandOfWarding extends Wand {
 			switch(tier){
 				default:
 					return;
+				case 2:
+					heal = Math.round(1 * healFactor);
+					break;
+				case 3:
+					heal = Math.round(Random.IntRange(1, 2) * healFactor);
+					break;
 				case 4:
-					heal = Math.round(9 * healFactor);
+					heal = Math.round(9 * healFactor); //9/5 1.8
 					break;
 				case 5:
-					heal = Math.round(12 * healFactor);
+					heal = Math.round(12 * healFactor); //12/6, 2
 					break;
 				case 6:
-					heal = Math.round(16 * healFactor);
+					heal = Math.round(16 * healFactor); //16/7, 2.28
 					break;
 			}
 
-			HP = Math.min(HT, HP+heal);
+			if (tier <= 3){
+				totalZaps = (Math.max(0, totalZaps-heal));
+			} else {
+				HP = Math.min(HT, HP + heal);
+			}
 			if (sprite != null) sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(heal), FloatingText.HEALING);
 
 		}
@@ -365,12 +385,6 @@ public class WandOfWarding extends Wand {
 			enemy.damage( dmg, this );
 			if (enemy.isAlive()){
 				Wand.wandProc(enemy, wandLevel, 1);
-				//scholar
-				WardingEffect effect = buff(WardingEffect.class);
-				if (effect != null && effect.atkCount > 0) {
-					WardingEffect.setBonusEffect(this, enemy);
-					effect.afterAttack();
-				}
 			}
 
 			if (!enemy.isAlive() && enemy == Dungeon.hero) {
@@ -474,14 +488,7 @@ public class WandOfWarding extends Wand {
 					return Messages.get(this, "desc_generic_sentry");
 				}
 			} else {
-				String result = Messages.get(this, "desc_" + tier, 2 + wandLevel, 8 + 4 * wandLevel, tier);
-				WardingEffect effect = buff(WardingEffect.class);
-				if (effect != null && effect.atkCount > 0){
-					result += "\n\n" + Messages.get(WardingEffect.class, "terr", Dungeon.level.tileName(Dungeon.level.map[pos]));
-					result += " " + Messages.get(WardingEffect.class, WardingEffect.setBonusEffect(this, null), name(), 2);
-					result += " " + Messages.get(WardingEffect.class, "range", effect.atkCount, effect.left);
-				}
-				return result;
+				return Messages.get(this, "desc_" + tier, 2 + wandLevel, 8 + 4 * wandLevel, tier);
 			}
 		}
 		
@@ -512,46 +519,6 @@ public class WandOfWarding extends Wand {
 			viewDistance = 3 + tier;
 			wandLevel = bundle.getInt(WAND_LEVEL);
 			totalZaps = bundle.getInt(TOTAL_ZAPS);
-		}
-	}
-
-	//scholar
-	@Override
-	public int bonusRange () {return super.bonusRange()+2;}
-	@Override
-	public int scholarTurnCount(){
-		return super.scholarTurnCount() + 30;
-	}
-	@Override
-	public void scholarAbility(Ballistica bolt, int cell) {
-		super.scholarAbility(bolt, cell);
-
-		int pos = bolt.collisionPos;
-
-		Char ch = Actor.findChar(pos);
-
-		if (ch != null && ch instanceof Ward) {
-			Buff.affect(ch, WardingEffect.class).setWarding(scholarTurnCount(), bonusRange());
-
-			String terr = WardingEffect.setBonusEffect(((Ward) ch), null);
-
-            switch (terr) {
-                case "cripple":
-                    CellEmitter.bottom(ch.pos).start(EarthParticle.FACTORY, 0.05f, 8);
-                    break;
-                case "burning":
-                    ch.sprite.emitter().burst(FlameParticle.FACTORY, 12);
-                    break;
-                case "chill":
-					ch.sprite.emitter().burst(SnowParticle.FACTORY, 14);
-                    break;
-                case "paralysis":
-					ch.sprite.centerEmitter().burst(SparkParticle.FACTORY, 14);
-                    break;
-                case "roots":
-					CellEmitter.get(ch.pos).burst(LeafParticle.GENERAL, 14);
-                    break;
-            }
 		}
 	}
 }

@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2024 Evan Debenham
+ * Copyright (C) 2014-2025 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.SacrificialFire;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.SmokeScreen;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Web;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.WellWater;
@@ -46,9 +47,13 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Regeneration;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.RevealedArea;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Shadows;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.cleric.PowerOfMany;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.huntress.SpiritHawk;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.spells.DivineSense;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.spells.Stasis;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.potionist.Homunculus;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.GnollGeomancer;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mimic;
@@ -60,8 +65,10 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Blacksmith;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Sheep;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Splash;
+import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.FlowParticle;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SnowParticle;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SacrificialParticle;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.WindParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
@@ -361,8 +368,8 @@ public abstract class Level implements Bundlable {
 
 		version = bundle.getInt( VERSION );
 		
-		//saves from before v1.4.3 are not supported
-		if (version < ShatteredPixelDungeon.v1_4_3){
+		//saves from before v2.3.2 are not supported
+		if (version < ShatteredPixelDungeon.v2_4_2){
 			throw new RuntimeException("old save");
 		}
 
@@ -498,7 +505,7 @@ public abstract class Level implements Bundlable {
 	public String waterTex() {
 		return null;
 	}
-
+	
 	abstract protected boolean build();
 	
 	private ArrayList<Class<?extends Mob>> mobsToSpawn = new ArrayList<>();
@@ -592,6 +599,15 @@ public abstract class Level implements Bundlable {
 		if (foodImmune != null) foodImmune.detach();
 		ScrollOfChallenge.ChallengeArena arena = Dungeon.hero.buff(ScrollOfChallenge.ChallengeArena.class);
 		if (arena != null) arena.detach();
+		//awareness also doesn't, honestly it's weird that it's a buff
+		Awareness awareness = Dungeon.hero.buff(Awareness.class);
+		if (awareness != null) awareness.detach();
+
+		Char ally = Stasis.getStasisAlly();
+		if (Char.hasProp(ally, Char.Property.IMMOVABLE)){
+			Dungeon.hero.buff(Stasis.StasisBuff.class).act();
+			GLog.w(Messages.get(Stasis.StasisBuff.class, "left_behind"));
+		}
 
 		//spend the hero's partial turns,  so the hero cannot take partial turns between floors
 		Dungeon.hero.spendToWhole();
@@ -732,7 +748,9 @@ public abstract class Level implements Bundlable {
 		PathFinder.buildDistanceMap(Dungeon.hero.pos, BArray.or(passable, avoid, null));
 
 		Mob mob = createMob();
-		mob.state = mob.WANDERING;
+		if (mob.state != mob.PASSIVE) {
+			mob.state = mob.WANDERING;
+		}
 		int tries = 30;
 		do {
 			mob.pos = randomRespawnCell(mob);
@@ -920,6 +938,12 @@ public abstract class Level implements Bundlable {
 		level.pit[cell]			    = (flags & Terrain.PIT) != 0;
 		level.water[cell]			= terrain == Terrain.WATER;
 
+		if (level instanceof SewerLevel){
+			if (level.map[cell] == Terrain.REGION_DECO || level.map[cell] == Terrain.REGION_DECO_ALT){
+				level.flamable[cell] = true;
+			}
+		}
+
 		for (int i : PathFinder.NEIGHBOURS9){
 			i = cell + i;
 			if (level.solid[i]){
@@ -1071,8 +1095,8 @@ public abstract class Level implements Bundlable {
 		int terr = map[cell];
 		if (terr == Terrain.EMPTY || terr == Terrain.GRASS ||
 				terr == Terrain.EMBERS || terr == Terrain.EMPTY_SP ||
-				terr == Terrain.HIGH_GRASS || terr == Terrain.FURROWED_GRASS ||
-				terr == Terrain.EMPTY_DECO ){
+				terr == Terrain.HIGH_GRASS || terr == Terrain.FURROWED_GRASS
+				|| terr == Terrain.EMPTY_DECO){
 			set(cell, Terrain.WATER);
 			GameScene.updateMap(cell);
 			return true;
@@ -1101,6 +1125,13 @@ public abstract class Level implements Bundlable {
 		if (!ch.isImmune(Web.class) && Blob.volumeAt(ch.pos, Web.class) > 0){
 			blobs.get(Web.class).clear(ch.pos);
 			Web.affectChar( ch );
+		}
+
+		if (Blob.volumeAt(ch.pos, SacrificialFire.class) > 0 && ch.buff( SacrificialFire.Marked.class ) == null){
+			if (Dungeon.level.heroFOV[ch.pos]) {
+				CellEmitter.get(ch.pos).burst( SacrificialParticle.FACTORY, 5 );
+			}
+			Buff.prolong( ch, SacrificialFire.Marked.class, SacrificialFire.Marked.DURATION );
 		}
 
 		if (!ch.flying){
@@ -1375,15 +1406,28 @@ public abstract class Level implements Bundlable {
 				if (((Hero) c).hasTalent(Talent.HEIGHTENED_SENSES)){
 					mindVisRange = 1+((Hero) c).pointsInTalent(Talent.HEIGHTENED_SENSES);
 				}
+				if (c.buff(DivineSense.DivineSenseTracker.class) != null){
+					if (((Hero) c).heroClass == HeroClass.CLERIC){
+						mindVisRange = 4+4*((Hero) c).pointsInTalent(Talent.DIVINE_SENSE);
+					} else {
+						mindVisRange = 1+2*((Hero) c).pointsInTalent(Talent.DIVINE_SENSE);
+					}
+				}
 				mindVisRange = Math.max(mindVisRange, EyeOfNewt.mindVisionRange());
+
+				//power of many's life link spell allows allies to get divine sense
+				Char ally = PowerOfMany.getPoweredAlly();
+				if (ally != null && ally.buff(DivineSense.DivineSenseTracker.class) == null){
+					ally = null;
+				}
 
 				if (mindVisRange >= 1) {
 					for (Mob mob : mobs) {
-						if (mob instanceof Mimic && mob.alignment == Char.Alignment.NEUTRAL&& ((Mimic) mob).stealthy()){
+						if (mob instanceof Mimic && mob.alignment == Char.Alignment.NEUTRAL && ((Mimic) mob).stealthy()){
 							continue;
 						}
 						int p = mob.pos;
-						if (!fieldOfView[p] && distance(c.pos, p) <= mindVisRange) {
+						if (!fieldOfView[p] && (distance(c.pos, p) <= mindVisRange || (ally != null && distance(ally.pos, p) <= mindVisRange))) {
 							for (int i : PathFinder.NEIGHBOURS9) {
 								heroMindFov[mob.pos + i] = true;
 							}
@@ -1416,7 +1460,8 @@ public abstract class Level implements Bundlable {
 			for (Mob m : mobs){
 				if (m instanceof WandOfWarding.Ward
 						|| m instanceof WandOfRegrowth.Lotus
-						|| m instanceof SpiritHawk.HawkAlly){ //scholar
+						|| m instanceof SpiritHawk.HawkAlly
+						|| m.buff(PowerOfMany.PowerBuff.class) != null){
 					if (m.fieldOfView == null || m.fieldOfView.length != length()){
 						m.fieldOfView = new boolean[length()];
 						Dungeon.level.updateFieldOfView( m, m.fieldOfView );
@@ -1449,8 +1494,8 @@ public abstract class Level implements Bundlable {
 
 	}
 
-	public boolean isLevelExplored( int depth ){
-		return false;
+	public float levelExplorePercent( int depth ){
+		return 0;
 	}
 	
 	public int distance( int a, int b ) {
